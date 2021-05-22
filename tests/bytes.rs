@@ -3,20 +3,30 @@ use fuel_tx::*;
 use std::fmt;
 use std::io::{self, Read, Write};
 
-mod valid;
-
 pub fn d<T: Default>() -> T {
     Default::default()
 }
 
 pub fn assert_encoding_correct<T>(data: &[T])
 where
-    T: Read + Write + fmt::Debug + Clone + PartialEq,
+    T: Read
+        + Write
+        + fmt::Debug
+        + Clone
+        + PartialEq
+        + bytes::SizedBytes
+        + bytes::SerializableVec
+        + bytes::Deserializable,
 {
     let mut buffer;
 
     for data in data.iter() {
         let mut d = data.clone();
+
+        let d_bytes = data.clone().to_bytes();
+        let d_p = T::from_bytes(d_bytes.as_slice()).expect("Failed to deserialize T");
+        assert_eq!(d, d_p);
+
         let mut d_p = data.clone();
 
         buffer = vec![0u8; 1024];
@@ -33,6 +43,7 @@ where
         d.read(buffer.as_mut_slice()).expect("Failed to read");
         d_p.write(buffer.as_slice()).expect("Failed to write");
         assert_eq!(d, d_p);
+        assert_eq!(d_bytes.as_slice(), buffer.as_slice());
 
         // No panic assertion
         loop {

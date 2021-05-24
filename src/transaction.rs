@@ -287,18 +287,23 @@ impl Transaction {
     /// For a transaction of type `Create`, return the offset of the data
     /// relative to the serialized transaction for a given index of inputs,
     /// if this input is of type `Coin`.
-    pub fn input_coin_data_offset(&self, index: usize) -> Option<usize> {
+    pub fn input_coin_predicate_offset(&self, index: usize) -> Option<usize> {
         match self {
             Transaction::Create {
                 inputs,
                 static_contracts,
                 ..
             } => inputs.get(index).map(|input| match input {
-                Input::Coin { predicate_data, .. } => Some(
+                Input::Coin {
+                    predicate,
+                    predicate_data,
+                    ..
+                } => Some(
                     TRANSACTION_CREATE_FIXED_SIZE
                         + CONTRACT_ADDRESS_SIZE * static_contracts.len()
                         + inputs.iter().take(index).map(|i| i.serialized_size()).sum::<usize>()
                         + input.serialized_size()
+                        - bytes::padded_len(predicate.as_slice())
                         - bytes::padded_len(predicate_data.as_slice()),
                 ),
 
@@ -311,12 +316,17 @@ impl Transaction {
                 script_data,
                 ..
             } => inputs.get(index).map(|input| match input {
-                Input::Coin { predicate_data, .. } => Some(
+                Input::Coin {
+                    predicate,
+                    predicate_data,
+                    ..
+                } => Some(
                     TRANSACTION_SCRIPT_FIXED_SIZE
                         + bytes::padded_len(script.as_slice())
                         + bytes::padded_len(script_data.as_slice())
                         + inputs.iter().take(index).map(|i| i.serialized_size()).sum::<usize>()
                         + input.serialized_size()
+                        - bytes::padded_len(predicate.as_slice())
                         - bytes::padded_len(predicate_data.as_slice()),
                 ),
 

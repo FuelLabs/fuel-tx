@@ -292,10 +292,10 @@ impl Transaction {
 
     /// For a serialized transaction of type `Script`, return the bytes offset
     /// of the script data
-    pub fn script_data_offset(&self) -> usize {
+    pub fn script_data_offset(&self) -> Option<usize> {
         match &self {
-            Self::Script { script, .. } => TRANSACTION_SCRIPT_FIXED_SIZE + bytes::padded_len(script.as_slice()),
-            _ => 0,
+            Self::Script { script, .. } => Some(TRANSACTION_SCRIPT_FIXED_SIZE + bytes::padded_len(script.as_slice())),
+            _ => None,
         }
     }
 

@@ -386,7 +386,9 @@ fn script_input_coin_data_offset() {
                         let script_offset = Transaction::script_offset();
                         assert_eq!(script.as_slice(), &buffer[script_offset..script_offset + script.len()]);
 
-                        let script_data_offset = tx.script_data_offset();
+                        let script_data_offset = tx
+                            .script_data_offset()
+                            .expect("Transaction is Script and should return data offset");
                         assert_eq!(
                             script_data.as_slice(),
                             &buffer[script_data_offset..script_data_offset + script_data.len()]

@@ -94,7 +94,7 @@ impl Default for Transaction {
         // The Return op is mandatory for the execution of any context
         let script = Opcode::RET(0x10).to_bytes().to_vec();
 
-        Transaction::script(1, 1000000, 1, script, vec![], vec![], vec![], vec![])
+        Transaction::script(0, 1000000, 0, script, vec![], vec![], vec![], vec![])
     }
 }
 

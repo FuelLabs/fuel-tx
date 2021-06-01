@@ -6,8 +6,11 @@ fn d<T: Default>() -> T {
     Default::default()
 }
 
-fn invert(bytes: &mut [u8]) {
-    bytes.iter_mut().for_each(|b| *b = b.not());
+fn invert<B>(mut bytes: B)
+where
+    B: AsMut<[u8]>,
+{
+    bytes.as_mut().iter_mut().for_each(|b| *b = b.not());
 }
 
 fn inv_v(bytes: &mut Vec<u8>) {

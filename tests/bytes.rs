@@ -77,65 +77,75 @@ fn witness() {
 fn input() {
     assert_encoding_correct(&[
         Input::coin(
-            [0xaa; 32],
-            [0xbb; 32],
+            [0xaa; 32].into(),
+            [0xbb; 32].into(),
             Word::MAX,
-            [0xcc; 32],
+            [0xcc; 32].into(),
             0xff,
             Word::MAX >> 1,
             vec![0xdd; 50],
             vec![0xee; 23],
         ),
         Input::coin(
-            [0xaa; 32],
-            [0xbb; 32],
+            [0xaa; 32].into(),
+            [0xbb; 32].into(),
             Word::MAX,
-            [0xcc; 32],
+            [0xcc; 32].into(),
             0xff,
             Word::MAX >> 1,
             vec![],
             vec![0xee; 23],
         ),
         Input::coin(
-            [0xaa; 32],
-            [0xbb; 32],
+            [0xaa; 32].into(),
+            [0xbb; 32].into(),
             Word::MAX,
-            [0xcc; 32],
+            [0xcc; 32].into(),
             0xff,
             Word::MAX >> 1,
             vec![0xdd; 50],
             vec![],
         ),
         Input::coin(
-            [0xaa; 32],
-            [0xbb; 32],
+            [0xaa; 32].into(),
+            [0xbb; 32].into(),
             Word::MAX,
-            [0xcc; 32],
+            [0xcc; 32].into(),
             0xff,
             Word::MAX >> 1,
             vec![],
             vec![],
         ),
-        Input::contract([0xaa; 32], [0xbb; 32], [0xcc; 32], [0xdd; 32]),
+        Input::contract(
+            [0xaa; 32].into(),
+            [0xbb; 32].into(),
+            [0xcc; 32].into(),
+            [0xdd; 32].into(),
+        ),
     ]);
 }
 
 #[test]
 fn output() {
     assert_encoding_correct(&[
-        Output::coin([0xaa; 32], Word::MAX >> 1, [0xbb; 32]),
-        Output::contract(0xaa, [0xbb; 32], [0xcc; 32]),
-        Output::withdrawal([0xaa; 32], Word::MAX >> 1, [0xbb; 32]),
-        Output::change([0xaa; 32], Word::MAX >> 1, [0xbb; 32]),
-        Output::variable([0xaa; 32], Word::MAX >> 1, [0xbb; 32]),
-        Output::contract_created([0xaa; 32]),
+        Output::coin([0xaa; 32].into(), Word::MAX >> 1, [0xbb; 32].into()),
+        Output::contract(0xaa, [0xbb; 32].into(), [0xcc; 32].into()),
+        Output::withdrawal([0xaa; 32].into(), Word::MAX >> 1, [0xbb; 32].into()),
+        Output::change([0xaa; 32].into(), Word::MAX >> 1, [0xbb; 32].into()),
+        Output::variable([0xaa; 32].into(), Word::MAX >> 1, [0xbb; 32].into()),
+        Output::contract_created([0xaa; 32].into()),
     ]);
 }
 
 #[test]
 fn transaction() {
-    let i = Input::contract([0xaa; 32], [0xbb; 32], [0xcc; 32], [0xdd; 32]);
-    let o = Output::coin([0xaa; 32], Word::MAX >> 1, [0xbb; 32]);
+    let i = Input::contract(
+        [0xaa; 32].into(),
+        [0xbb; 32].into(),
+        [0xcc; 32].into(),
+        [0xdd; 32].into(),
+    );
+    let o = Output::coin([0xaa; 32].into(), Word::MAX >> 1, [0xbb; 32].into());
     let w = Witness::from(vec![0xbf]);
 
     assert_encoding_correct(&[
@@ -214,8 +224,8 @@ fn transaction() {
             Word::MAX >> 2,
             Word::MAX >> 3,
             0xba,
-            [0xdd; 32],
-            vec![[0xce; 32]],
+            [0xdd; 32].into(),
+            vec![[0xce; 32].into()],
             vec![i.clone()],
             vec![o.clone()],
             vec![w.clone()],
@@ -225,7 +235,7 @@ fn transaction() {
             Word::MAX >> 2,
             Word::MAX >> 3,
             0xba,
-            [0xdd; 32],
+            [0xdd; 32].into(),
             vec![],
             vec![i.clone()],
             vec![o.clone()],
@@ -236,7 +246,7 @@ fn transaction() {
             Word::MAX >> 2,
             Word::MAX >> 3,
             0xba,
-            [0xdd; 32],
+            [0xdd; 32].into(),
             vec![],
             vec![],
             vec![o.clone()],
@@ -247,7 +257,7 @@ fn transaction() {
             Word::MAX >> 2,
             Word::MAX >> 3,
             0xba,
-            [0xdd; 32],
+            [0xdd; 32].into(),
             vec![],
             vec![],
             vec![],
@@ -258,7 +268,7 @@ fn transaction() {
             Word::MAX >> 2,
             Word::MAX >> 3,
             0xba,
-            [0xdd; 32],
+            [0xdd; 32].into(),
             vec![],
             vec![],
             vec![],
@@ -273,7 +283,7 @@ fn create_input_coin_data_offset() {
     let gas_limit = 1000;
     let maturity = 10;
     let bytecode_witness_index = 0x00;
-    let salt = [0xbb; 32];
+    let salt = [0xbb; 32].into();
 
     let static_contracts: Vec<Vec<ContractAddress>> = vec![vec![], vec![d()], vec![d(), d()]];
     let inputs: Vec<Vec<Input>> = vec![

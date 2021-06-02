@@ -19,6 +19,25 @@ macro_rules! key {
             pub const fn size_of() -> usize {
                 $s
             }
+
+            pub fn random<R>(rng: &mut R) -> Self
+            where
+                R: rand::RngCore + rand::CryptoRng,
+            {
+                let mut bytes = [0u8; $s];
+
+                rng.fill_bytes(&mut bytes);
+
+                bytes.into()
+            }
+        }
+
+        impl rand::Fill for $i {
+            fn try_fill<R: rand::Rng + ?Sized>(&mut self, rng: &mut R) -> Result<(), rand::Error> {
+                rng.fill_bytes(self.as_mut());
+
+                Ok(())
+            }
         }
 
         impl Deref for $i {

@@ -129,7 +129,7 @@ fn contract() {
     .validate(
         1,
         &[Output::coin(
-            Address::random(rng),
+            ContractAddress::random(rng),
             rng.next_u64(),
             Color::random(rng),
         )],

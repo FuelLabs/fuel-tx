@@ -134,7 +134,11 @@ fn output() {
     let rng = &mut rng_base;
 
     assert_encoding_correct(&[
-        Output::coin(Address::random(rng), rng.next_u64(), Color::random(rng)),
+        Output::coin(
+            ContractAddress::random(rng),
+            rng.next_u64(),
+            Color::random(rng),
+        ),
         Output::contract(
             rng.next_u32().to_be_bytes()[0],
             Hash::random(rng),
@@ -158,7 +162,11 @@ fn transaction() {
         Hash::random(rng),
         ContractAddress::random(rng),
     );
-    let o = Output::coin(Address::random(rng), rng.next_u64(), Color::random(rng));
+    let o = Output::coin(
+        ContractAddress::random(rng),
+        rng.next_u64(),
+        Color::random(rng),
+    );
     let w = Witness::random(rng);
 
     assert_encoding_correct(&[
@@ -327,7 +335,7 @@ fn create_input_coin_data_offset() {
     let outputs: Vec<Vec<Output>> = vec![
         vec![],
         vec![Output::coin(
-            Address::random(rng),
+            ContractAddress::random(rng),
             rng.next_u64(),
             Color::random(rng),
         )],
@@ -437,7 +445,7 @@ fn script_input_coin_data_offset() {
     let outputs: Vec<Vec<Output>> = vec![
         vec![],
         vec![Output::coin(
-            Address::random(rng),
+            ContractAddress::random(rng),
             rng.next_u64(),
             Color::random(rng),
         )],

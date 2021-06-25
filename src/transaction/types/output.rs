@@ -9,6 +9,11 @@ use std::{io, mem};
 const WORD_SIZE: usize = mem::size_of::<Word>();
 
 const OUTPUT_COIN_SIZE: usize = WORD_SIZE // Identifier
+    + ContractAddress::size_of() // To
+    + WORD_SIZE // Amount
+    + Color::size_of(); // Color
+
+const OUTPUT_WITHDRAWAL_SIZE: usize = WORD_SIZE // Identifier
     + Address::size_of() // To
     + WORD_SIZE // Amount
     + Color::size_of(); // Color
@@ -66,7 +71,7 @@ impl From<&mut Output> for OutputRepr {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Output {
     Coin {
-        to: Address,
+        to: ContractAddress,
         amount: Word,
         color: Color,
     },
@@ -111,10 +116,11 @@ impl Default for Output {
 impl bytes::SizedBytes for Output {
     fn serialized_size(&self) -> usize {
         match self {
-            Self::Coin { .. }
-            | Self::Withdrawal { .. }
-            | Self::Change { .. }
-            | Self::Variable { .. } => OUTPUT_COIN_SIZE,
+            Self::Coin { .. } => OUTPUT_COIN_SIZE,
+
+            Self::Withdrawal { .. } | Self::Change { .. } | Self::Variable { .. } => {
+                OUTPUT_WITHDRAWAL_SIZE
+            }
 
             Self::Contract { .. } => OUTPUT_CONTRACT_SIZE,
 
@@ -124,7 +130,7 @@ impl bytes::SizedBytes for Output {
 }
 
 impl Output {
-    pub const fn coin(to: Address, amount: Word, color: Color) -> Self {
+    pub const fn coin(to: ContractAddress, amount: Word, color: Color) -> Self {
         Self::Coin { to, amount, color }
     }
 
@@ -174,8 +180,13 @@ impl io::Read for Output {
         buf = bytes::store_number_unchecked(buf, identifier as Word);
 
         match self {
-            Self::Coin { to, amount, color }
-            | Self::Withdrawal { to, amount, color }
+            Self::Coin { to, amount, color } => {
+                buf = bytes::store_array_unchecked(buf, to);
+                buf = bytes::store_number_unchecked(buf, *amount);
+                bytes::store_array_unchecked(buf, color);
+            }
+
+            Self::Withdrawal { to, amount, color }
             | Self::Change { to, amount, color }
             | Self::Variable { to, amount, color } => {
                 buf = bytes::store_array_unchecked(buf, to);
@@ -212,11 +223,10 @@ impl io::Write for Output {
         let identifier = OutputRepr::try_from(identifier)?;
 
         match identifier {
-            OutputRepr::Coin
-            | OutputRepr::Withdrawal
-            | OutputRepr::Change
-            | OutputRepr::Variable
-                if buf.len() < OUTPUT_COIN_SIZE - WORD_SIZE =>
+            OutputRepr::Coin if buf.len() < OUTPUT_COIN_SIZE - WORD_SIZE => Err(bytes::eof()),
+
+            OutputRepr::Withdrawal | OutputRepr::Change | OutputRepr::Variable
+                if buf.len() < OUTPUT_WITHDRAWAL_SIZE - WORD_SIZE =>
             {
                 Err(bytes::eof())
             }
@@ -229,10 +239,20 @@ impl io::Write for Output {
                 Err(bytes::eof())
             }
 
-            OutputRepr::Coin
-            | OutputRepr::Withdrawal
-            | OutputRepr::Change
-            | OutputRepr::Variable => {
+            OutputRepr::Coin => {
+                let (to, buf) = bytes::restore_array_unchecked(buf);
+                let (amount, buf) = bytes::restore_number_unchecked(buf);
+                let (color, _) = bytes::restore_array_unchecked(buf);
+
+                let to = to.into();
+                let color = color.into();
+
+                *self = Self::Coin { to, amount, color };
+
+                Ok(OUTPUT_COIN_SIZE)
+            }
+
+            OutputRepr::Withdrawal | OutputRepr::Change | OutputRepr::Variable => {
                 let (to, buf) = bytes::restore_array_unchecked(buf);
                 let (amount, buf) = bytes::restore_number_unchecked(buf);
                 let (color, _) = bytes::restore_array_unchecked(buf);
@@ -241,7 +261,6 @@ impl io::Write for Output {
                 let color = color.into();
 
                 match identifier {
-                    OutputRepr::Coin => *self = Self::Coin { to, amount, color },
                     OutputRepr::Withdrawal => *self = Self::Withdrawal { to, amount, color },
                     OutputRepr::Change => *self = Self::Change { to, amount, color },
                     OutputRepr::Variable => *self = Self::Variable { to, amount, color },
@@ -249,7 +268,7 @@ impl io::Write for Output {
                     _ => unreachable!(),
                 }
 
-                Ok(OUTPUT_COIN_SIZE)
+                Ok(OUTPUT_WITHDRAWAL_SIZE)
             }
 
             OutputRepr::Contract => {

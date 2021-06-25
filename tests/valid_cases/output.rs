@@ -7,9 +7,13 @@ fn coin() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;
 
-    Output::coin(Address::random(rng), rng.next_u64(), Color::random(rng))
-        .validate(1, &[])
-        .unwrap();
+    Output::coin(
+        ContractAddress::random(rng),
+        rng.next_u64(),
+        Color::random(rng),
+    )
+    .validate(1, &[])
+    .unwrap();
 }
 
 #[test]

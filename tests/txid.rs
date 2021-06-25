@@ -155,7 +155,11 @@ fn id() {
     let outputs = vec![
         vec![],
         vec![
-            Output::coin(Address::random(rng), rng.next_u64(), Color::random(rng)),
+            Output::coin(
+                ContractAddress::random(rng),
+                rng.next_u64(),
+                Color::random(rng),
+            ),
             Output::contract(
                 rng.next_u32().to_be_bytes()[0],
                 Hash::random(rng),

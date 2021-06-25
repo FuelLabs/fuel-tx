@@ -164,7 +164,11 @@ fn max_iow() {
             MAX_INPUTS as usize
         ],
         vec![
-            Output::coin(Address::random(rng), rng.next_u64(), Color::random(rng));
+            Output::coin(
+                ContractAddress::random(rng),
+                rng.next_u64(),
+                Color::random(rng)
+            );
             MAX_OUTPUTS as usize
         ],
         vec![Witness::random(rng); MAX_WITNESSES as usize],
@@ -193,7 +197,11 @@ fn max_iow() {
             MAX_INPUTS as usize
         ],
         vec![
-            Output::coin(Address::random(rng), rng.next_u64(), Color::random(rng));
+            Output::coin(
+                ContractAddress::random(rng),
+                rng.next_u64(),
+                Color::random(rng)
+            );
             MAX_OUTPUTS as usize
         ],
         vec![Witness::random(rng); MAX_WITNESSES as usize],

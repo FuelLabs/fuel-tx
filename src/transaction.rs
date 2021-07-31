@@ -318,31 +318,6 @@ impl Transaction {
     /// if this input is of type `Coin`.
     pub fn input_coin_predicate_offset(&self, index: usize) -> Option<usize> {
         match self {
-            Transaction::Create {
-                inputs,
-                static_contracts,
-                ..
-            } => inputs.get(index).map(|input| match input {
-                Input::Coin {
-                    predicate,
-                    predicate_data,
-                    ..
-                } => Some(
-                    TRANSACTION_CREATE_FIXED_SIZE
-                        + ContractId::size_of() * static_contracts.len()
-                        + inputs
-                            .iter()
-                            .take(index)
-                            .map(|i| i.serialized_size())
-                            .sum::<usize>()
-                        + input.serialized_size()
-                        - bytes::padded_len(predicate.as_slice())
-                        - bytes::padded_len(predicate_data.as_slice()),
-                ),
-
-                _ => None,
-            }),
-
             Transaction::Script {
                 inputs,
                 script,
@@ -369,8 +344,156 @@ impl Transaction {
 
                 _ => None,
             }),
+
+            Transaction::Create {
+                inputs,
+                static_contracts,
+                ..
+            } => inputs.get(index).map(|input| match input {
+                Input::Coin {
+                    predicate,
+                    predicate_data,
+                    ..
+                } => Some(
+                    TRANSACTION_CREATE_FIXED_SIZE
+                        + ContractId::size_of() * static_contracts.len()
+                        + inputs
+                            .iter()
+                            .take(index)
+                            .map(|i| i.serialized_size())
+                            .sum::<usize>()
+                        + input.serialized_size()
+                        - bytes::padded_len(predicate.as_slice())
+                        - bytes::padded_len(predicate_data.as_slice()),
+                ),
+
+                _ => None,
+            }),
         }
         .flatten()
+    }
+
+    /// Return the serialized bytes offset of the input with the provided index
+    ///
+    /// If `|inputs| <= index`, the offset of the end of the last input is returned
+    pub fn input_offset(&self, index: usize) -> usize {
+        match self {
+            Transaction::Script {
+                script,
+                script_data,
+                inputs,
+                ..
+            } => {
+                TRANSACTION_SCRIPT_FIXED_SIZE
+                    + bytes::padded_len(script.as_slice())
+                    + bytes::padded_len(script_data.as_slice())
+                    + inputs
+                        .iter()
+                        .take(index)
+                        .map(|i| i.serialized_size())
+                        .sum::<usize>()
+            }
+
+            Transaction::Create {
+                static_contracts,
+                inputs,
+                ..
+            } => {
+                TRANSACTION_CREATE_FIXED_SIZE
+                    + ContractId::size_of() * static_contracts.len()
+                    + inputs
+                        .iter()
+                        .take(index)
+                        .map(|i| i.serialized_size())
+                        .sum::<usize>()
+            }
+        }
+    }
+
+    /// Return the serialized bytes offset of the output with the provided index
+    ///
+    /// If `|outputs| <= index`, the offset of the end of the last output is returned
+    pub fn output_offset(&self, index: usize) -> usize {
+        match self {
+            Transaction::Script {
+                script,
+                script_data,
+                inputs,
+                outputs,
+                ..
+            } => {
+                TRANSACTION_SCRIPT_FIXED_SIZE
+                    + bytes::padded_len(script.as_slice())
+                    + bytes::padded_len(script_data.as_slice())
+                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
+                    + outputs
+                        .iter()
+                        .take(index)
+                        .map(|o| o.serialized_size())
+                        .sum::<usize>()
+            }
+
+            Transaction::Create {
+                static_contracts,
+                inputs,
+                outputs,
+                ..
+            } => {
+                TRANSACTION_CREATE_FIXED_SIZE
+                    + ContractId::size_of() * static_contracts.len()
+                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
+                    + outputs
+                        .iter()
+                        .take(index)
+                        .map(|o| o.serialized_size())
+                        .sum::<usize>()
+            }
+        }
+    }
+
+    /// Return the serialized bytes offset of the witness with the provided index
+    ///
+    /// If `|witnesses| <= index`, the offset of the end of the last witness is returned
+    pub fn witness_offset(&self, index: usize) -> usize {
+        match self {
+            Transaction::Script {
+                script,
+                script_data,
+                inputs,
+                outputs,
+                witnesses,
+                ..
+            } => {
+                TRANSACTION_SCRIPT_FIXED_SIZE
+                    + bytes::padded_len(script.as_slice())
+                    + bytes::padded_len(script_data.as_slice())
+                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
+                    + outputs.iter().map(|o| o.serialized_size()).sum::<usize>()
+                    + witnesses
+                        .iter()
+                        .take(index)
+                        .map(|w| w.serialized_size())
+                        .sum::<usize>()
+            }
+
+            Transaction::Create {
+                static_contracts,
+                inputs,
+                outputs,
+                witnesses,
+                ..
+            } => {
+                TRANSACTION_CREATE_FIXED_SIZE
+                    + ContractId::size_of() * static_contracts.len()
+                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
+                    + outputs.iter().map(|o| o.serialized_size()).sum::<usize>()
+                    + witnesses
+                        .iter()
+                        .take(index)
+                        .map(|w| w.serialized_size())
+                        .sum::<usize>()
+            }
+        }
     }
 
     pub fn inputs(&self) -> &[Input] {

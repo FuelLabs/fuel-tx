@@ -374,6 +374,8 @@ impl Transaction {
     }
 
     /// Return the serialized bytes offset of the input with the provided index
+    ///
+    /// Return `None` if `index` is invalid
     pub fn input_offset(&self, index: usize) -> Option<usize> {
         let (offset, inputs) = match self {
             Transaction::Script {
@@ -409,6 +411,8 @@ impl Transaction {
     }
 
     /// Return the serialized bytes offset of the output with the provided index
+    ///
+    /// Return `None` if `index` is invalid
     pub fn output_offset(&self, index: usize) -> Option<usize> {
         let (offset, outputs) = match self {
             Transaction::Script {
@@ -449,6 +453,8 @@ impl Transaction {
     }
 
     /// Return the serialized bytes offset of the witness with the provided index
+    ///
+    /// Return `None` if `index` is invalid
     pub fn witness_offset(&self, index: usize) -> Option<usize> {
         let (offset, witnesses) = match self {
             Transaction::Script {

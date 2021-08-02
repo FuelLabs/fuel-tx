@@ -374,88 +374,83 @@ impl Transaction {
     }
 
     /// Return the serialized bytes offset of the input with the provided index
-    ///
-    /// If `|inputs| <= index`, the offset of the end of the last input is returned
-    pub fn input_offset(&self, index: usize) -> usize {
-        match self {
+    pub fn input_offset(&self, index: usize) -> Option<usize> {
+        let (offset, inputs) = match self {
             Transaction::Script {
                 script,
                 script_data,
                 inputs,
                 ..
-            } => {
+            } => (
                 TRANSACTION_SCRIPT_FIXED_SIZE
                     + bytes::padded_len(script.as_slice())
-                    + bytes::padded_len(script_data.as_slice())
-                    + inputs
-                        .iter()
-                        .take(index)
-                        .map(|i| i.serialized_size())
-                        .sum::<usize>()
-            }
+                    + bytes::padded_len(script_data.as_slice()),
+                inputs,
+            ),
 
             Transaction::Create {
                 static_contracts,
                 inputs,
                 ..
-            } => {
-                TRANSACTION_CREATE_FIXED_SIZE
-                    + ContractId::size_of() * static_contracts.len()
-                    + inputs
-                        .iter()
-                        .take(index)
-                        .map(|i| i.serialized_size())
-                        .sum::<usize>()
-            }
-        }
+            } => (
+                TRANSACTION_CREATE_FIXED_SIZE + ContractId::size_of() * static_contracts.len(),
+                inputs,
+            ),
+        };
+
+        inputs.iter().nth(index).map(|_| {
+            inputs
+                .iter()
+                .take(index)
+                .map(|i| i.serialized_size())
+                .sum::<usize>()
+                + offset
+        })
     }
 
     /// Return the serialized bytes offset of the output with the provided index
-    ///
-    /// If `|outputs| <= index`, the offset of the end of the last output is returned
-    pub fn output_offset(&self, index: usize) -> usize {
-        match self {
+    pub fn output_offset(&self, index: usize) -> Option<usize> {
+        let (offset, outputs) = match self {
             Transaction::Script {
                 script,
                 script_data,
                 inputs,
                 outputs,
                 ..
-            } => {
+            } => (
                 TRANSACTION_SCRIPT_FIXED_SIZE
                     + bytes::padded_len(script.as_slice())
                     + bytes::padded_len(script_data.as_slice())
-                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
-                    + outputs
-                        .iter()
-                        .take(index)
-                        .map(|o| o.serialized_size())
-                        .sum::<usize>()
-            }
+                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>(),
+                outputs,
+            ),
 
             Transaction::Create {
                 static_contracts,
                 inputs,
                 outputs,
                 ..
-            } => {
+            } => (
                 TRANSACTION_CREATE_FIXED_SIZE
                     + ContractId::size_of() * static_contracts.len()
-                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
-                    + outputs
-                        .iter()
-                        .take(index)
-                        .map(|o| o.serialized_size())
-                        .sum::<usize>()
-            }
-        }
+                    + inputs.iter().map(|i| i.serialized_size()).sum::<usize>(),
+                outputs,
+            ),
+        };
+
+        outputs.iter().nth(index).map(|_| {
+            outputs
+                .iter()
+                .take(index)
+                .map(|i| i.serialized_size())
+                .sum::<usize>()
+                + offset
+        })
     }
 
     /// Return the serialized bytes offset of the witness with the provided index
-    ///
-    /// If `|witnesses| <= index`, the offset of the end of the last witness is returned
-    pub fn witness_offset(&self, index: usize) -> usize {
-        match self {
+    pub fn witness_offset(&self, index: usize) -> Option<usize> {
+        let (offset, witnesses) = match self {
             Transaction::Script {
                 script,
                 script_data,
@@ -463,18 +458,14 @@ impl Transaction {
                 outputs,
                 witnesses,
                 ..
-            } => {
+            } => (
                 TRANSACTION_SCRIPT_FIXED_SIZE
                     + bytes::padded_len(script.as_slice())
                     + bytes::padded_len(script_data.as_slice())
                     + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
-                    + outputs.iter().map(|o| o.serialized_size()).sum::<usize>()
-                    + witnesses
-                        .iter()
-                        .take(index)
-                        .map(|w| w.serialized_size())
-                        .sum::<usize>()
-            }
+                    + outputs.iter().map(|o| o.serialized_size()).sum::<usize>(),
+                witnesses,
+            ),
 
             Transaction::Create {
                 static_contracts,
@@ -482,18 +473,23 @@ impl Transaction {
                 outputs,
                 witnesses,
                 ..
-            } => {
+            } => (
                 TRANSACTION_CREATE_FIXED_SIZE
                     + ContractId::size_of() * static_contracts.len()
                     + inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
-                    + outputs.iter().map(|o| o.serialized_size()).sum::<usize>()
-                    + witnesses
-                        .iter()
-                        .take(index)
-                        .map(|w| w.serialized_size())
-                        .sum::<usize>()
-            }
-        }
+                    + outputs.iter().map(|o| o.serialized_size()).sum::<usize>(),
+                witnesses,
+            ),
+        };
+
+        witnesses.iter().nth(index).map(|_| {
+            witnesses
+                .iter()
+                .take(index)
+                .map(|i| i.serialized_size())
+                .sum::<usize>()
+                + offset
+        })
     }
 
     pub fn inputs(&self) -> &[Input] {

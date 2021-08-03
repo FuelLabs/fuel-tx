@@ -1,6 +1,3 @@
-use crate::bytes::SerializableVec;
-use crate::crypto;
-
 use fuel_asm::{Opcode, Word};
 use itertools::Itertools;
 
@@ -8,6 +5,7 @@ use std::convert::TryFrom;
 use std::io::Write;
 use std::{io, mem};
 
+mod id;
 mod metadata;
 mod offset;
 mod txio;
@@ -162,61 +160,6 @@ impl Transaction {
             .unique()
     }
 
-    pub fn id(&self) -> Bytes32 {
-        self.metadata()
-            .map(Metadata::id)
-            .copied()
-            .unwrap_or(self._id())
-    }
-
-    pub(crate) fn _id(&self) -> Bytes32 {
-        let mut tx = self.clone();
-        tx.prepare_sign();
-
-        crypto::hash(tx.to_bytes().as_slice())
-    }
-
-    pub fn prepare_sign(&mut self) {
-        self.inputs_mut().iter_mut().for_each(|input| {
-            if let Input::Contract {
-                utxo_id,
-                balance_root,
-                state_root,
-                ..
-            } = input
-            {
-                utxo_id.iter_mut().for_each(|b| *b = 0);
-                balance_root.iter_mut().for_each(|b| *b = 0);
-                state_root.iter_mut().for_each(|b| *b = 0);
-            }
-        });
-
-        self.outputs_mut()
-            .iter_mut()
-            .for_each(|output| match output {
-                Output::Contract {
-                    balance_root,
-                    state_root,
-                    ..
-                } => {
-                    balance_root.iter_mut().for_each(|b| *b = 0);
-                    state_root.iter_mut().for_each(|b| *b = 0);
-                }
-
-                Output::Change { amount, .. } => *amount = 0,
-
-                Output::Variable {
-                    to, amount, color, ..
-                } => {
-                    to.iter_mut().for_each(|b| *b = 0);
-                    *amount = 0;
-                    color.iter_mut().for_each(|b| *b = 0);
-                }
-
-                _ => (),
-            });
-    }
-
     pub fn input_contracts(&self) -> impl Iterator<Item = &ContractId> {
         self.inputs()
             .iter()
@@ -280,24 +223,10 @@ impl Transaction {
         }
     }
 
-    pub fn metadata_mut(&mut self) -> &mut Option<Metadata> {
-        match self {
-            Self::Script { metadata, .. } => metadata,
-            Self::Create { metadata, .. } => metadata,
-        }
-    }
-
     pub fn inputs(&self) -> &[Input] {
         match self {
             Self::Script { inputs, .. } => inputs.as_slice(),
             Self::Create { inputs, .. } => inputs.as_slice(),
-        }
-    }
-
-    pub fn inputs_mut(&mut self) -> &mut [Input] {
-        match self {
-            Self::Script { inputs, .. } => inputs.as_mut_slice(),
-            Self::Create { inputs, .. } => inputs.as_mut_slice(),
         }
     }
 
@@ -308,24 +237,10 @@ impl Transaction {
         }
     }
 
-    pub fn outputs_mut(&mut self) -> &mut [Output] {
-        match self {
-            Self::Script { outputs, .. } => outputs.as_mut_slice(),
-            Self::Create { outputs, .. } => outputs.as_mut_slice(),
-        }
-    }
-
     pub fn witnesses(&self) -> &[Witness] {
         match self {
             Self::Script { witnesses, .. } => witnesses.as_slice(),
             Self::Create { witnesses, .. } => witnesses.as_slice(),
-        }
-    }
-
-    pub fn witnesses_mut(&mut self) -> &mut [Witness] {
-        match self {
-            Self::Script { witnesses, .. } => witnesses.as_mut_slice(),
-            Self::Create { witnesses, .. } => witnesses.as_mut_slice(),
         }
     }
 

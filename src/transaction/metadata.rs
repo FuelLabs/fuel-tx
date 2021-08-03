@@ -60,6 +60,13 @@ impl Metadata {
 }
 
 impl Transaction {
+    fn metadata_mut(&mut self) -> &mut Option<Metadata> {
+        match self {
+            Self::Script { metadata, .. } => metadata,
+            Self::Create { metadata, .. } => metadata,
+        }
+    }
+
     pub fn precompute_metadata(&mut self) {
         let id = self._id();
 

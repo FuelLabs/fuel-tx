@@ -32,8 +32,14 @@ where
     F: FnMut(&mut Transaction),
 {
     let mut tx_p = tx.clone();
+
+    let mut tx_q = tx.clone();
+    tx_q.precompute_metadata();
+
     f(&mut tx_p);
+
     assert_eq!(tx.id(), tx_p.id());
+    assert_eq!(tx.id(), tx_q.id());
 }
 
 fn assert_id_ne<F>(tx: &Transaction, mut f: F)
@@ -41,8 +47,14 @@ where
     F: FnMut(&mut Transaction),
 {
     let mut tx_p = tx.clone();
+
     f(&mut tx_p);
+
+    let mut tx_q = tx_p.clone();
+    tx_q.precompute_metadata();
+
     assert_ne!(tx.id(), tx_p.id());
+    assert_ne!(tx.id(), tx_q.id());
 }
 
 macro_rules! assert_io_ne {

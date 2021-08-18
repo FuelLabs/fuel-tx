@@ -1,4 +1,3 @@
-use crate::Bytes8;
 use fuel_asm::Word;
 
 use std::convert::TryFrom;
@@ -117,8 +116,8 @@ pub fn restore_bytes(mut buf: &[u8]) -> io::Result<(usize, Vec<u8>, &[u8])> {
     let len = buf
         .chunks_exact(WORD_SIZE)
         .next()
-        .map(Bytes8::from_slice_unchecked)
-        .map(|len| Word::from_be_bytes(len.into()) as usize)
+        .map(from_slice_unchecked)
+        .map(|len| Word::from_be_bytes(len) as usize)
         .ok_or_else(eof)?;
     buf = &buf[WORD_SIZE..];
 
@@ -172,43 +171,43 @@ pub fn restore_number_unchecked<T>(buf: &[u8]) -> (T, &[u8])
 where
     T: From<Word>,
 {
-    let number = Bytes8::from_slice_unchecked(buf);
-    let number = Word::from_be_bytes(number.into()).into();
+    let number = from_slice_unchecked(buf);
+    let number = Word::from_be_bytes(number).into();
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_word_unchecked(buf: &[u8]) -> (Word, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(buf);
-    let number = Word::from_be_bytes(number.into());
+    let number = from_slice_unchecked(buf);
+    let number = Word::from_be_bytes(number);
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_u8_unchecked(buf: &[u8]) -> (u8, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(buf);
-    let number = Word::from_be_bytes(number.into()) as u8;
+    let number = from_slice_unchecked(buf);
+    let number = Word::from_be_bytes(number) as u8;
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_u16_unchecked(buf: &[u8]) -> (u16, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(buf);
-    let number = Word::from_be_bytes(number.into()) as u16;
+    let number = from_slice_unchecked(buf);
+    let number = Word::from_be_bytes(number) as u16;
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_u32_unchecked(buf: &[u8]) -> (u32, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(buf);
-    let number = Word::from_be_bytes(number.into()) as u32;
+    let number = from_slice_unchecked(buf);
+    let number = Word::from_be_bytes(number) as u32;
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_usize_unchecked(buf: &[u8]) -> (usize, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(buf);
-    let number = Word::from_be_bytes(number.into()) as usize;
+    let number = from_slice_unchecked(buf);
+    let number = Word::from_be_bytes(number) as usize;
 
     (number, &buf[WORD_SIZE..])
 }
@@ -220,8 +219,8 @@ where
     let number = buf
         .chunks_exact(WORD_SIZE)
         .next()
-        .map(Bytes8::from_slice_unchecked)
-        .map(|chunk| Word::from_be_bytes(chunk.into()).into())
+        .map(from_slice_unchecked)
+        .map(|chunk| Word::from_be_bytes(chunk).into())
         .ok_or_else(eof)?;
 
     Ok((number, &buf[WORD_SIZE..]))

@@ -172,42 +172,42 @@ pub fn restore_number_unchecked<T>(buf: &[u8]) -> (T, &[u8])
 where
     T: From<Word>,
 {
-    let number = Bytes8::from_slice_unchecked(&buf[..WORD_SIZE]);
+    let number = Bytes8::from_slice_unchecked(buf);
     let number = Word::from_be_bytes(number.into()).into();
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_word_unchecked(buf: &[u8]) -> (Word, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(&buf[..WORD_SIZE]);
+    let number = Bytes8::from_slice_unchecked(buf);
     let number = Word::from_be_bytes(number.into());
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_u8_unchecked(buf: &[u8]) -> (u8, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(&buf[..WORD_SIZE]);
+    let number = Bytes8::from_slice_unchecked(buf);
     let number = Word::from_be_bytes(number.into()) as u8;
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_u16_unchecked(buf: &[u8]) -> (u16, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(&buf[..WORD_SIZE]);
+    let number = Bytes8::from_slice_unchecked(buf);
     let number = Word::from_be_bytes(number.into()) as u16;
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_u32_unchecked(buf: &[u8]) -> (u32, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(&buf[..WORD_SIZE]);
+    let number = Bytes8::from_slice_unchecked(buf);
     let number = Word::from_be_bytes(number.into()) as u32;
 
     (number, &buf[WORD_SIZE..])
 }
 
 pub fn restore_usize_unchecked(buf: &[u8]) -> (usize, &[u8]) {
-    let number = Bytes8::from_slice_unchecked(&buf[..WORD_SIZE]);
+    let number = Bytes8::from_slice_unchecked(buf);
     let number = Word::from_be_bytes(number.into()) as usize;
 
     (number, &buf[WORD_SIZE..])
@@ -249,7 +249,7 @@ pub fn store_array_unchecked<'a, const N: usize>(
 }
 
 pub fn restore_array_unchecked<const N: usize>(buf: &[u8]) -> ([u8; N], &[u8]) {
-    (from_slice_unchecked(&buf[..N]), &buf[N..])
+    (from_slice_unchecked(buf), &buf[N..])
 }
 
 pub fn restore_array<const N: usize>(buf: &[u8]) -> io::Result<([u8; N], &[u8])> {

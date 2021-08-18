@@ -1,3 +1,4 @@
+use crate::bytes;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use std::array::TryFromSliceError;
@@ -29,11 +30,7 @@ macro_rules! key {
             ///
             /// Will panic if the provided slice length is different than `Self::size_of()`
             pub fn from_slice_unchecked(bytes: &[u8]) -> Self {
-                assert_eq!(bytes.len(), $s);
-
-                <[u8; $s]>::try_from(bytes)
-                    .expect("Unchecked slice conversion into type")
-                    .into()
+                $i(bytes::from_slice_unchecked(bytes))
             }
         }
 
@@ -106,9 +103,56 @@ pub use witness::Witness;
 key!(Address, 32);
 key!(Color, 32);
 key!(ContractId, 32);
+key!(Bytes8, 8);
 key!(Bytes32, 32);
 key!(Salt, 32);
 
 impl ContractId {
     pub const SEED: [u8; 4] = 0x4655454C_u32.to_be_bytes();
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    use rand::rngs::StdRng;
+    use rand::{RngCore, SeedableRng};
+    use std::convert::TryFrom;
+
+    #[test]
+    fn from_slice_unchecked() {
+        let rng = &mut StdRng::seed_from_u64(8586);
+
+        let mut bytes = [0u8; 257];
+        rng.fill_bytes(&mut bytes);
+
+        let i = &bytes[..Address::size_of()];
+        let a = Address::from_slice_unchecked(i);
+        let b = Address::try_from(i).expect("Memory conversion");
+        assert_eq!(a, b);
+
+        let i = &bytes[..Color::size_of()];
+        let a = Color::from_slice_unchecked(i);
+        let b = Color::try_from(i).expect("Memory conversion");
+        assert_eq!(a, b);
+
+        let i = &bytes[..ContractId::size_of()];
+        let a = ContractId::from_slice_unchecked(i);
+        let b = ContractId::try_from(i).expect("Memory conversion");
+        assert_eq!(a, b);
+
+        let i = &bytes[..Bytes8::size_of()];
+        let a = Bytes8::from_slice_unchecked(i);
+        let b = Bytes8::try_from(i).expect("Memory conversion");
+        assert_eq!(a, b);
+
+        let i = &bytes[..Bytes32::size_of()];
+        let a = Bytes32::from_slice_unchecked(i);
+        let b = Bytes32::try_from(i).expect("Memory conversion");
+        assert_eq!(a, b);
+
+        let i = &bytes[..Salt::size_of()];
+        let a = Salt::from_slice_unchecked(i);
+        let b = Salt::try_from(i).expect("Memory conversion");
+        assert_eq!(a, b);
+    }
 }

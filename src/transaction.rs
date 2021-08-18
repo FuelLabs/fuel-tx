@@ -13,7 +13,7 @@ mod types;
 mod validation;
 
 pub use metadata::Metadata;
-pub use types::{Address, Bytes32, Color, ContractId, Input, Output, Salt, Witness};
+pub use types::{Address, Bytes32, Bytes8, Color, ContractId, Input, Output, Salt, Witness};
 pub use validation::ValidationError;
 
 const WORD_SIZE: usize = mem::size_of::<Word>();

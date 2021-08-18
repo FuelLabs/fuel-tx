@@ -24,11 +24,13 @@ macro_rules! key {
                 $s
             }
 
-            /// Add a conversion between arbitrary slices to the type
+            /// Add a conversion from arbitrary slices into `Self`
             ///
-            /// # Panics
+            /// # Warning
             ///
-            /// Will panic if the provided slice length is smaller than `Self::size_of()`
+            /// This function will not panic if the length of the slice is smaller than
+            /// `Self::size_of`. Instead, it will cause undefined behavior and read random disowned
+            /// bytes
             pub fn from_slice_unchecked(bytes: &[u8]) -> Self {
                 $i(bytes::from_slice_unchecked(bytes))
             }
@@ -118,6 +120,29 @@ mod tests {
     use rand::{Rng, RngCore, SeedableRng};
     use std::convert::TryFrom;
 
+    macro_rules! check_consistency {
+        ($i:ident,$r:expr,$b:expr) => {
+            let n = $i::size_of();
+            let s = $r.gen_range(0..257 - n);
+            let e = $r.gen_range(s + n..257);
+            let r = $r.gen_range(1..n - 1);
+            let i = &$b[s..s + n];
+
+            let a = $i::from_slice_unchecked(i);
+            let b = $i::from_slice_unchecked(&$b[s..e]);
+            let c = $i::try_from(i).expect("Memory conversion");
+
+            // `d` will create random smaller slices and expect the value to be parsed correctly
+            //
+            // However, this is not the expected usage of the function
+            let d = $i::from_slice_unchecked(&i[..i.len() - r]);
+
+            assert_eq!(a, b);
+            assert_eq!(a, c);
+            assert_eq!(a, d);
+        };
+    }
+
     #[test]
     fn from_slice_unchecked_safety() {
         let rng = &mut StdRng::seed_from_u64(8586);
@@ -126,65 +151,12 @@ mod tests {
         rng.fill_bytes(&mut bytes);
 
         for _ in 0..100 {
-            let n = Address::size_of();
-            let s = rng.gen_range(0..257 - n);
-            let e = rng.gen_range(s + n..257);
-            let i = &bytes[s..s + n];
-            let a = Address::from_slice_unchecked(i);
-            let b = Address::from_slice_unchecked(&bytes[s..e]);
-            let c = Address::try_from(i).expect("Memory conversion");
-            assert_eq!(a, b);
-            assert_eq!(a, c);
-
-            let n = Color::size_of();
-            let s = rng.gen_range(0..257 - n);
-            let e = rng.gen_range(s + n..257);
-            let i = &bytes[s..s + n];
-            let a = Color::from_slice_unchecked(i);
-            let b = Color::from_slice_unchecked(&bytes[s..e]);
-            let c = Color::try_from(i).expect("Memory conversion");
-            assert_eq!(a, b);
-            assert_eq!(a, c);
-
-            let n = ContractId::size_of();
-            let s = rng.gen_range(0..257 - n);
-            let e = rng.gen_range(s + n..257);
-            let i = &bytes[s..s + n];
-            let a = ContractId::from_slice_unchecked(i);
-            let b = ContractId::from_slice_unchecked(&bytes[s..e]);
-            let c = ContractId::try_from(i).expect("Memory conversion");
-            assert_eq!(a, b);
-            assert_eq!(a, c);
-
-            let n = Bytes8::size_of();
-            let s = rng.gen_range(0..257 - n);
-            let e = rng.gen_range(s + n..257);
-            let i = &bytes[s..s + n];
-            let a = Bytes8::from_slice_unchecked(i);
-            let b = Bytes8::from_slice_unchecked(&bytes[s..e]);
-            let c = Bytes8::try_from(i).expect("Memory conversion");
-            assert_eq!(a, b);
-            assert_eq!(a, c);
-
-            let n = Bytes32::size_of();
-            let s = rng.gen_range(0..257 - n);
-            let e = rng.gen_range(s + n..257);
-            let i = &bytes[s..s + n];
-            let a = Bytes32::from_slice_unchecked(i);
-            let b = Bytes32::from_slice_unchecked(&bytes[s..e]);
-            let c = Bytes32::try_from(i).expect("Memory conversion");
-            assert_eq!(a, b);
-            assert_eq!(a, c);
-
-            let n = Salt::size_of();
-            let s = rng.gen_range(0..257 - n);
-            let e = rng.gen_range(s + n..257);
-            let i = &bytes[s..s + n];
-            let a = Salt::from_slice_unchecked(i);
-            let b = Salt::from_slice_unchecked(&bytes[s..e]);
-            let c = Salt::try_from(i).expect("Memory conversion");
-            assert_eq!(a, b);
-            assert_eq!(a, c);
+            check_consistency!(Address, rng, bytes);
+            check_consistency!(Color, rng, bytes);
+            check_consistency!(ContractId, rng, bytes);
+            check_consistency!(Bytes8, rng, bytes);
+            check_consistency!(Bytes32, rng, bytes);
+            check_consistency!(Salt, rng, bytes);
         }
     }
 }

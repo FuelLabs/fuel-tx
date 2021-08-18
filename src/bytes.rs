@@ -259,9 +259,10 @@ pub fn restore_array<const N: usize>(buf: &[u8]) -> io::Result<([u8; N], &[u8])>
 
 /// Add a conversion from arbitrary slices into arrays
 ///
-/// # Panics
+/// # Warning
 ///
-/// Will panic if the provided slice length is smaller than `N`
+/// This function will not panic if the length of the slice is smaller than `N`. Instead, it will
+/// cause undefined behavior and read random disowned bytes.
 pub fn from_slice_unchecked<const N: usize>(buf: &[u8]) -> [u8; N] {
     let ptr = buf.as_ptr() as *const [u8; N];
 

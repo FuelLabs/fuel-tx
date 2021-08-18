@@ -113,6 +113,7 @@ pub fn store_raw_bytes<'a>(
 }
 
 pub fn restore_bytes(mut buf: &[u8]) -> io::Result<(usize, Vec<u8>, &[u8])> {
+    // Safety: chunks_exact will guarantee the size of the slice is correct
     let len = buf
         .chunks_exact(WORD_SIZE)
         .next()

@@ -115,6 +115,7 @@ pub use witness::Witness;
 key!(Address, 32);
 key!(Color, 32);
 key!(ContractId, 32);
+key!(Bytes4, 4);
 key!(Bytes8, 8);
 key!(Bytes32, 32);
 key!(Salt, 32);
@@ -177,6 +178,7 @@ mod tests {
             check_consistency!(Address, rng, bytes);
             check_consistency!(Color, rng, bytes);
             check_consistency!(ContractId, rng, bytes);
+            check_consistency!(Bytes4, rng, bytes);
             check_consistency!(Bytes8, rng, bytes);
             check_consistency!(Bytes32, rng, bytes);
             check_consistency!(Salt, rng, bytes);

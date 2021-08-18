@@ -123,8 +123,8 @@ mod tests {
     macro_rules! check_consistency {
         ($i:ident,$r:expr,$b:expr) => {
             let n = $i::size_of();
-            let s = $r.gen_range(0..257 - n);
-            let e = $r.gen_range(s + n..257);
+            let s = $r.gen_range(0..$b.len() - n);
+            let e = $r.gen_range(s + n..$b.len());
             let r = $r.gen_range(1..n - 1);
             let i = &$b[s..s + n];
 

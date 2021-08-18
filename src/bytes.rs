@@ -249,9 +249,7 @@ pub fn store_array_unchecked<'a, const N: usize>(
 }
 
 pub fn restore_array_unchecked<const N: usize>(buf: &[u8]) -> ([u8; N], &[u8]) {
-    let arr = from_slice_unchecked::<N>(buf);
-
-    (arr, &buf[N..])
+    (from_slice_unchecked(&buf[..N]), &buf[N..])
 }
 
 pub fn restore_array<const N: usize>(buf: &[u8]) -> io::Result<([u8; N], &[u8])> {

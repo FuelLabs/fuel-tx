@@ -22,6 +22,19 @@ macro_rules! key {
             pub const fn size_of() -> usize {
                 $s
             }
+
+            /// Add a conversion between arbitrary slices to the type
+            ///
+            /// # Panics
+            ///
+            /// Will panic if the provided slice length is different than `Self::size_of()`
+            pub fn from_slice_unchecked(bytes: &[u8]) -> Self {
+                assert_eq!(bytes.len(), $s);
+
+                <[u8; $s]>::try_from(bytes)
+                    .expect("Unchecked slice conversion into type")
+                    .into()
+            }
         }
 
         impl rand::Fill for $i {

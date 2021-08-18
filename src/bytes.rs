@@ -262,7 +262,7 @@ pub fn restore_array<const N: usize>(buf: &[u8]) -> io::Result<([u8; N], &[u8])>
 ///
 /// # Panics
 ///
-/// Will panic if the provided slice length is different than `N`
+/// Will panic if the provided slice length is smaller than `N`
 pub fn from_slice_unchecked<const N: usize>(buf: &[u8]) -> [u8; N] {
     let ptr = buf.as_ptr() as *const [u8; N];
 

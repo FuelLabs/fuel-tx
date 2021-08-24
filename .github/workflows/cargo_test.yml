@@ -33,6 +33,13 @@ jobs:
         toolchain: stable
         override: true
 
+    - name: Install toolchain no-std
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: thumbv6m-none-eabi
+        override: true
+
     - name: Install rustfmt
       run: rustup component add rustfmt
 
@@ -48,11 +55,23 @@ jobs:
         command: build
         args: --verbose
 
+    - name: Build no-std
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --verbose --target thumbv6m-none-eabi --no-default-features
+
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
         command: test
         args: --verbose
+
+    - name: Run tests no-std
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --verbose --no-default-features
 
     - name: Run tests
       uses: actions-rs/cargo@v1

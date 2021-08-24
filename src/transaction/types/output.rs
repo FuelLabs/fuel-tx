@@ -1,5 +1,5 @@
-use super::{Address, Bytes32, Color, ContractId};
 use crate::bytes::{self, SizedBytes};
+use crate::{Address, Bytes32, Color, ContractId};
 
 use fuel_asm::Word;
 

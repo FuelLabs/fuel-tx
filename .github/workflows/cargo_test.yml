@@ -33,6 +33,11 @@ jobs:
         toolchain: stable
         override: true
 
+
+    # Using thumbv6m-none-eabi as ARMv6-M arbitrary common choice for a bare-minimum target.
+    # More info: https://docs.rs/cortex-m-rt/latest/cortex_m_rt/
+    #
+    # Can be replaced by other targets that guarantee bare-minimum no-std
     - name: Install toolchain no-std
       uses: actions-rs/toolchain@v1
       with:

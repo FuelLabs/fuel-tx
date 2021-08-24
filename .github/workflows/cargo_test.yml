@@ -73,8 +73,14 @@ jobs:
         command: test
         args: --verbose --no-default-features
 
-    - name: Run tests
+    - name: Run tests serde no-std
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --verbose --features serde-types
+        args: --verbose --no-default-features --features serde-types
+
+    - name: Run tests serde
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --verbose --features serde-types-default

@@ -9,7 +9,7 @@ repository = "https://github.com/FuelLabs/fuel-tx"
 description = "FuelVM transaction."
 
 [dependencies]
-fuel-asm = { git = "ssh://git@github.com/FuelLabs/fuel-asm.git", branch = "vlopes11/no-std", default-features = false }
+fuel-asm = { git = "ssh://git@github.com/FuelLabs/fuel-asm.git", default-features = false }
 itertools = { version = "0.10", optional = true }
 rand = { version = "0.8", optional = true }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }

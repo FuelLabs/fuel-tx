@@ -61,6 +61,12 @@ jobs:
         command: build
         args: --verbose --target thumbv6m-none-eabi --no-default-features
 
+    - name: Build no-std serde
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --verbose --target thumbv6m-none-eabi --no-default-features --features serde-types
+
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:

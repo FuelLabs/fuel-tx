@@ -18,5 +18,20 @@ sha2 = { version = "0.9", optional = true }
 [features]
 default = ["std"]
 std = [ "fuel-asm/std", "itertools", "rand", "sha2" ]
-serde-types-default = [ "fuel-asm/serde-types-default", "serde/default", "std" ]
+serde-types-default = [ "fuel-asm/serde-types-default", "serde-types", "serde/default", "std" ]
 serde-types = [ "fuel-asm/serde-types", "serde" ]
+
+[[test]]
+name = "test-bytes"
+path = "tests/bytes.rs"
+required-features = ["std"]
+
+[[test]]
+name = "test-offsets"
+path = "tests/offset.rs"
+required-features = ["std"]
+
+[[test]]
+name = "test-valid"
+path = "tests/valid.rs"
+required-features = ["std"]

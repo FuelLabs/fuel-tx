@@ -64,10 +64,7 @@ impl From<&mut Output> for OutputRepr {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(
-    any(feature = "serde-types", feature = "serde-types-default"),
-    derive(serde::Serialize, serde::Deserialize)
-)]
+#[cfg_attr(feature = "serde-types", derive(serde::Serialize, serde::Deserialize))]
 pub enum Output {
     Coin {
         to: Address,

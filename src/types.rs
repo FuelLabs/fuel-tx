@@ -13,10 +13,7 @@ use rand::{
 macro_rules! key {
     ($i:ident, $s:expr) => {
         #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        #[cfg_attr(
-            any(feature = "serde-types", feature = "serde-types-default"),
-            derive(serde::Serialize, serde::Deserialize)
-        )]
+        #[cfg_attr(feature = "serde-types", derive(serde::Serialize, serde::Deserialize))]
         pub struct $i([u8; $s]);
 
         key_methods!($i, $s);

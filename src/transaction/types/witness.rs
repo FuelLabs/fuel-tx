@@ -8,10 +8,7 @@ use std::{io, mem};
 const WORD_SIZE: usize = mem::size_of::<Word>();
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(
-    any(feature = "serde-types", feature = "serde-types-default"),
-    derive(serde::Serialize, serde::Deserialize)
-)]
+#[cfg_attr(feature = "serde-types", derive(serde::Serialize, serde::Deserialize))]
 pub struct Witness {
     data: Vec<u8>,
 }

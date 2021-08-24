@@ -2,10 +2,7 @@ use crate::bytes::SizedBytes;
 use crate::{Bytes32, Transaction};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(
-    any(feature = "serde-types", feature = "serde-types-default"),
-    derive(serde::Serialize, serde::Deserialize)
-)]
+#[cfg_attr(feature = "serde-types", derive(serde::Serialize, serde::Deserialize))]
 pub struct Metadata {
     id: Bytes32,
     script_data_offset: Option<usize>,

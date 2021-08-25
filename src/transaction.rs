@@ -1,3 +1,5 @@
+use crate::{Bytes32, Color, ContractId, Salt};
+
 use fuel_asm::{Opcode, Word};
 use itertools::Itertools;
 
@@ -15,9 +17,7 @@ mod validation;
 
 pub use metadata::Metadata;
 pub use receipt::Receipt;
-pub use types::{
-    Address, Bytes32, Bytes4, Bytes64, Bytes8, Color, ContractId, Input, Output, Salt, Witness,
-};
+pub use types::{Input, Output, Witness};
 pub use validation::ValidationError;
 
 const WORD_SIZE: usize = mem::size_of::<Word>();
@@ -67,7 +67,10 @@ impl TryFrom<Word> for TransactionRepr {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde-types", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde-types-minimal",
+    derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum Transaction {
     Script {
         gas_price: Word,

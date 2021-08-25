@@ -64,7 +64,10 @@ impl TryFrom<Word> for TransactionRepr {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde-types", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde-types-minimal",
+    derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum Transaction {
     Script {
         gas_price: Word,

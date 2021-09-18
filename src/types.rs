@@ -17,7 +17,7 @@ macro_rules! key {
             feature = "serde-types-minimal",
             derive(serde::Serialize, serde::Deserialize)
         )]
-        pub struct $i([u8; $s]);
+        pub struct $i(pub [u8; $s]);
 
         key_methods!($i, $s);
 

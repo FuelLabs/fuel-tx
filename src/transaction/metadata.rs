@@ -1,7 +1,7 @@
 use crate::Transaction;
 
 use fuel_types::bytes::SizedBytes;
-use fuel_types::Bytes32;
+use fuel_types::{Bytes32, Word};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
@@ -15,6 +15,7 @@ pub struct Metadata {
     inputs_offset: Vec<usize>,
     outputs_offset: Vec<usize>,
     witnesses_offset: Vec<usize>,
+    initial_gas: Word,
 }
 
 impl Metadata {
@@ -25,6 +26,7 @@ impl Metadata {
         inputs_offset: Vec<usize>,
         outputs_offset: Vec<usize>,
         witnesses_offset: Vec<usize>,
+        initial_gas: Word,
     ) -> Self {
         Self {
             id,
@@ -33,6 +35,7 @@ impl Metadata {
             inputs_offset,
             outputs_offset,
             witnesses_offset,
+            initial_gas,
         }
     }
 
@@ -61,6 +64,10 @@ impl Metadata {
 
     pub fn witnesses_offset(&self, index: usize) -> Option<usize> {
         self.witnesses_offset.get(index).copied()
+    }
+
+    pub const fn initial_gas(&self) -> Word {
+        self.initial_gas
     }
 }
 
@@ -119,6 +126,8 @@ impl Transaction {
             })
             .collect();
 
+        let initial_gas = self.gas_limit();
+
         let metadata = Metadata::new(
             id,
             script_data_offset,
@@ -126,6 +135,7 @@ impl Transaction {
             inputs_offset,
             outputs_offset,
             witnesses_offset,
+            initial_gas,
         );
 
         self.metadata_mut().replace(metadata);

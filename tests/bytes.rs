@@ -1,5 +1,5 @@
 use fuel_tx::*;
-use fuel_types::{bytes, ContractId};
+use fuel_types::{bytes, ContractId, Word};
 use rand::rngs::StdRng;
 use rand::{Rng, RngCore, SeedableRng};
 use std::fmt;
@@ -200,7 +200,82 @@ fn receipt() {
             rng.gen(),
             rng.gen(),
         ),
-        Receipt::script_result(rng.gen(), rng.gen()),
+        Receipt::script_result(ScriptResult::Success, rng.gen()),
+        Receipt::script_result(ScriptResult::Revert, rng.gen()),
+        Receipt::script_result(ScriptResult::OutOfGas, rng.gen()),
+        Receipt::script_result(ScriptResult::TransactionValidity, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::MemoryOverflow(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(ScriptResult::ArithmeticOverflow, rng.gen()),
+        Receipt::script_result(ScriptResult::ContractNotFound, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::MemoryOwnership(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(ScriptResult::NotEnoughBalance, rng.gen()),
+        Receipt::script_result(ScriptResult::ExpectedInternalContext, rng.gen()),
+        Receipt::script_result(ScriptResult::ColorNotFound, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::InputNotFound(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::OutputNotFound(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::WitnessNotFound(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::TransactionMaturity(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(ScriptResult::InvalidMetadataIdentifier, rng.gen()),
+        Receipt::script_result(ScriptResult::MalformedCallStructure, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::ReservedRegisterNotWritable(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(ScriptResult::ErrorFlag, rng.gen()),
+        Receipt::script_result(ScriptResult::InvalidImmediateValue, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::ExpectedCoinInput(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::MaxMemoryAccess(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::MemoryWriteOverlap(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::ContractNotInInputs(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::InternalBalanceOverflow(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::ContractMaxSize(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(ScriptResult::ExpectedUnallocatedStack, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::MaxStaticContractsReached(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(ScriptResult::TransferAmountCannotBeZero, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::ExpectedOutputVariable(rng.gen::<u32>() as Word),
+            rng.gen(),
+        ),
+        Receipt::script_result(ScriptResult::ExpectedParentInternalContext, rng.gen()),
     ]);
 }
 

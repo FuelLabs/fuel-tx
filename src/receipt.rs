@@ -10,7 +10,7 @@ mod script_result;
 
 use receipt_repr::ReceiptRepr;
 
-pub use script_result::ScriptResult;
+pub use script_result::{ScriptResult, ScriptResultRepr};
 
 const WORD_SIZE: usize = mem::size_of::<Word>();
 
@@ -741,7 +741,7 @@ impl io::Write for Receipt {
                 let (result, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (gas_used, _) = unsafe { bytes::restore_word_unchecked(buf) };
 
-                let result = ScriptResult::try_from(result)?;
+                let result = ScriptResult::from(result);
 
                 *self = Self::script_result(result, gas_used);
             }

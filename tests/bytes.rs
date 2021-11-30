@@ -1,5 +1,6 @@
+use fuel_asm::Opcode;
 use fuel_tx::*;
-use fuel_types::{bytes, ContractId, Word};
+use fuel_types::{bytes, ContractId};
 use rand::rngs::StdRng;
 use rand::{Rng, RngCore, SeedableRng};
 use std::fmt;
@@ -200,82 +201,160 @@ fn receipt() {
             rng.gen(),
             rng.gen(),
         ),
-        Receipt::script_result(ScriptResult::Success, rng.gen()),
-        Receipt::script_result(ScriptResult::Revert, rng.gen()),
-        Receipt::script_result(ScriptResult::OutOfGas, rng.gen()),
-        Receipt::script_result(ScriptResult::TransactionValidity, rng.gen()),
         Receipt::script_result(
-            ScriptResult::MemoryOverflow(rng.gen::<u32>() as Word),
-            rng.gen(),
-        ),
-        Receipt::script_result(ScriptResult::ArithmeticOverflow, rng.gen()),
-        Receipt::script_result(ScriptResult::ContractNotFound, rng.gen()),
-        Receipt::script_result(
-            ScriptResult::MemoryOwnership(rng.gen::<u32>() as Word),
-            rng.gen(),
-        ),
-        Receipt::script_result(ScriptResult::NotEnoughBalance, rng.gen()),
-        Receipt::script_result(ScriptResult::ExpectedInternalContext, rng.gen()),
-        Receipt::script_result(ScriptResult::ColorNotFound, rng.gen()),
-        Receipt::script_result(
-            ScriptResult::InputNotFound(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::Success, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::OutputNotFound(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::Revert, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::WitnessNotFound(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::OutOfGas, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::TransactionMaturity(rng.gen::<u32>() as Word),
-            rng.gen(),
-        ),
-        Receipt::script_result(ScriptResult::InvalidMetadataIdentifier, rng.gen()),
-        Receipt::script_result(ScriptResult::MalformedCallStructure, rng.gen()),
-        Receipt::script_result(
-            ScriptResult::ReservedRegisterNotWritable(rng.gen::<u32>() as Word),
-            rng.gen(),
-        ),
-        Receipt::script_result(ScriptResult::ErrorFlag, rng.gen()),
-        Receipt::script_result(ScriptResult::InvalidImmediateValue, rng.gen()),
-        Receipt::script_result(
-            ScriptResult::ExpectedCoinInput(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::TransactionValidity, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::MaxMemoryAccess(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::MemoryOverflow, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::MemoryWriteOverlap(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::ArithmeticOverflow, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::ContractNotInInputs(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::ContractNotFound, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::InternalBalanceOverflow(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::MemoryOwnership, Opcode::NOOP.into()),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::ContractMaxSize(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::NotEnoughBalance, Opcode::NOOP.into()),
             rng.gen(),
         ),
-        Receipt::script_result(ScriptResult::ExpectedUnallocatedStack, rng.gen()),
         Receipt::script_result(
-            ScriptResult::MaxStaticContractsReached(rng.gen::<u32>() as Word),
+            ScriptResult::new(
+                ScriptResultRepr::ExpectedInternalContext,
+                Opcode::NOOP.into(),
+            ),
             rng.gen(),
         ),
-        Receipt::script_result(ScriptResult::TransferAmountCannotBeZero, rng.gen()),
         Receipt::script_result(
-            ScriptResult::ExpectedOutputVariable(rng.gen::<u32>() as Word),
+            ScriptResult::new(ScriptResultRepr::ColorNotFound, Opcode::NOOP.into()),
             rng.gen(),
         ),
-        Receipt::script_result(ScriptResult::ExpectedParentInternalContext, rng.gen()),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::InputNotFound, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::OutputNotFound, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::WitnessNotFound, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::TransactionMaturity, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::InvalidMetadataIdentifier,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::MalformedCallStructure,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::ReservedRegisterNotWritable,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::ErrorFlag, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::InvalidImmediateValue, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::ExpectedCoinInput, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::MaxMemoryAccess, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::MemoryWriteOverlap, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::ContractNotInInputs, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::InternalBalanceOverflow,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(ScriptResultRepr::ContractMaxSize, Opcode::NOOP.into()),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::ExpectedUnallocatedStack,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::MaxStaticContractsReached,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::TransferAmountCannotBeZero,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::ExpectedOutputVariable,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
+        Receipt::script_result(
+            ScriptResult::new(
+                ScriptResultRepr::ExpectedParentInternalContext,
+                Opcode::NOOP.into(),
+            ),
+            rng.gen(),
+        ),
     ]);
 }
 

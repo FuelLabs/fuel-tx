@@ -1,6 +1,6 @@
 use fuel_asm::Opcode;
 use fuel_tx::*;
-use fuel_types::{bytes, ContractId};
+use fuel_types::{bytes, ContractId, Immediate24};
 use rand::rngs::StdRng;
 use rand::{Rng, RngCore, SeedableRng};
 use std::fmt;
@@ -202,156 +202,219 @@ fn receipt() {
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::Success, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::Success,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::Revert, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::Revert,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::OutOfGas, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::OutOfGas,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::TransactionValidity, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::TransactionValidity,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::MemoryOverflow, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::MemoryOverflow,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::ArithmeticOverflow, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::ArithmeticOverflow,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::ContractNotFound, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::ContractNotFound,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::MemoryOwnership, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::MemoryOwnership,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::NotEnoughBalance, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::NotEnoughBalance,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::ExpectedInternalContext,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::ColorNotFound, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::ColorNotFound,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::InputNotFound, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::InputNotFound,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::OutputNotFound, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::OutputNotFound,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::WitnessNotFound, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::WitnessNotFound,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::TransactionMaturity, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::TransactionMaturity,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::InvalidMetadataIdentifier,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::MalformedCallStructure,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::ReservedRegisterNotWritable,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::ErrorFlag, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::ErrorFlag,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::InvalidImmediateValue, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::InvalidImmediateValue,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::ExpectedCoinInput, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::ExpectedCoinInput,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::MaxMemoryAccess, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::MaxMemoryAccess,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::MemoryWriteOverlap, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::MemoryWriteOverlap,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::ContractNotInInputs, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::ContractNotInInputs,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::InternalBalanceOverflow,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
-            ScriptResult::new(ScriptResultRepr::ContractMaxSize, Opcode::NOOP.into()),
+            ScriptResult::new(
+                ScriptResultRepr::ContractMaxSize,
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
+            ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::ExpectedUnallocatedStack,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::MaxStaticContractsReached,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::TransferAmountCannotBeZero,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::ExpectedOutputVariable,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),
         Receipt::script_result(
             ScriptResult::new(
                 ScriptResultRepr::ExpectedParentInternalContext,
-                Opcode::NOOP.into(),
+                Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
             rng.gen(),
         ),

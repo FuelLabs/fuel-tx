@@ -13,7 +13,17 @@ pub struct ScriptResult {
 }
 
 impl ScriptResult {
-    pub const fn new(result: PanicReason, instruction: Instruction) -> Self {
+    pub const fn success() -> Self {
+        let result = PanicReason::from_u8(0);
+        let instruction = Instruction::new(0);
+
+        Self {
+            result,
+            instruction,
+        }
+    }
+
+    pub const fn error(result: PanicReason, instruction: Instruction) -> Self {
         Self {
             result,
             instruction,
@@ -51,10 +61,17 @@ impl From<ScriptResult> for Word {
 
 impl From<Word> for ScriptResult {
     fn from(val: Word) -> Self {
-        let result = PanicReason::from(val >> RESULT_OFFSET);
-        let instruction = Instruction::from((val >> INSTR_OFFSET) as u32);
+        let result = val >> RESULT_OFFSET;
+        let instruction = val >> INSTR_OFFSET;
+        let instruction = (result != 0) as Word * instruction;
 
-        Self::new(result, instruction)
+        let result = PanicReason::from(result);
+        let instruction = Instruction::from(instruction as u32);
+
+        Self {
+            result,
+            instruction,
+        }
     }
 }
 

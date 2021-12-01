@@ -5,12 +5,12 @@ use std::convert::TryFrom;
 use std::io::{self, Write};
 use std::mem;
 
-mod panic_reason;
 mod receipt_repr;
+mod script_result;
 
 use receipt_repr::ReceiptRepr;
 
-pub use panic_reason::{PanicReason, ScriptResult};
+pub use script_result::ScriptResult;
 
 const WORD_SIZE: usize = mem::size_of::<Word>();
 

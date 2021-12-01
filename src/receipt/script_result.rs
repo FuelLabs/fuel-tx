@@ -27,6 +27,14 @@ impl ScriptResult {
     pub const fn instruction(&self) -> &Instruction {
         &self.instruction
     }
+
+    pub const fn is_success(&self) -> bool {
+        (self.result as u8) == 0u8
+    }
+
+    pub const fn is_error(&self) -> bool {
+        !self.is_success()
+    }
 }
 
 const RESULT_OFFSET: Word = (WORD_SIZE * 8 - 8) as Word;

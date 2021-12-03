@@ -1,3 +1,4 @@
+use fuel_asm::InstructionResult;
 use fuel_types::bytes::{self, SizedBytes};
 use fuel_types::{Address, Bytes32, Color, ContractId, Word};
 
@@ -6,11 +7,8 @@ use std::io::{self, Write};
 use std::mem;
 
 mod receipt_repr;
-mod script_result;
 
 use receipt_repr::ReceiptRepr;
-
-pub use script_result::ScriptResult;
 
 const WORD_SIZE: usize = mem::size_of::<Word>();
 
@@ -99,7 +97,7 @@ pub enum Receipt {
     },
 
     ScriptResult {
-        result: ScriptResult,
+        result: InstructionResult,
         gas_used: Word,
     },
 }
@@ -238,7 +236,7 @@ impl Receipt {
         }
     }
 
-    pub const fn script_result(result: ScriptResult, gas_used: Word) -> Self {
+    pub const fn script_result(result: InstructionResult, gas_used: Word) -> Self {
         Self::ScriptResult { result, gas_used }
     }
 
@@ -410,9 +408,9 @@ impl Receipt {
         }
     }
 
-    pub const fn result(&self) -> Option<ScriptResult> {
+    pub const fn result(&self) -> Option<&InstructionResult> {
         match self {
-            Self::ScriptResult { result, .. } => Some(*result),
+            Self::ScriptResult { result, .. } => Some(result),
             _ => None,
         }
     }
@@ -741,7 +739,7 @@ impl io::Write for Receipt {
                 let (result, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (gas_used, _) = unsafe { bytes::restore_word_unchecked(buf) };
 
-                let result = ScriptResult::from(result);
+                let result = InstructionResult::from(result);
 
                 *self = Self::script_result(result, gas_used);
             }

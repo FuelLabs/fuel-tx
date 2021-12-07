@@ -20,7 +20,7 @@ pub enum ReceiptRepr {
 }
 
 impl ReceiptRepr {
-    pub const fn len(&self) -> usize {
+    pub const fn len_without_data(&self) -> usize {
         ContractId::LEN // id
                 + WORD_SIZE // pc
                 + WORD_SIZE // is

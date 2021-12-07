@@ -1,5 +1,5 @@
 use fuel_asm::InstructionResult;
-use fuel_types::bytes::{self, SizedBytes};
+use fuel_types::bytes::{self, padded_len_usize, SizedBytes};
 use fuel_types::{Address, Bytes32, Color, ContractId, Word};
 
 use std::convert::TryFrom;
@@ -376,6 +376,14 @@ impl Receipt {
         }
     }
 
+    pub const fn data(&self) -> Option<&Vec<u8>> {
+        match self {
+            Self::ReturnData { data, .. } => Some(data),
+            Self::LogData { data, .. } => Some(data),
+            _ => None,
+        }
+    }
+
     pub const fn reason(&self) -> Option<Word> {
         match self {
             Self::Panic { reason, .. } => Some(*reason),
@@ -612,9 +620,11 @@ impl io::Write for Receipt {
         // Safety: buffer size is checked
         let (identifier, buf) = unsafe { bytes::restore_word_unchecked(buf) };
         let identifier = ReceiptRepr::try_from(identifier)?;
-        let len = identifier.len();
 
-        if buf.len() < len {
+        let orig_buf_len = buf.len();
+        let mut used_len = identifier.len_without_data();
+
+        if orig_buf_len < used_len {
             return Err(bytes::eof());
         }
 
@@ -654,7 +664,14 @@ impl io::Write for Receipt {
                 let (ptr, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (len, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (digest, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (_, data, buf) = bytes::restore_bytes(buf)?;
+
+                let (count, data, buf) = bytes::restore_bytes(buf)?;
+                // Safety: enforce data buffer length check after fetching data
+                used_len += count;
+                if orig_buf_len < used_len {
+                    return Err(bytes::eof());
+                }
+
                 let (pc, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (is, _) = unsafe { bytes::restore_word_unchecked(buf) };
 
@@ -707,7 +724,14 @@ impl io::Write for Receipt {
                 let (ptr, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (len, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (digest, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (_, data, buf) = bytes::restore_bytes(buf)?;
+
+                let (count, data, buf) = bytes::restore_bytes(buf)?;
+                // Safety: enforce data buffer length check after fetching data
+                used_len += count;
+                if orig_buf_len < used_len {
+                    return Err(bytes::eof());
+                }
+
                 let (pc, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (is, _) = unsafe { bytes::restore_word_unchecked(buf) };
 
@@ -757,7 +781,7 @@ impl io::Write for Receipt {
             }
         }
 
-        Ok(len + WORD_SIZE)
+        Ok(used_len + WORD_SIZE)
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -765,9 +789,17 @@ impl io::Write for Receipt {
     }
 }
 
+fn bytes_encoded_len(data_len: usize) -> usize {
+    WORD_SIZE + padded_len_usize(data_len)
+}
+
 impl SizedBytes for Receipt {
     fn serialized_size(&self) -> usize {
-        ReceiptRepr::from(self).len() + WORD_SIZE
+        let data_len = self
+            .data()
+            .map(|data| bytes_encoded_len(data.len()))
+            .unwrap_or(0);
+        ReceiptRepr::from(self).len_without_data() + WORD_SIZE + data_len
     }
 }
 

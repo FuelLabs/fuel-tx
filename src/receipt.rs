@@ -12,7 +12,7 @@ use receipt_repr::ReceiptRepr;
 
 const WORD_SIZE: usize = mem::size_of::<Word>();
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde-types", derive(serde::Serialize, serde::Deserialize))]
 pub enum Receipt {
     Call {
@@ -39,6 +39,7 @@ pub enum Receipt {
         ptr: Word,
         len: Word,
         digest: Bytes32,
+        data: Vec<u8>,
         pc: Word,
         is: Word,
     },
@@ -74,6 +75,7 @@ pub enum Receipt {
         ptr: Word,
         len: Word,
         digest: Bytes32,
+        data: Vec<u8>,
         pc: Word,
         is: Word,
     },

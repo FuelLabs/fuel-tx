@@ -139,6 +139,7 @@ impl Receipt {
         ptr: Word,
         len: Word,
         digest: Bytes32,
+        data: Vec<u8>,
         pc: Word,
         is: Word,
     ) -> Self {
@@ -147,6 +148,7 @@ impl Receipt {
             ptr,
             len,
             digest,
+            data,
             pc,
             is,
         }
@@ -187,6 +189,7 @@ impl Receipt {
         ptr: Word,
         len: Word,
         digest: Bytes32,
+        data: Vec<u8>,
         pc: Word,
         is: Word,
     ) -> Self {
@@ -197,6 +200,7 @@ impl Receipt {
             ptr,
             len,
             digest,
+            data,
             pc,
             is,
         }
@@ -472,6 +476,7 @@ impl io::Read for Receipt {
                 ptr,
                 len,
                 digest,
+                data,
                 pc,
                 is,
             } => {
@@ -481,6 +486,7 @@ impl io::Read for Receipt {
                 let buf = bytes::store_number_unchecked(buf, *ptr);
                 let buf = bytes::store_number_unchecked(buf, *len);
                 let buf = bytes::store_array_unchecked(buf, digest);
+                let (_, buf) = bytes::store_bytes(buf, data)?;
                 let buf = bytes::store_number_unchecked(buf, *pc);
                 bytes::store_number_unchecked(buf, *is);
             }
@@ -530,6 +536,7 @@ impl io::Read for Receipt {
                 ptr,
                 len,
                 digest,
+                data,
                 pc,
                 is,
             } => {
@@ -541,6 +548,7 @@ impl io::Read for Receipt {
                 let buf = bytes::store_number_unchecked(buf, *ptr);
                 let buf = bytes::store_number_unchecked(buf, *len);
                 let buf = bytes::store_array_unchecked(buf, digest);
+                let (_, buf) = bytes::store_bytes(buf, data)?;
                 let buf = bytes::store_number_unchecked(buf, *pc);
                 bytes::store_number_unchecked(buf, *is);
             }
@@ -646,13 +654,14 @@ impl io::Write for Receipt {
                 let (ptr, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (len, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (digest, buf) = unsafe { bytes::restore_array_unchecked(buf) };
+                let (_, data, buf) = bytes::restore_bytes(buf)?;
                 let (pc, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (is, _) = unsafe { bytes::restore_word_unchecked(buf) };
 
                 let id = id.into();
                 let digest = digest.into();
 
-                *self = Self::return_data(id, ptr, len, digest, pc, is);
+                *self = Self::return_data(id, ptr, len, digest, data, pc, is);
             }
 
             ReceiptRepr::Panic => {
@@ -698,13 +707,14 @@ impl io::Write for Receipt {
                 let (ptr, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (len, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (digest, buf) = unsafe { bytes::restore_array_unchecked(buf) };
+                let (_, data, buf) = bytes::restore_bytes(buf)?;
                 let (pc, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (is, _) = unsafe { bytes::restore_word_unchecked(buf) };
 
                 let id = id.into();
                 let digest = digest.into();
 
-                *self = Self::log_data(id, ra, rb, ptr, len, digest, pc, is);
+                *self = Self::log_data(id, ra, rb, ptr, len, digest, data, pc, is);
             }
 
             ReceiptRepr::Transfer => {

@@ -435,6 +435,65 @@ impl Receipt {
             _ => None,
         }
     }
+
+    fn variant_len_without_data(variant: ReceiptRepr) -> usize {
+        ContractId::LEN // id
+                + WORD_SIZE // pc
+                + WORD_SIZE // is
+        + match variant {
+            ReceiptRepr::Call => {
+                ContractId::LEN // to
+                + WORD_SIZE // amount
+                + Color::LEN // color
+                + WORD_SIZE // gas
+                + WORD_SIZE // a
+                + WORD_SIZE // b
+            }
+
+            ReceiptRepr::Return => WORD_SIZE, // val
+
+            ReceiptRepr::ReturnData => {
+                WORD_SIZE // ptr
+                + WORD_SIZE // len
+                + Bytes32::LEN // digest
+            }
+
+            ReceiptRepr::Panic => WORD_SIZE, // reason
+            ReceiptRepr::Revert => WORD_SIZE, // ra
+
+            ReceiptRepr::Log => {
+                WORD_SIZE // ra
+                + WORD_SIZE // rb
+                + WORD_SIZE // rc
+                + WORD_SIZE // rd
+            }
+
+            ReceiptRepr::LogData => {
+                WORD_SIZE // ra
+                + WORD_SIZE // rb
+                + WORD_SIZE // ptr
+                + WORD_SIZE // len
+                + Bytes32::LEN // digest
+            }
+
+            ReceiptRepr::Transfer => {
+                ContractId::LEN // to
+                + WORD_SIZE // amount
+                + Color::LEN // digest
+            }
+
+            ReceiptRepr::TransferOut => {
+                Address::LEN // to
+                + WORD_SIZE // amount
+                + Color::LEN // digest
+            }
+
+            ReceiptRepr::ScriptResult => {
+                WORD_SIZE // status
+                + WORD_SIZE // gas_used
+            }
+        }
+    }
 }
 
 impl io::Read for Receipt {
@@ -622,7 +681,7 @@ impl io::Write for Receipt {
         let identifier = ReceiptRepr::try_from(identifier)?;
 
         let orig_buf_len = buf.len();
-        let mut used_len = identifier.len_without_data();
+        let mut used_len = Self::variant_len_without_data(identifier);
 
         if orig_buf_len < used_len {
             return Err(bytes::eof());
@@ -799,7 +858,8 @@ impl SizedBytes for Receipt {
             .data()
             .map(|data| bytes_encoded_len(data.len()))
             .unwrap_or(0);
-        ReceiptRepr::from(self).len_without_data() + WORD_SIZE + data_len
+
+        Self::variant_len_without_data(ReceiptRepr::from(self)) + WORD_SIZE + data_len
     }
 }
 

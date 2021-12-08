@@ -376,7 +376,7 @@ impl Receipt {
         }
     }
 
-    pub const fn data(&self) -> Option<&Vec<u8>> {
+    pub fn data(&self) -> Option<&[u8]> {
         match self {
             Self::ReturnData { data, .. } => Some(data),
             Self::LogData { data, .. } => Some(data),

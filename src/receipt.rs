@@ -848,15 +848,11 @@ impl io::Write for Receipt {
     }
 }
 
-fn bytes_encoded_len(data_len: usize) -> usize {
-    WORD_SIZE + padded_len_usize(data_len)
-}
-
 impl SizedBytes for Receipt {
     fn serialized_size(&self) -> usize {
         let data_len = self
             .data()
-            .map(|data| bytes_encoded_len(data.len()))
+            .map(|data| WORD_SIZE + padded_len_usize(data.len()))
             .unwrap_or(0);
 
         Self::variant_len_without_data(ReceiptRepr::from(self)) + WORD_SIZE + data_len

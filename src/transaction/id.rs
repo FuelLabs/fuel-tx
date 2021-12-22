@@ -30,7 +30,7 @@ impl Transaction {
         self.metadata()
             .map(Metadata::id)
             .copied()
-            .unwrap_or(self._id())
+            .unwrap_or_else(|| self._id())
     }
 
     pub(crate) fn _id(&self) -> Bytes32 {

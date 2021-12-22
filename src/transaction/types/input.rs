@@ -139,8 +139,8 @@ impl Input {
 
     pub const fn utxo_id(&self) -> &UtxoId {
         match self {
-            Self::Coin { utxo_id, .. } => &utxo_id,
-            Self::Contract { utxo_id, .. } => &utxo_id,
+            Self::Coin { utxo_id, .. } => utxo_id,
+            Self::Contract { utxo_id, .. } => utxo_id,
         }
     }
 
@@ -158,10 +158,7 @@ impl Input {
     }
 
     pub const fn is_coin(&self) -> bool {
-        match self {
-            Input::Coin { .. } => true,
-            _ => false,
-        }
+        matches!(self, Input::Coin{..})
     }
 
     pub const fn coin_predicate_offset() -> usize {

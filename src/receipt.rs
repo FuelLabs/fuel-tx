@@ -368,6 +368,14 @@ impl Receipt {
         }
     }
 
+    pub const fn is_empty(&self) -> Option<bool> {
+        if let Some(len) = self.len() {
+            Some(len == 0)
+        } else {
+            None
+        }
+    }
+
     pub const fn digest(&self) -> Option<&Bytes32> {
         match self {
             Self::ReturnData { digest, .. } => Some(digest),
@@ -863,7 +871,7 @@ impl bytes::Deserializable for Receipt {
     fn from_bytes(bytes: &[u8]) -> io::Result<Self> {
         let mut instance = Self::ret(Default::default(), 0, 0, 0);
 
-        instance.write(bytes)?;
+        instance.write_all(bytes)?;
 
         Ok(instance)
     }

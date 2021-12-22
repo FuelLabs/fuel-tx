@@ -4,6 +4,7 @@ use itertools::Itertools;
 
 use std::convert::TryFrom;
 use std::io::Write;
+use std::sync::Arc;
 use std::{io, mem};
 
 mod id;
@@ -14,7 +15,7 @@ mod types;
 mod validation;
 
 pub use metadata::Metadata;
-pub use types::{Input, Output, Witness};
+pub use types::{Input, Output, UtxoId, Witness};
 pub use validation::ValidationError;
 
 const WORD_SIZE: usize = mem::size_of::<Word>();
@@ -41,6 +42,9 @@ const TRANSACTION_CREATE_FIXED_SIZE: usize = WORD_SIZE // Identifier
     + WORD_SIZE // Outputs size
     + WORD_SIZE // Witnesses size
     + Salt::LEN; // Salt
+
+/// Identification of transaction (also called transaction hash)
+pub type TxId = Bytes32;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum TransactionRepr {
@@ -95,6 +99,8 @@ pub enum Transaction {
         metadata: Option<Metadata>,
     },
 }
+
+pub type ArcTx = Arc<Transaction>;
 
 impl Default for Transaction {
     fn default() -> Self {

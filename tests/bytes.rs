@@ -82,27 +82,36 @@ fn input() {
 
     assert_encoding_correct(&[
         Input::coin(
-            rng.gen(),
+            UtxoId {
+                tx_id: rng.gen(),
+                output_index: rng.gen(),
+            },
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
             rng.gen(),
             rng.next_u64(),
             rng.gen::<Witness>().into_inner(),
-            rng.gen::<Witness>().into_inner(),
-        ),
-        Input::coin(
-            rng.gen(),
-            rng.gen(),
-            rng.next_u64(),
-            rng.gen(),
-            rng.gen(),
-            rng.next_u64(),
-            vec![],
             rng.gen::<Witness>().into_inner(),
         ),
         Input::coin(
+            UtxoId {
+                tx_id: rng.gen(),
+                output_index: rng.gen(),
+            },
             rng.gen(),
+            rng.next_u64(),
+            rng.gen(),
+            rng.gen(),
+            rng.next_u64(),
+            vec![],
+            rng.gen::<Witness>().into_inner(),
+        ),
+        Input::coin(
+            UtxoId {
+                tx_id: rng.gen(),
+                output_index: rng.gen(),
+            },
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -112,7 +121,10 @@ fn input() {
             vec![],
         ),
         Input::coin(
-            rng.gen(),
+            UtxoId {
+                tx_id: rng.gen(),
+                output_index: rng.gen(),
+            },
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -121,7 +133,15 @@ fn input() {
             vec![],
             vec![],
         ),
-        Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
+        Input::contract(
+            UtxoId {
+                tx_id: rng.gen(),
+                output_index: rng.gen(),
+            },
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+        ),
     ]);
 }
 
@@ -422,7 +442,15 @@ fn transaction() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;
 
-    let i = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen());
+    let i = Input::contract(
+        UtxoId {
+            tx_id: rng.gen(),
+            output_index: rng.gen(),
+        },
+        rng.gen(),
+        rng.gen(),
+        rng.gen(),
+    );
     let o = Output::coin(rng.gen(), rng.next_u64(), rng.gen());
     let w = rng.gen::<Witness>();
 
@@ -570,8 +598,27 @@ fn create_input_coin_data_offset() {
         vec![vec![], vec![rng.gen()], vec![rng.gen(), rng.gen()]];
     let inputs: Vec<Vec<Input>> = vec![
         vec![],
-        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())],
-        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()); 2],
+        vec![Input::contract(
+            UtxoId {
+                tx_id: rng.gen(),
+                output_index: rng.gen(),
+            },
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+        )],
+        vec![
+            Input::contract(
+                UtxoId {
+                    tx_id: rng.gen(),
+                    output_index: rng.gen(),
+                },
+                rng.gen(),
+                rng.gen(),
+                rng.gen()
+            );
+            2
+        ],
     ];
     let outputs: Vec<Vec<Output>> = vec![
         vec![],
@@ -586,7 +633,10 @@ fn create_input_coin_data_offset() {
     let predicate = rng.gen::<Witness>().into_inner();
     let predicate_data = rng.gen::<Witness>().into_inner();
     let input_coin = Input::coin(
-        rng.gen(),
+        UtxoId {
+            tx_id: rng.gen(),
+            output_index: rng.gen(),
+        },
         rng.gen(),
         rng.next_u64(),
         rng.gen(),
@@ -658,10 +708,34 @@ fn script_input_coin_data_offset() {
 
     let inputs: Vec<Vec<Input>> = vec![
         vec![],
-        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())],
+        vec![Input::contract(
+            UtxoId {
+                tx_id: rng.gen(),
+                output_index: rng.gen(),
+            },
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+        )],
         vec![
-            Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
-            Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
+            Input::contract(
+                UtxoId {
+                    tx_id: rng.gen(),
+                    output_index: rng.gen(),
+                },
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+            ),
+            Input::contract(
+                UtxoId {
+                    tx_id: rng.gen(),
+                    output_index: rng.gen(),
+                },
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+            ),
         ],
     ];
     let outputs: Vec<Vec<Output>> = vec![
@@ -677,7 +751,10 @@ fn script_input_coin_data_offset() {
     let predicate = rng.gen::<Witness>().into_inner();
     let predicate_data = rng.gen::<Witness>().into_inner();
     let input_coin = Input::coin(
-        rng.gen(),
+        UtxoId {
+            tx_id: rng.gen(),
+            output_index: rng.gen(),
+        },
         rng.gen(),
         rng.next_u64(),
         rng.gen(),

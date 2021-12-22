@@ -21,7 +21,10 @@ impl TransactionFactory {
 
         match variant {
             0 => Input::coin(
-                self.rng.gen(),
+                UtxoId {
+                    tx_id: self.rng.gen(),
+                    output_index: self.rng.gen(),
+                },
                 self.rng.gen(),
                 self.rng.gen(),
                 self.rng.gen(),
@@ -32,7 +35,10 @@ impl TransactionFactory {
             ),
 
             1 => Input::contract(
-                self.rng.gen(),
+                UtxoId {
+                    tx_id: self.rng.gen(),
+                    output_index: self.rng.gen(),
+                },
                 self.rng.gen(),
                 self.rng.gen(),
                 self.rng.gen(),

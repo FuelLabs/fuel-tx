@@ -158,7 +158,7 @@ impl Input {
     }
 
     pub const fn is_coin(&self) -> bool {
-        matches!(self, Input::Coin{..})
+        matches!(self, Input::Coin { .. })
     }
 
     pub const fn coin_predicate_offset() -> usize {

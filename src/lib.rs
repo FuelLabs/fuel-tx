@@ -23,7 +23,7 @@ mod receipt;
 
 #[cfg(feature = "std")]
 pub use transaction::{
-    ArcTx, Input, Metadata, Output, Transaction, TxId, UtxoId, ValidationError, Witness,
+    Input, Metadata, Output, Transaction, TxId, UtxoId, ValidationError, Witness,
 };
 
 #[cfg(feature = "std")]

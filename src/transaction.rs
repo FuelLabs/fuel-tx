@@ -4,7 +4,6 @@ use itertools::Itertools;
 
 use std::convert::TryFrom;
 use std::io::Write;
-use std::sync::Arc;
 use std::{io, mem};
 
 mod id;
@@ -99,8 +98,6 @@ pub enum Transaction {
         metadata: Option<Metadata>,
     },
 }
-
-pub type ArcTx = Arc<Transaction>;
 
 impl Default for Transaction {
     fn default() -> Self {

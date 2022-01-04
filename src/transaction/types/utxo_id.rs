@@ -1,7 +1,7 @@
 use crate::TxId;
 
 /// Identification of unspend transaction output.
-#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde-types-minimal",
     derive(serde::Serialize, serde::Deserialize)

@@ -20,9 +20,9 @@ pub struct UtxoId {
 impl core::fmt::LowerHex for UtxoId {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if f.alternate() {
-            write!(f, "{:x}{:02x}", self.tx_id, self.output_index)
-        } else {
             write!(f, "{:#x}{:02x}", self.tx_id, self.output_index)
+        } else {
+            write!(f, "{:x}{:02x}", self.tx_id, self.output_index)
         }
     }
 }
@@ -30,9 +30,9 @@ impl core::fmt::LowerHex for UtxoId {
 impl core::fmt::UpperHex for UtxoId {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if f.alternate() {
-            write!(f, "{:X}{:02X}", self.tx_id, self.output_index)
-        } else {
             write!(f, "{:#X}{:02X}", self.tx_id, self.output_index)
+        } else {
+            write!(f, "{:X}{:02X}", self.tx_id, self.output_index)
         }
     }
 }
@@ -90,8 +90,12 @@ mod tests {
             output_index: 10,
         };
         assert_eq!(
-            format!("{:x}", utxo_id),
+            format!("{:#x}", utxo_id),
             "0x0c0000000000000000000000000000000000000000000000000000000000000b0a"
+        );
+        assert_eq!(
+            format!("{:x}", utxo_id),
+            "0c0000000000000000000000000000000000000000000000000000000000000b0a"
         );
     }
 

@@ -871,7 +871,7 @@ impl bytes::Deserializable for Receipt {
     fn from_bytes(bytes: &[u8]) -> io::Result<Self> {
         let mut instance = Self::ret(Default::default(), 0, 0, 0);
 
-        instance.write(bytes)?;
+        let _ = instance.write(bytes)?;
 
         Ok(instance)
     }

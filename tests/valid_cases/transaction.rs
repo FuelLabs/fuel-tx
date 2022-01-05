@@ -201,15 +201,7 @@ fn max_iow() {
         maturity,
         rng.gen::<Witness>().into_inner(),
         rng.gen::<Witness>().into_inner(),
-        vec![
-            Input::contract(
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-                rng.gen()
-            );
-            MAX_INPUTS as usize + 1
-        ],
+        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()); MAX_INPUTS as usize + 1],
         vec![Output::variable(rng.gen(), rng.next_u64(), rng.gen()); MAX_OUTPUTS as usize],
         vec![rng.gen(); MAX_WITNESSES as usize],
     )
@@ -224,15 +216,7 @@ fn max_iow() {
         maturity,
         rng.gen::<Witness>().into_inner(),
         rng.gen::<Witness>().into_inner(),
-        vec![
-            Input::contract(
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-                rng.gen()
-            );
-            MAX_INPUTS as usize
-        ],
+        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()); MAX_INPUTS as usize],
         vec![Output::variable(rng.gen(), rng.next_u64(), rng.gen()); MAX_OUTPUTS as usize + 1],
         vec![rng.gen(); MAX_WITNESSES as usize],
     )
@@ -247,15 +231,7 @@ fn max_iow() {
         maturity,
         rng.gen::<Witness>().into_inner(),
         rng.gen::<Witness>().into_inner(),
-        vec![
-            Input::contract(
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-                rng.gen()
-            );
-            MAX_INPUTS as usize
-        ],
+        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()); MAX_INPUTS as usize],
         vec![Output::variable(rng.gen(), rng.next_u64(), rng.gen()); MAX_OUTPUTS as usize],
         vec![rng.gen(); MAX_WITNESSES as usize + 1],
     )
@@ -539,12 +515,7 @@ fn create() {
         0,
         rng.gen(),
         vec![],
-        vec![Input::contract(
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-        )],
+        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())],
         vec![Output::contract(0, rng.gen(), rng.gen())],
         vec![rng.gen()],
     )

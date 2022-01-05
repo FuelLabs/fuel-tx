@@ -92,56 +92,36 @@ fn contract() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;
 
-    Input::contract(
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-    )
-    .validate(1, &[Output::contract(1, rng.gen(), rng.gen())], &[])
-    .unwrap();
+    Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())
+        .validate(1, &[Output::contract(1, rng.gen(), rng.gen())], &[])
+        .unwrap();
 
-    let err = Input::contract(
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-    )
-    .validate(1, &[], &[])
-    .err()
-    .unwrap();
+    let err = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())
+        .validate(1, &[], &[])
+        .err()
+        .unwrap();
     assert_eq!(
         ValidationError::InputContractAssociatedOutputContract { index: 1 },
         err
     );
 
-    let err = Input::contract(
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-    )
-    .validate(
-        1,
-        &[Output::coin(rng.gen(), rng.next_u64(), rng.gen())],
-        &[],
-    )
-    .err()
-    .unwrap();
+    let err = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())
+        .validate(
+            1,
+            &[Output::coin(rng.gen(), rng.next_u64(), rng.gen())],
+            &[],
+        )
+        .err()
+        .unwrap();
     assert_eq!(
         ValidationError::InputContractAssociatedOutputContract { index: 1 },
         err
     );
 
-    let err = Input::contract(
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-    )
-    .validate(1, &[Output::contract(2, rng.gen(), rng.gen())], &[])
-    .err()
-    .unwrap();
+    let err = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())
+        .validate(1, &[Output::contract(2, rng.gen(), rng.gen())], &[])
+        .err()
+        .unwrap();
     assert_eq!(
         ValidationError::InputContractAssociatedOutputContract { index: 1 },
         err

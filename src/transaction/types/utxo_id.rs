@@ -72,7 +72,7 @@ impl FromStr for UtxoId {
         const ERR: &str = "Invalid encoded byte";
         let alternate = s.starts_with("0x");
         let s = if alternate { &s[2..] } else { s };
-        let utxo_id = if s.len() == 0 {
+        let utxo_id = if s.is_empty() {
             UtxoId {
                 tx_id: Bytes32::default(),
                 output_index: 0,

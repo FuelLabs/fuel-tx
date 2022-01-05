@@ -31,12 +31,7 @@ fn contract() {
                     rng.gen::<Witness>().into_inner(),
                     rng.gen::<Witness>().into_inner(),
                 ),
-                Input::contract(
-                    rng.gen(),
-                    rng.gen(),
-                    rng.gen(),
-                    rng.gen(),
-                ),
+                Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
             ],
         )
         .unwrap();
@@ -55,12 +50,7 @@ fn contract() {
                     rng.gen::<Witness>().into_inner(),
                     rng.gen::<Witness>().into_inner(),
                 ),
-                Input::contract(
-                    rng.gen(),
-                    rng.gen(),
-                    rng.gen(),
-                    rng.gen(),
-                ),
+                Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
             ],
         )
         .err()
@@ -81,12 +71,7 @@ fn contract() {
                     rng.gen::<Witness>().into_inner(),
                     rng.gen::<Witness>().into_inner(),
                 ),
-                Input::contract(
-                    rng.gen(),
-                    rng.gen(),
-                    rng.gen(),
-                    rng.gen(),
-                ),
+                Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
             ],
         )
         .err()

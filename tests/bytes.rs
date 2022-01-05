@@ -121,12 +121,7 @@ fn input() {
             vec![],
             vec![],
         ),
-        Input::contract(
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-        ),
+        Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
     ]);
 }
 
@@ -427,12 +422,7 @@ fn transaction() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;
 
-    let i = Input::contract(
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-    );
+    let i = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen());
     let o = Output::coin(rng.gen(), rng.next_u64(), rng.gen());
     let w = rng.gen::<Witness>();
 
@@ -580,21 +570,8 @@ fn create_input_coin_data_offset() {
         vec![vec![], vec![rng.gen()], vec![rng.gen(), rng.gen()]];
     let inputs: Vec<Vec<Input>> = vec![
         vec![],
-        vec![Input::contract(
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-        )],
-        vec![
-            Input::contract(
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-                rng.gen()
-            );
-            2
-        ],
+        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())],
+        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()); 2],
     ];
     let outputs: Vec<Vec<Output>> = vec![
         vec![],
@@ -681,25 +658,10 @@ fn script_input_coin_data_offset() {
 
     let inputs: Vec<Vec<Input>> = vec![
         vec![],
-        vec![Input::contract(
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-        )],
+        vec![Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen())],
         vec![
-            Input::contract(
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-            ),
-            Input::contract(
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
-            ),
+            Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
+            Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
         ],
     ];
     let outputs: Vec<Vec<Output>> = vec![

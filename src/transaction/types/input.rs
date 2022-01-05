@@ -195,8 +195,8 @@ impl io::Read for Input {
                 predicate_data,
             } => {
                 let buf = bytes::store_number_unchecked(buf, InputRepr::Coin as Word);
-                let buf = bytes::store_array_unchecked(buf, &utxo_id.tx_id);
-                let buf = bytes::store_number_unchecked(buf, utxo_id.output_index as Word);
+                let buf = bytes::store_array_unchecked(buf, utxo_id.tx_id());
+                let buf = bytes::store_number_unchecked(buf, utxo_id.output_index() as Word);
                 let buf = bytes::store_array_unchecked(buf, owner);
                 let buf = bytes::store_number_unchecked(buf, *amount);
                 let buf = bytes::store_array_unchecked(buf, color);
@@ -217,8 +217,8 @@ impl io::Read for Input {
                 contract_id,
             } => {
                 let buf = bytes::store_number_unchecked(buf, InputRepr::Contract as Word);
-                let buf = bytes::store_array_unchecked(buf, &utxo_id.tx_id);
-                let buf = bytes::store_number_unchecked(buf, utxo_id.output_index as Word);
+                let buf = bytes::store_array_unchecked(buf, utxo_id.tx_id());
+                let buf = bytes::store_number_unchecked(buf, utxo_id.output_index() as Word);
                 let buf = bytes::store_array_unchecked(buf, balance_root);
                 let buf = bytes::store_array_unchecked(buf, state_root);
                 bytes::store_array_unchecked(buf, contract_id);
@@ -263,10 +263,7 @@ impl io::Write for Input {
                 let (size, predicate_data, _) = bytes::restore_raw_bytes(buf, predicate_data_len)?;
                 n += size;
 
-                let utxo_id = UtxoId {
-                    tx_id: tx_id.into(),
-                    output_index: output_index as u8,
-                };
+                let utxo_id = UtxoId::new(tx_id.into(), output_index as u8);
                 let owner = owner.into();
                 let color = color.into();
 
@@ -294,10 +291,7 @@ impl io::Write for Input {
                 let (state_root, buf) = unsafe { bytes::restore_array_unchecked(buf) };
                 let (contract_id, _) = unsafe { bytes::restore_array_unchecked(buf) };
 
-                let utxo_id = UtxoId {
-                    tx_id: tx_id.into(),
-                    output_index: output_index as u8,
-                };
+                let utxo_id = UtxoId::new(tx_id.into(), output_index as u8);
                 let balance_root = balance_root.into();
                 let state_root = state_root.into();
                 let contract_id = contract_id.into();

@@ -22,10 +22,7 @@ fn contract() {
             2,
             &[
                 Input::coin(
-                    UtxoId {
-                        tx_id: rng.gen(),
-                        output_index: rng.gen(),
-                    },
+                    rng.gen(),
                     rng.gen(),
                     rng.next_u64(),
                     rng.gen(),
@@ -35,10 +32,7 @@ fn contract() {
                     rng.gen::<Witness>().into_inner(),
                 ),
                 Input::contract(
-                    UtxoId {
-                        tx_id: rng.gen(),
-                        output_index: rng.gen(),
-                    },
+                    rng.gen(),
                     rng.gen(),
                     rng.gen(),
                     rng.gen(),
@@ -52,10 +46,7 @@ fn contract() {
             2,
             &[
                 Input::coin(
-                    UtxoId {
-                        tx_id: rng.gen(),
-                        output_index: rng.gen(),
-                    },
+                    rng.gen(),
                     rng.gen(),
                     rng.next_u64(),
                     rng.gen(),
@@ -65,10 +56,7 @@ fn contract() {
                     rng.gen::<Witness>().into_inner(),
                 ),
                 Input::contract(
-                    UtxoId {
-                        tx_id: rng.gen(),
-                        output_index: rng.gen(),
-                    },
+                    rng.gen(),
                     rng.gen(),
                     rng.gen(),
                     rng.gen(),
@@ -84,10 +72,7 @@ fn contract() {
             2,
             &[
                 Input::coin(
-                    UtxoId {
-                        tx_id: rng.gen(),
-                        output_index: rng.gen(),
-                    },
+                    rng.gen(),
                     rng.gen(),
                     rng.next_u64(),
                     rng.gen(),
@@ -97,10 +82,7 @@ fn contract() {
                     rng.gen::<Witness>().into_inner(),
                 ),
                 Input::contract(
-                    UtxoId {
-                        tx_id: rng.gen(),
-                        output_index: rng.gen(),
-                    },
+                    rng.gen(),
                     rng.gen(),
                     rng.gen(),
                     rng.gen(),

@@ -152,10 +152,7 @@ fn max_iow() {
         rng.gen::<Witness>().into_inner(),
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 rng.gen(),
@@ -181,10 +178,7 @@ fn max_iow() {
         vec![],
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 rng.gen(),
@@ -209,10 +203,7 @@ fn max_iow() {
         rng.gen::<Witness>().into_inner(),
         vec![
             Input::contract(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.gen(),
                 rng.gen()
@@ -235,10 +226,7 @@ fn max_iow() {
         rng.gen::<Witness>().into_inner(),
         vec![
             Input::contract(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.gen(),
                 rng.gen()
@@ -261,10 +249,7 @@ fn max_iow() {
         rng.gen::<Witness>().into_inner(),
         vec![
             Input::contract(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.gen(),
                 rng.gen()
@@ -300,10 +285,7 @@ fn output_change_color() {
         rng.gen::<Witness>().into_inner(),
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 a,
@@ -313,10 +295,7 @@ fn output_change_color() {
                 rng.gen::<Witness>().into_inner(),
             ),
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 b,
@@ -343,10 +322,7 @@ fn output_change_color() {
         rng.gen::<Witness>().into_inner(),
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 a,
@@ -356,10 +332,7 @@ fn output_change_color() {
                 rng.gen::<Witness>().into_inner(),
             ),
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 b,
@@ -388,10 +361,7 @@ fn output_change_color() {
         rng.gen::<Witness>().into_inner(),
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 a,
@@ -401,10 +371,7 @@ fn output_change_color() {
                 rng.gen::<Witness>().into_inner(),
             ),
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 b,
@@ -442,10 +409,7 @@ fn script() {
         vec![0xfa; MAX_SCRIPT_LENGTH as usize],
         vec![0xfb; MAX_SCRIPT_DATA_LENGTH as usize],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             color,
@@ -467,10 +431,7 @@ fn script() {
         vec![0xfa; MAX_SCRIPT_LENGTH as usize],
         vec![0xfb; MAX_SCRIPT_DATA_LENGTH as usize],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -497,10 +458,7 @@ fn script() {
         vec![0xfa; MAX_SCRIPT_LENGTH as usize + 1],
         vec![0xfb; MAX_SCRIPT_DATA_LENGTH as usize],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -525,10 +483,7 @@ fn script() {
         vec![0xfa; MAX_SCRIPT_LENGTH as usize],
         vec![0xfb; MAX_SCRIPT_DATA_LENGTH as usize + 1],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             color,
@@ -562,10 +517,7 @@ fn create() {
         rng.gen(),
         vec![],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             Color::default(),
@@ -588,10 +540,7 @@ fn create() {
         rng.gen(),
         vec![],
         vec![Input::contract(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.gen(),
             rng.gen(),
@@ -616,10 +565,7 @@ fn create() {
         rng.gen(),
         vec![],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             color,
@@ -648,10 +594,7 @@ fn create() {
         vec![],
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 Color::default(),
@@ -661,10 +604,7 @@ fn create() {
                 vec![],
             ),
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 rng.gen(),
@@ -698,10 +638,7 @@ fn create() {
         vec![],
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 Color::default(),
@@ -711,10 +648,7 @@ fn create() {
                 vec![],
             ),
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 color,
@@ -747,10 +681,7 @@ fn create() {
         vec![],
         vec![
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 Color::default(),
@@ -760,10 +691,7 @@ fn create() {
                 vec![],
             ),
             Input::coin(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.next_u64(),
                 rng.gen(),
@@ -795,10 +723,7 @@ fn create() {
         rng.gen(),
         vec![],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             Color::default(),
@@ -821,10 +746,7 @@ fn create() {
         rng.gen(),
         vec![],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             Color::default(),
@@ -849,10 +771,7 @@ fn create() {
         rng.gen(),
         vec![],
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             Color::default(),
@@ -885,10 +804,7 @@ fn create() {
         rng.gen(),
         static_contracts.clone(),
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             Color::default(),
@@ -913,10 +829,7 @@ fn create() {
         rng.gen(),
         static_contracts.clone(),
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             Color::default(),
@@ -943,10 +856,7 @@ fn create() {
         rng.gen(),
         static_contracts,
         vec![Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             Color::default(),

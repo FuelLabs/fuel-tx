@@ -1,8 +1,11 @@
 use std::str::FromStr;
 
-use fuel_types::Bytes32;
-
 use crate::TxId;
+use fuel_types::Bytes32;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 
 /// Identification of unspend transaction output.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
@@ -12,9 +15,34 @@ use crate::TxId;
 )]
 pub struct UtxoId {
     /// transaction id
-    pub tx_id: TxId,
+    tx_id: TxId,
     /// output index
-    pub output_index: u8,
+    output_index: u8,
+}
+
+impl UtxoId {
+    pub fn new(tx_id: TxId, output_index: u8) -> Self {
+        Self {
+            tx_id,
+            output_index,
+        }
+    }
+
+    pub fn tx_id(&self) -> &TxId {
+        &self.tx_id
+    }
+
+    pub fn output_index(&self) -> u8 {
+        self.output_index
+    }
+}
+
+impl Distribution<UtxoId> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> UtxoId {
+        let mut tx_id = Bytes32::default();
+        rng.fill_bytes(tx_id.as_mut());
+        UtxoId::new(tx_id, rng.gen())
+    }
 }
 
 impl core::fmt::LowerHex for UtxoId {

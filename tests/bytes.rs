@@ -28,7 +28,7 @@ where
 
         let mut d_p = data.clone();
 
-        buffer = vec![0u8; 1024];
+        buffer = vec![0u8; 2048];
         let read_size = d.read(buffer.as_mut_slice()).expect("Failed to read");
         let write_size = d_p.write(buffer.as_slice()).expect("Failed to write");
 
@@ -82,10 +82,7 @@ fn input() {
 
     assert_encoding_correct(&[
         Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -95,10 +92,7 @@ fn input() {
             rng.gen::<Witness>().into_inner(),
         ),
         Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -108,10 +102,7 @@ fn input() {
             rng.gen::<Witness>().into_inner(),
         ),
         Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -121,10 +112,7 @@ fn input() {
             vec![],
         ),
         Input::coin(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.next_u64(),
             rng.gen(),
@@ -134,10 +122,7 @@ fn input() {
             vec![],
         ),
         Input::contract(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.gen(),
             rng.gen(),
@@ -443,10 +428,7 @@ fn transaction() {
     let rng = &mut rng_base;
 
     let i = Input::contract(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),
@@ -599,20 +581,14 @@ fn create_input_coin_data_offset() {
     let inputs: Vec<Vec<Input>> = vec![
         vec![],
         vec![Input::contract(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.gen(),
             rng.gen(),
         )],
         vec![
             Input::contract(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.gen(),
                 rng.gen()
@@ -633,10 +609,7 @@ fn create_input_coin_data_offset() {
     let predicate = rng.gen::<Witness>().into_inner();
     let predicate_data = rng.gen::<Witness>().into_inner();
     let input_coin = Input::coin(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.next_u64(),
         rng.gen(),
@@ -709,29 +682,20 @@ fn script_input_coin_data_offset() {
     let inputs: Vec<Vec<Input>> = vec![
         vec![],
         vec![Input::contract(
-            UtxoId {
-                tx_id: rng.gen(),
-                output_index: rng.gen(),
-            },
+            rng.gen(),
             rng.gen(),
             rng.gen(),
             rng.gen(),
         )],
         vec![
             Input::contract(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.gen(),
                 rng.gen(),
             ),
             Input::contract(
-                UtxoId {
-                    tx_id: rng.gen(),
-                    output_index: rng.gen(),
-                },
+                rng.gen(),
                 rng.gen(),
                 rng.gen(),
                 rng.gen(),
@@ -751,10 +715,7 @@ fn script_input_coin_data_offset() {
     let predicate = rng.gen::<Witness>().into_inner();
     let predicate_data = rng.gen::<Witness>().into_inner();
     let input_coin = Input::coin(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.next_u64(),
         rng.gen(),

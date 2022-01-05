@@ -10,10 +10,7 @@ fn coin() {
     let witnesses = vec![rng.gen()];
 
     Input::coin(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.next_u64(),
         rng.gen(),
@@ -26,10 +23,7 @@ fn coin() {
     .unwrap();
 
     Input::coin(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.next_u64(),
         rng.gen(),
@@ -42,10 +36,7 @@ fn coin() {
     .unwrap();
 
     let err = Input::coin(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.next_u64(),
         rng.gen(),
@@ -60,10 +51,7 @@ fn coin() {
     assert_eq!(ValidationError::InputCoinPredicateLength { index: 1 }, err);
 
     let err = Input::coin(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.next_u64(),
         rng.gen(),
@@ -81,10 +69,7 @@ fn coin() {
     );
 
     let err = Input::coin(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.next_u64(),
         rng.gen(),
@@ -108,10 +93,7 @@ fn contract() {
     let rng = &mut rng_base;
 
     Input::contract(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),
@@ -120,10 +102,7 @@ fn contract() {
     .unwrap();
 
     let err = Input::contract(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),
@@ -137,10 +116,7 @@ fn contract() {
     );
 
     let err = Input::contract(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),
@@ -158,10 +134,7 @@ fn contract() {
     );
 
     let err = Input::contract(
-        UtxoId {
-            tx_id: rng.gen(),
-            output_index: rng.gen(),
-        },
+        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),

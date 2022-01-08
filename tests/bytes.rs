@@ -28,7 +28,7 @@ where
 
         let mut d_p = data.clone();
 
-        buffer = vec![0u8; 1024];
+        buffer = vec![0u8; 2048];
         let read_size = d.read(buffer.as_mut_slice()).expect("Failed to read");
         let write_size = d_p.write(buffer.as_slice()).expect("Failed to write");
 
@@ -431,17 +431,8 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
             rng.gen::<Witness>().into_inner(),
-            rng.gen::<Witness>().into_inner(),
-            vec![i.clone()],
-            vec![o.clone()],
-            vec![w.clone()],
-        ),
-        Transaction::script(
-            rng.next_u64(),
-            rng.next_u64(),
-            rng.next_u64(),
-            vec![],
             rng.gen::<Witness>().into_inner(),
             vec![i.clone()],
             vec![o.clone()],
@@ -451,6 +442,18 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
+            vec![],
+            rng.gen::<Witness>().into_inner(),
+            vec![i.clone()],
+            vec![o.clone()],
+            vec![w.clone()],
+        ),
+        Transaction::script(
+            rng.next_u64(),
+            rng.next_u64(),
+            rng.next_u64(),
+            rng.next_u64(),
             rng.gen::<Witness>().into_inner(),
             vec![],
             vec![i.clone()],
@@ -461,6 +464,7 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
             vec![],
             vec![],
             vec![i.clone()],
@@ -471,6 +475,7 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
             vec![],
             vec![],
             vec![],
@@ -481,6 +486,7 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
             vec![],
             vec![],
             vec![],
@@ -488,6 +494,7 @@ fn transaction() {
             vec![w.clone()],
         ),
         Transaction::script(
+            rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
@@ -498,7 +505,6 @@ fn transaction() {
             vec![],
         ),
         Transaction::create(
-            rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -511,7 +517,6 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![],
@@ -522,7 +527,6 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![],
@@ -533,7 +537,6 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![],
@@ -542,7 +545,6 @@ fn transaction() {
             vec![w.clone()],
         ),
         Transaction::create(
-            rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -560,8 +562,7 @@ fn create_input_coin_data_offset() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;
 
-    let gas_price = 100;
-    let gas_limit = 1000;
+    let byte_price = 20;
     let maturity = 10;
     let bytecode_witness_index = 0x00;
     let salt = rng.gen();
@@ -606,8 +607,7 @@ fn create_input_coin_data_offset() {
                     inputs.push(input_coin.clone());
 
                     let mut tx = Transaction::create(
-                        gas_price,
-                        gas_limit,
+                        byte_price,
                         maturity,
                         bytecode_witness_index,
                         salt,
@@ -650,6 +650,7 @@ fn script_input_coin_data_offset() {
 
     let gas_price = 100;
     let gas_limit = 1000;
+    let byte_price = 20;
     let maturity = 10;
 
     let script: Vec<Vec<u8>> = vec![vec![], rng.gen::<Witness>().into_inner()];
@@ -700,6 +701,7 @@ fn script_input_coin_data_offset() {
                         let mut tx = Transaction::script(
                             gas_price,
                             gas_limit,
+                            byte_price,
                             maturity,
                             script.clone(),
                             script_data.clone(),

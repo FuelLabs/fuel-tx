@@ -66,7 +66,7 @@ impl Output {
 
 impl Transaction {
     pub fn validate(&self, block_height: Word) -> Result<(), ValidationError> {
-        if self.gas_price() > MAX_GAS_PER_TX {
+        if self.gas_limit() > Some(MAX_GAS_PER_TX) {
             Err(ValidationError::TransactionGasLimit)?
         }
 

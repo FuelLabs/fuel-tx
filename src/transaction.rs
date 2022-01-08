@@ -2,6 +2,7 @@ use fuel_asm::Opcode;
 use fuel_types::{Bytes32, Color, ContractId, Salt, Word};
 use itertools::Itertools;
 
+use fuel_types::bytes::SizedBytes;
 use std::convert::TryFrom;
 use std::io::Write;
 use std::{io, mem};
@@ -22,6 +23,7 @@ const WORD_SIZE: usize = mem::size_of::<Word>();
 const TRANSACTION_SCRIPT_FIXED_SIZE: usize = WORD_SIZE // Identifier
     + WORD_SIZE // Gas price
     + WORD_SIZE // Gas limit
+    + WORD_SIZE // Byte price
     + WORD_SIZE // Maturity
     + WORD_SIZE // Script size
     + WORD_SIZE // Script data size
@@ -31,8 +33,7 @@ const TRANSACTION_SCRIPT_FIXED_SIZE: usize = WORD_SIZE // Identifier
     + Bytes32::LEN; // Receipts root
 
 const TRANSACTION_CREATE_FIXED_SIZE: usize = WORD_SIZE // Identifier
-    + WORD_SIZE // Gas price
-    + WORD_SIZE // Gas limit
+    + WORD_SIZE // Byte price
     + WORD_SIZE // Maturity
     + WORD_SIZE // Bytecode size
     + WORD_SIZE // Bytecode witness index
@@ -72,6 +73,7 @@ pub enum Transaction {
     Script {
         gas_price: Word,
         gas_limit: Word,
+        byte_price: Word,
         maturity: Word,
         receipts_root: Bytes32,
         script: Vec<u8>,
@@ -83,8 +85,7 @@ pub enum Transaction {
     },
 
     Create {
-        gas_price: Word,
-        gas_limit: Word,
+        byte_price: Word,
         maturity: Word,
         bytecode_witness_index: u8,
         salt: Salt,
@@ -103,7 +104,7 @@ impl Default for Transaction {
         // The Return op is mandatory for the execution of any context
         let script = Opcode::RET(0x10).to_bytes().to_vec();
 
-        Transaction::script(0, 1000000, 0, script, vec![], vec![], vec![], vec![])
+        Transaction::script(0, 1000000, 0, 0, script, vec![], vec![], vec![], vec![])
     }
 }
 
@@ -111,6 +112,7 @@ impl Transaction {
     pub const fn script(
         gas_price: Word,
         gas_limit: Word,
+        byte_price: Word,
         maturity: Word,
         script: Vec<u8>,
         script_data: Vec<u8>,
@@ -123,6 +125,7 @@ impl Transaction {
         Self::Script {
             gas_price,
             gas_limit,
+            byte_price,
             maturity,
             receipts_root,
             script,
@@ -135,8 +138,7 @@ impl Transaction {
     }
 
     pub const fn create(
-        gas_price: Word,
-        gas_limit: Word,
+        byte_price: Word,
         maturity: Word,
         bytecode_witness_index: u8,
         salt: Salt,
@@ -146,8 +148,7 @@ impl Transaction {
         witnesses: Vec<Witness>,
     ) -> Self {
         Self::Create {
-            gas_price,
-            gas_limit,
+            byte_price,
             maturity,
             bytecode_witness_index,
             salt,
@@ -179,31 +180,45 @@ impl Transaction {
             .unique()
     }
 
-    pub const fn gas_price(&self) -> Word {
+    pub const fn gas_price(&self) -> Option<Word> {
         match self {
-            Self::Script { gas_price, .. } => *gas_price,
-            Self::Create { gas_price, .. } => *gas_price,
+            Self::Script { gas_price, .. } => Some(*gas_price),
+            Self::Create { .. } => None,
         }
     }
 
     pub fn set_gas_price(&mut self, price: Word) {
         match self {
             Self::Script { gas_price, .. } => *gas_price = price,
-            Self::Create { gas_price, .. } => *gas_price = price,
+            _ => (),
         }
     }
 
-    pub const fn gas_limit(&self) -> Word {
+    pub const fn gas_limit(&self) -> Option<Word> {
         match self {
-            Self::Script { gas_limit, .. } => *gas_limit,
-            Self::Create { gas_limit, .. } => *gas_limit,
+            Self::Script { gas_limit, .. } => Some(*gas_limit),
+            Self::Create { .. } => None,
         }
     }
 
     pub fn set_gas_limit(&mut self, limit: Word) {
         match self {
             Self::Script { gas_limit, .. } => *gas_limit = limit,
-            Self::Create { gas_limit, .. } => *gas_limit = limit,
+            _ => (),
+        }
+    }
+
+    pub const fn byte_price(&self) -> Word {
+        match self {
+            Self::Script { byte_price, .. } => *byte_price,
+            Self::Create { byte_price, .. } => *byte_price,
+        }
+    }
+
+    pub fn set_byte_price(&mut self, price: Word) {
+        match self {
+            Self::Script { byte_price, .. } => *byte_price = price,
+            Self::Create { byte_price, .. } => *byte_price = price,
         }
     }
 
@@ -274,5 +289,13 @@ impl Transaction {
 
             _ => None,
         }
+    }
+
+    /// Used for accounting purposes when charging byte based fees
+    pub fn metered_bytes_size(&self) -> usize {
+        // Just use the default serialized size for now until
+        // the compressed representation for accounting purposes
+        // is defined.
+        self.serialized_size()
     }
 }

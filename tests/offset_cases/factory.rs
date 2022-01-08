@@ -69,6 +69,7 @@ impl TransactionFactory {
                 self.rng.gen(),
                 self.rng.gen(),
                 self.rng.gen(),
+                self.rng.gen(),
                 self.rng.gen::<Witness>().into_inner(),
                 self.rng.gen::<Witness>().into_inner(),
                 (0..inputs).map(|_| self.input()).collect(),
@@ -77,7 +78,6 @@ impl TransactionFactory {
             ),
 
             1 => Transaction::create(
-                self.rng.gen(),
                 self.rng.gen(),
                 self.rng.gen(),
                 self.rng.gen(),

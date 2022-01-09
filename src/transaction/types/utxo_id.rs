@@ -70,35 +70,18 @@ impl FromStr for UtxoId {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         const ERR: &str = "Invalid encoded byte";
-        let alternate = s.starts_with("0x");
-        let s = if alternate { &s[2..] } else { s };
+        let s = s.trim_start_matches("0x");
         let utxo_id = if s.is_empty() {
-            UtxoId {
-                tx_id: Bytes32::default(),
-                output_index: 0,
-            }
+            UtxoId::new(Bytes32::default(), 0)
+        } else if s.len() > 2 {
+            UtxoId::new(
+                Bytes32::from_str(&s[..s.len() - 2])?,
+                u8::from_str_radix(&s[s.len() - 2..], 16).map_err(|_| ERR)?,
+            )
         } else {
-            UtxoId {
-                tx_id: Bytes32::from_str(&s[..s.len() - 1])?,
-                output_index: s
-                    .as_bytes()
-                    .last()
-                    .cloned()
-                    .map(hex_val)
-                    .flatten()
-                    .ok_or(ERR)?,
-            }
+            UtxoId::new(TxId::default(), u8::from_str_radix(s, 16).map_err(|_| ERR)?)
         };
         Ok(utxo_id)
-    }
-}
-
-const fn hex_val(c: u8) -> Option<u8> {
-    match c {
-        b'A'..=b'F' => Some(c - b'A' + 10),
-        b'a'..=b'f' => Some(c - b'a' + 10),
-        b'0'..=b'9' => Some(c - b'0'),
-        _ => None,
     }
 }
 
@@ -115,25 +98,25 @@ mod tests {
 
         let utxo_id = UtxoId {
             tx_id,
-            output_index: 10,
+            output_index: 26,
         };
         assert_eq!(
             format!("{:#x}", utxo_id),
-            "0x0c0000000000000000000000000000000000000000000000000000000000000b0a"
+            "0x0c0000000000000000000000000000000000000000000000000000000000000b1a"
         );
         assert_eq!(
             format!("{:x}", utxo_id),
-            "0c0000000000000000000000000000000000000000000000000000000000000b0a"
+            "0c0000000000000000000000000000000000000000000000000000000000000b1a"
         );
     }
 
     #[test]
     fn from_str_utxo_id() -> Result<(), &'static str> {
         let utxo_id = UtxoId::from_str(
-            "0x0c0000000000000000000000000000000000000000000000000000000000000b0a",
+            "0x0c0000000000000000000000000000000000000000000000000000000000000b1a",
         )?;
 
-        assert_eq!(utxo_id.output_index, 10);
+        assert_eq!(utxo_id.output_index, 26);
         assert_eq!(utxo_id.tx_id[31], 11);
         assert_eq!(utxo_id.tx_id[0], 12);
         Ok(())

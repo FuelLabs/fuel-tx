@@ -369,10 +369,10 @@ impl Receipt {
     }
 
     pub const fn is_empty(&self) -> Option<bool> {
-        if let Some(len) = self.len() {
-            Some(len == 0)
-        } else {
-            None
+        match self.len() {
+            Some(0) => Some(true),
+            Some(_) => Some(false),
+            None => None,
         }
     }
 

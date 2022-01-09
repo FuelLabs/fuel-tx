@@ -871,6 +871,8 @@ impl bytes::Deserializable for Receipt {
     fn from_bytes(bytes: &[u8]) -> io::Result<Self> {
         let mut instance = Self::ret(Default::default(), 0, 0, 0);
 
+        // We are sure that all needed bytes are written or error would happen.
+        // unused let is here to silence clippy warning for this check.
         let _ = instance.write(bytes)?;
 
         Ok(instance)

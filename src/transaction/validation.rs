@@ -88,21 +88,32 @@ impl Transaction {
 
         let input_colors: Vec<&Color> = self.input_colors().collect();
         for input_color in input_colors.as_slice() {
+            // check for duplicate change outputs
             if self
                 .outputs()
                 .iter()
                 .filter_map(|output| match output {
-                    Output::Change { color, .. }
-                        if color != &Color::default() && input_color == &color =>
-                    {
-                        Some(())
-                    }
+                    Output::Change { color, .. } if input_color == &color => Some(()),
                     _ => None,
                 })
                 .count()
                 > 1
             {
                 Err(ValidationError::TransactionOutputChangeColorDuplicated)?
+            }
+
+            // check for duplicate variable outputs
+            if self
+                .outputs()
+                .iter()
+                .filter_map(|output| match output {
+                    Output::Variable { color, .. } if input_color == &color => Some(()),
+                    _ => None,
+                })
+                .count()
+                > 1
+            {
+                Err(ValidationError::TransactionOutputVariableColorDuplicated)?
             }
         }
 

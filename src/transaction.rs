@@ -188,9 +188,8 @@ impl Transaction {
     }
 
     pub fn set_gas_price(&mut self, price: Word) {
-        match self {
-            Self::Script { gas_price, .. } => *gas_price = price,
-            _ => (),
+        if let Self::Script { gas_price, .. } = self {
+            *gas_price = price
         }
     }
 
@@ -202,9 +201,8 @@ impl Transaction {
     }
 
     pub fn set_gas_limit(&mut self, limit: Word) {
-        match self {
-            Self::Script { gas_limit, .. } => *gas_limit = limit,
-            _ => (),
+        if let Self::Script { gas_limit, .. } = self {
+            *gas_limit = limit
         }
     }
 

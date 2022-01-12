@@ -572,10 +572,7 @@ fn create() {
     .validate(block_height)
     .err()
     .unwrap();
-    assert_eq!(
-        ValidationError::TransactionCreateOutputChangeColorZero { index: 1 },
-        err
-    );
+    assert_eq!(ValidationError::TransactionOutputChangeColorDuplicated, err);
 
     let color = rng.gen();
     let err = Transaction::create(

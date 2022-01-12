@@ -282,6 +282,7 @@ mod tests {
                                 rng.next_u64(),
                                 rng.next_u64(),
                                 rng.next_u64(),
+                                rng.next_u64(),
                                 script.clone(),
                                 script_data.clone(),
                                 inputs.clone(),
@@ -305,7 +306,6 @@ mod tests {
 
                     for static_contracts in static_contracts.iter() {
                         let tx = Transaction::create(
-                            rng.next_u64(),
                             rng.next_u64(),
                             rng.next_u64(),
                             rng.next_u32().to_be_bytes()[0],

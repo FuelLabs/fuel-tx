@@ -39,8 +39,8 @@ where
         buffer = vec![0u8; read_size];
 
         // Minimum size buffer assertion
-        d.read(buffer.as_mut_slice()).expect("Failed to read");
-        d_p.write(buffer.as_slice()).expect("Failed to write");
+        let _ = d.read(buffer.as_mut_slice()).expect("Failed to read");
+        let _ = d_p.write(buffer.as_slice()).expect("Failed to write");
         assert_eq!(d, d_p);
         assert_eq!(d_bytes.as_slice(), buffer.as_slice());
 
@@ -435,7 +435,7 @@ fn transaction() {
             rng.gen::<Witness>().into_inner(),
             rng.gen::<Witness>().into_inner(),
             vec![i.clone()],
-            vec![o.clone()],
+            vec![o],
             vec![w.clone()],
         ),
         Transaction::script(
@@ -446,7 +446,7 @@ fn transaction() {
             vec![],
             rng.gen::<Witness>().into_inner(),
             vec![i.clone()],
-            vec![o.clone()],
+            vec![o],
             vec![w.clone()],
         ),
         Transaction::script(
@@ -457,7 +457,7 @@ fn transaction() {
             rng.gen::<Witness>().into_inner(),
             vec![],
             vec![i.clone()],
-            vec![o.clone()],
+            vec![o],
             vec![w.clone()],
         ),
         Transaction::script(
@@ -468,7 +468,7 @@ fn transaction() {
             vec![],
             vec![],
             vec![i.clone()],
-            vec![o.clone()],
+            vec![o],
             vec![w.clone()],
         ),
         Transaction::script(
@@ -479,7 +479,7 @@ fn transaction() {
             vec![],
             vec![],
             vec![],
-            vec![o.clone()],
+            vec![o],
             vec![w.clone()],
         ),
         Transaction::script(
@@ -511,7 +511,7 @@ fn transaction() {
             rng.gen(),
             vec![rng.gen()],
             vec![i.clone()],
-            vec![o.clone()],
+            vec![o],
             vec![w.clone()],
         ),
         Transaction::create(
@@ -520,18 +520,8 @@ fn transaction() {
             rng.gen(),
             rng.gen(),
             vec![],
-            vec![i.clone()],
-            vec![o.clone()],
-            vec![w.clone()],
-        ),
-        Transaction::create(
-            rng.next_u64(),
-            rng.next_u64(),
-            rng.gen(),
-            rng.gen(),
-            vec![],
-            vec![],
-            vec![o.clone()],
+            vec![i],
+            vec![o],
             vec![w.clone()],
         ),
         Transaction::create(
@@ -541,8 +531,18 @@ fn transaction() {
             rng.gen(),
             vec![],
             vec![],
-            vec![],
+            vec![o],
             vec![w.clone()],
+        ),
+        Transaction::create(
+            rng.next_u64(),
+            rng.next_u64(),
+            rng.gen(),
+            rng.gen(),
+            vec![],
+            vec![],
+            vec![],
+            vec![w],
         ),
         Transaction::create(
             rng.next_u64(),
@@ -594,7 +594,7 @@ fn create_input_coin_data_offset() {
         rng.gen(),
         rng.next_u64(),
         predicate.clone(),
-        predicate_data.clone(),
+        predicate_data,
     );
 
     let mut buffer = vec![0u8; 4096];
@@ -621,7 +621,8 @@ fn create_input_coin_data_offset() {
                     tx_p.precompute_metadata();
 
                     buffer.iter_mut().for_each(|b| *b = 0x00);
-                    tx.read(buffer.as_mut_slice())
+                    let _ = tx
+                        .read(buffer.as_mut_slice())
                         .expect("Failed to serialize input");
 
                     let offset = tx
@@ -685,7 +686,7 @@ fn script_input_coin_data_offset() {
         rng.gen(),
         rng.next_u64(),
         predicate.clone(),
-        predicate_data.clone(),
+        predicate_data,
     );
 
     let mut buffer = vec![0u8; 4096];
@@ -714,7 +715,8 @@ fn script_input_coin_data_offset() {
                         tx_p.precompute_metadata();
 
                         buffer.iter_mut().for_each(|b| *b = 0x00);
-                        tx.read(buffer.as_mut_slice())
+                        let _ = tx
+                            .read(buffer.as_mut_slice())
                             .expect("Failed to serialize input");
 
                         let script_offset = Transaction::script_offset();

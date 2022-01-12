@@ -203,16 +203,8 @@ impl Transaction {
                             Err(ValidationError::TransactionCreateOutputVariable { index })?
                         }
 
-                        Output::Change { color, .. }
-                            if color == &Color::default() && change_color_zero =>
-                        {
-                            Err(ValidationError::TransactionCreateOutputChangeColorZero { index })?
-                        }
-                        Output::Change { color, .. } if color == &Color::default() => {
-                            change_color_zero = true
-                        }
-                        Output::Change { .. } => {
-                            Err(ValidationError::TransactionCreateOutputChangeColorNonZero {
+                        Output::Change { color, .. } if color != &Color::default() => {
+                            Err(ValidationError::TransactionCreateOutputChangeNotBaseAsset {
                                 index,
                             })?
                         }

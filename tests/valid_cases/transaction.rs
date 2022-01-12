@@ -613,7 +613,7 @@ fn create() {
     .err()
     .unwrap();
     assert_eq!(
-        ValidationError::TransactionCreateOutputChangeColorNonZero { index: 1 },
+        ValidationError::TransactionCreateOutputChangeNotBaseAsset { index: 1 },
         err
     );
 

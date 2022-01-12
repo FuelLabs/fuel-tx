@@ -24,8 +24,8 @@ fuel-tx = { path = ".", features = ["random"]}
 
 [features]
 default = ["fuel-asm/default", "fuel-types/default", "std"]
-random = ["fuel-types/random"]
-std = ["fuel-asm/std", "fuel-types/std", "itertools", "rand", "sha2"]
+random = ["fuel-types/random", "rand"]
+std = ["fuel-asm/std", "fuel-types/std", "itertools", "sha2"]
 serde-types = ["fuel-asm/serde-types", "fuel-types/serde-types", "serde-types-minimal", "serde/default", "std"]
 serde-types-minimal = ["fuel-asm/serde-types-minimal", "fuel-types/serde-types-minimal", "serde"]
 

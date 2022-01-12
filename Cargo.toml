@@ -20,6 +20,7 @@ sha2 = { version = "0.9", optional = true }
 
 [dev-dependencies]
 fuel-types = { version = "0.1", default-features = false, features = ["random"] }
+fuel-tx = { path = ".", features = ["random"]}
 
 [features]
 default = ["fuel-asm/default", "fuel-types/default", "std"]

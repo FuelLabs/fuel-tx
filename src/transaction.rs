@@ -295,7 +295,81 @@ impl Transaction {
     pub fn metered_bytes_size(&self) -> usize {
         // Just use the default serialized size for now until
         // the compressed representation for accounting purposes
-        // is defined.
-        self.serialized_size()
+        // is defined. Witness data should still be excluded.
+        let witness_data = self
+            .witnesses()
+            .iter()
+            .map(|w| w.serialized_size())
+            .sum::<usize>();
+
+        self.serialized_size() - witness_data // Witness data size
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metered_data_excludes_witnesses() {
+        // test script
+        let script_with_no_witnesses = Transaction::Script {
+            gas_price: 0,
+            gas_limit: 0,
+            byte_price: 0,
+            maturity: 0,
+            receipts_root: Default::default(),
+            script: vec![],
+            script_data: vec![],
+            inputs: vec![],
+            outputs: vec![],
+            witnesses: vec![],
+            metadata: None,
+        };
+        let script_with_witnesses = Transaction::Script {
+            gas_price: 0,
+            gas_limit: 0,
+            byte_price: 0,
+            maturity: 0,
+            receipts_root: Default::default(),
+            script: vec![],
+            script_data: vec![],
+            inputs: vec![],
+            outputs: vec![],
+            witnesses: vec![[0u8; 64].to_vec().into()],
+            metadata: None,
+        };
+
+        assert_eq!(
+            script_with_witnesses.metered_bytes_size(),
+            script_with_no_witnesses.metered_bytes_size()
+        );
+        // test create
+        let create_with_no_witnesses = Transaction::Create {
+            byte_price: 0,
+            maturity: 0,
+            bytecode_witness_index: 0,
+            salt: Default::default(),
+            static_contracts: vec![],
+            inputs: vec![],
+            outputs: vec![],
+            witnesses: vec![],
+            metadata: None,
+        };
+        let create_with_witnesses = Transaction::Create {
+            byte_price: 0,
+            maturity: 0,
+            bytecode_witness_index: 0,
+            salt: Default::default(),
+            static_contracts: vec![],
+            inputs: vec![],
+            outputs: vec![],
+            witnesses: vec![[0u8; 64].to_vec().into()],
+            metadata: None,
+        };
+        assert_eq!(
+            create_with_witnesses.metered_bytes_size(),
+            create_with_no_witnesses.metered_bytes_size()
+        );
     }
 }

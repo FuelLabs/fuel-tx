@@ -192,7 +192,6 @@ impl Transaction {
                     }
                 }
 
-                let mut change_color_zero = false;
                 let mut contract_created = false;
                 for (index, output) in outputs.iter().enumerate() {
                     match output {

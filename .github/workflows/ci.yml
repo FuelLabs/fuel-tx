@@ -88,6 +88,12 @@ jobs:
       with:
         command: test
         args: --verbose --features serde-types
+    
+    - name: Run tests all-features
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --verbose --all --all-features
 
   publish:
     # Only do this job if publishing a release

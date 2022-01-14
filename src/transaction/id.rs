@@ -87,6 +87,7 @@ impl Transaction {
 
 #[cfg(all(test, feature = "random"))]
 mod tests {
+    use crate::consts::MAX_GAS_PER_TX;
     use crate::*;
     use rand::rngs::StdRng;
     use rand::{Rng, RngCore, SeedableRng};
@@ -321,7 +322,7 @@ mod tests {
                     for static_contracts in static_contracts.iter() {
                         let tx = Transaction::create(
                             rng.next_u64(),
-                            rng.next_u64(),
+                            MAX_GAS_PER_TX,
                             rng.next_u64(),
                             rng.next_u64(),
                             rng.next_u32().to_be_bytes()[0],

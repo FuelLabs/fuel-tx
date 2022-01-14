@@ -65,7 +65,7 @@ fn maturity() {
 
     Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         1000,
         0,
@@ -96,7 +96,7 @@ fn maturity() {
 
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         1001,
         0,
@@ -148,7 +148,7 @@ fn max_iow() {
 
     Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -475,7 +475,7 @@ fn create() {
 
     Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -499,7 +499,7 @@ fn create() {
 
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -520,7 +520,7 @@ fn create() {
     let color = rng.gen();
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -549,7 +549,7 @@ fn create() {
 
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -591,7 +591,7 @@ fn create() {
     let color = rng.gen();
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -635,7 +635,7 @@ fn create() {
 
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -679,7 +679,7 @@ fn create() {
 
     Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -703,7 +703,7 @@ fn create() {
 
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -729,7 +729,7 @@ fn create() {
 
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         1,
@@ -763,7 +763,7 @@ fn create() {
 
     Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -789,7 +789,7 @@ fn create() {
     static_contracts.push(id);
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,
@@ -817,7 +817,7 @@ fn create() {
     static_contracts[0][0] = 0xff;
     let err = Transaction::create(
         rng.next_u64(),
-        rng.next_u64(),
+        MAX_GAS_PER_TX,
         rng.next_u64(),
         maturity,
         0,

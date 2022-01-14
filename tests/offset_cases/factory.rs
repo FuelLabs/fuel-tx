@@ -1,3 +1,4 @@
+use fuel_tx::consts::MAX_GAS_PER_TX;
 use fuel_tx::*;
 use fuel_types::bytes::Deserializable;
 use rand::distributions::{Distribution, Uniform};
@@ -79,7 +80,7 @@ impl TransactionFactory {
 
             1 => Transaction::create(
                 self.rng.gen(),
-                self.rng.gen(),
+                MAX_GAS_PER_TX,
                 self.rng.gen(),
                 self.rng.gen(),
                 self.rng.gen(),

@@ -1,4 +1,5 @@
 use fuel_asm::Opcode;
+use fuel_tx::consts::MAX_GAS_PER_TX;
 use fuel_tx::*;
 use fuel_types::{bytes, ContractId, Immediate24};
 use rand::rngs::StdRng;
@@ -506,7 +507,7 @@ fn transaction() {
         ),
         Transaction::create(
             rng.next_u64(),
-            rng.next_u64(),
+            MAX_GAS_PER_TX,
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -518,7 +519,7 @@ fn transaction() {
         ),
         Transaction::create(
             rng.next_u64(),
-            rng.next_u64(),
+            MAX_GAS_PER_TX,
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -530,7 +531,7 @@ fn transaction() {
         ),
         Transaction::create(
             rng.next_u64(),
-            rng.next_u64(),
+            MAX_GAS_PER_TX,
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -542,7 +543,7 @@ fn transaction() {
         ),
         Transaction::create(
             rng.next_u64(),
-            rng.next_u64(),
+            MAX_GAS_PER_TX,
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -554,7 +555,7 @@ fn transaction() {
         ),
         Transaction::create(
             rng.next_u64(),
-            rng.next_u64(),
+            MAX_GAS_PER_TX,
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),

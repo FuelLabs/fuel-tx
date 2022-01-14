@@ -42,6 +42,7 @@ impl Transaction {
 
     fn prepare_sign(&mut self) {
         self.set_receipts_root(Default::default());
+        self.set_witnesses(vec![]);
 
         self.inputs_mut().iter_mut().for_each(|input| {
             if let Input::Contract {
@@ -97,6 +98,16 @@ mod tests {
         B: AsMut<[u8]>,
     {
         bytes.as_mut().iter_mut().for_each(|b| *b = b.not());
+    }
+
+    fn invert_utxo_id(utxo_id: &mut UtxoId) {
+        let mut tx_id = utxo_id.tx_id().clone();
+        let mut out_idx = [utxo_id.output_index()];
+
+        invert(&mut tx_id);
+        invert(&mut out_idx);
+
+        *utxo_id = UtxoId::new(tx_id, out_idx[0])
     }
 
     fn inv_v(bytes: &mut Vec<u8>) {
@@ -176,7 +187,7 @@ mod tests {
         assert_id_ne(tx, |t| t.set_maturity(t.maturity().not()));
 
         if !tx.inputs().is_empty() {
-            assert_io_ne!(tx, inputs_mut, Input::Coin, utxo_id, invert);
+            assert_io_ne!(tx, inputs_mut, Input::Coin, utxo_id, invert_utxo_id);
             assert_io_ne!(tx, inputs_mut, Input::Coin, owner, invert);
             assert_io_ne!(tx, inputs_mut, Input::Coin, amount, not);
             assert_io_ne!(tx, inputs_mut, Input::Coin, color, invert);
@@ -185,7 +196,7 @@ mod tests {
             assert_io_ne!(tx, inputs_mut, Input::Coin, predicate, inv_v);
             assert_io_ne!(tx, inputs_mut, Input::Coin, predicate_data, inv_v);
 
-            assert_io_eq!(tx, inputs_mut, Input::Contract, utxo_id, invert);
+            assert_io_eq!(tx, inputs_mut, Input::Contract, utxo_id, invert_utxo_id);
             assert_io_eq!(tx, inputs_mut, Input::Contract, balance_root, invert);
             assert_io_eq!(tx, inputs_mut, Input::Contract, state_root, invert);
             assert_io_ne!(tx, inputs_mut, Input::Contract, contract_id, invert);
@@ -222,7 +233,7 @@ mod tests {
         }
 
         if !tx.witnesses().is_empty() {
-            assert_id_ne(tx, |t| {
+            assert_id_eq(tx, |t| {
                 inv_v(t.witnesses_mut().first_mut().unwrap().as_vec_mut())
             });
         }

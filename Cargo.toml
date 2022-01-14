@@ -1,6 +1,6 @@
 [package]
 name = "fuel-tx"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Fuel Labs <contact@fuel.sh>"]
 categories = ["cryptography::cryptocurrencies", "data-structures"]
 edition = "2021"
@@ -20,11 +20,12 @@ sha2 = { version = "0.9", optional = true }
 
 [dev-dependencies]
 fuel-types = { version = "0.1", default-features = false, features = ["random"] }
+fuel-tx = { path = ".",  default-features = false, features = ["random"]}
 
 [features]
 default = ["fuel-asm/default", "fuel-types/default", "std"]
-random = ["fuel-types/random"]
-std = ["fuel-asm/std", "fuel-types/std", "itertools", "rand", "sha2"]
+random = ["fuel-types/random", "rand"]
+std = ["fuel-asm/std", "fuel-types/std", "itertools", "sha2"]
 serde-types = ["fuel-asm/serde-types", "fuel-types/serde-types", "serde-types-minimal", "serde/default", "std"]
 serde-types-minimal = ["fuel-asm/serde-types-minimal", "fuel-types/serde-types-minimal", "serde"]
 

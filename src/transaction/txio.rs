@@ -87,6 +87,8 @@ impl io::Read for Transaction {
             }
 
             Self::Create {
+                gas_price,
+                gas_limit,
                 byte_price,
                 maturity,
                 bytecode_witness_index,
@@ -103,6 +105,8 @@ impl io::Read for Transaction {
                     .unwrap_or(0);
 
                 let buf = bytes::store_number_unchecked(buf, TransactionRepr::Create as Word);
+                let buf = bytes::store_number_unchecked(buf, *gas_price);
+                let buf = bytes::store_number_unchecked(buf, *gas_limit);
                 let buf = bytes::store_number_unchecked(buf, *byte_price);
                 let buf = bytes::store_number_unchecked(buf, *maturity);
                 let buf = bytes::store_number_unchecked(buf, bytecode_length);
@@ -222,6 +226,8 @@ impl io::Write for Transaction {
                 }
 
                 // Safety: buffer size is checked
+                let (gas_price, buf) = unsafe { bytes::restore_number_unchecked(buf) };
+                let (gas_limit, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (byte_price, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (maturity, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (_bytecode_length, buf) = unsafe { bytes::restore_u16_unchecked(buf) };
@@ -267,6 +273,8 @@ impl io::Write for Transaction {
                 }
 
                 *self = Self::Create {
+                    gas_price,
+                    gas_limit,
                     byte_price,
                     maturity,
                     bytecode_witness_index,

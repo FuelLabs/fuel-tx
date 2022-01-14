@@ -33,6 +33,8 @@ const TRANSACTION_SCRIPT_FIXED_SIZE: usize = WORD_SIZE // Identifier
     + Bytes32::LEN; // Receipts root
 
 const TRANSACTION_CREATE_FIXED_SIZE: usize = WORD_SIZE // Identifier
+    + WORD_SIZE // Gas price
+    + WORD_SIZE // Gas limit
     + WORD_SIZE // Byte price
     + WORD_SIZE // Maturity
     + WORD_SIZE // Bytecode size
@@ -88,6 +90,8 @@ pub enum Transaction {
     },
 
     Create {
+        gas_price: Word,
+        gas_limit: Word,
         byte_price: Word,
         maturity: Word,
         bytecode_witness_index: u8,
@@ -141,6 +145,8 @@ impl Transaction {
     }
 
     pub const fn create(
+        gas_price: Word,
+        gas_limit: Word,
         byte_price: Word,
         maturity: Word,
         bytecode_witness_index: u8,
@@ -151,6 +157,8 @@ impl Transaction {
         witnesses: Vec<Witness>,
     ) -> Self {
         Self::Create {
+            gas_price,
+            gas_limit,
             byte_price,
             maturity,
             bytecode_witness_index,
@@ -186,26 +194,28 @@ impl Transaction {
     pub const fn gas_price(&self) -> Option<Word> {
         match self {
             Self::Script { gas_price, .. } => Some(*gas_price),
-            Self::Create { .. } => None,
+            Self::Create { gas_price, .. } => Some(*gas_price),
         }
     }
 
     pub fn set_gas_price(&mut self, price: Word) {
-        if let Self::Script { gas_price, .. } = self {
-            *gas_price = price
+        match self {
+            Self::Script { gas_price, .. } => *gas_price = price,
+            Self::Create { gas_price, .. } => *gas_price = price,
         }
     }
 
     pub const fn gas_limit(&self) -> Option<Word> {
         match self {
             Self::Script { gas_limit, .. } => Some(*gas_limit),
-            Self::Create { .. } => None,
+            Self::Create { gas_limit, .. } => Some(*gas_limit),
         }
     }
 
     pub fn set_gas_limit(&mut self, limit: Word) {
-        if let Self::Script { gas_limit, .. } = self {
-            *gas_limit = limit
+        match self {
+            Self::Script { gas_limit, .. } => *gas_limit = limit,
+            Self::Create { gas_limit, .. } => *gas_limit = limit,
         }
     }
 
@@ -347,6 +357,8 @@ mod tests {
         );
         // test create
         let create_with_no_witnesses = Transaction::Create {
+            gas_price: 0,
+            gas_limit: 0,
             byte_price: 0,
             maturity: 0,
             bytecode_witness_index: 0,
@@ -358,6 +370,8 @@ mod tests {
             metadata: None,
         };
         let create_with_witnesses = Transaction::Create {
+            gas_price: 0,
+            gas_limit: 0,
             byte_price: 0,
             maturity: 0,
             bytecode_witness_index: 0,

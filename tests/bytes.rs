@@ -507,6 +507,8 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
+            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![rng.gen()],
@@ -515,6 +517,8 @@ fn transaction() {
             vec![w.clone()],
         ),
         Transaction::create(
+            rng.next_u64(),
+            rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -527,6 +531,8 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
+            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![],
@@ -537,6 +543,8 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             rng.next_u64(),
+            rng.next_u64(),
+            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![],
@@ -545,6 +553,8 @@ fn transaction() {
             vec![w],
         ),
         Transaction::create(
+            rng.next_u64(),
+            rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
@@ -562,6 +572,8 @@ fn create_input_coin_data_offset() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;
 
+    let gas_price = 100;
+    let gas_limit = 1000;
     let byte_price = 20;
     let maturity = 10;
     let bytecode_witness_index = 0x00;
@@ -607,6 +619,8 @@ fn create_input_coin_data_offset() {
                     inputs.push(input_coin.clone());
 
                     let mut tx = Transaction::create(
+                        gas_price,
+                        gas_limit,
                         byte_price,
                         maturity,
                         bytecode_witness_index,

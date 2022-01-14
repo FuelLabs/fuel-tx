@@ -65,6 +65,8 @@ fn maturity() {
 
     Transaction::create(
         rng.next_u64(),
+        rng.next_u64(),
+        rng.next_u64(),
         1000,
         0,
         rng.gen(),
@@ -93,6 +95,8 @@ fn maturity() {
     assert_eq!(ValidationError::TransactionMaturity, err);
 
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         1001,
         0,
@@ -143,6 +147,8 @@ fn max_iow() {
     .unwrap();
 
     Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         0,
@@ -469,6 +475,8 @@ fn create() {
 
     Transaction::create(
         rng.next_u64(),
+        rng.next_u64(),
+        rng.next_u64(),
         maturity,
         0,
         rng.gen(),
@@ -491,6 +499,8 @@ fn create() {
 
     let err = Transaction::create(
         rng.next_u64(),
+        rng.next_u64(),
+        rng.next_u64(),
         maturity,
         0,
         rng.gen(),
@@ -509,6 +519,8 @@ fn create() {
 
     let color = rng.gen();
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         0,
@@ -536,6 +548,8 @@ fn create() {
     );
 
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         0,
@@ -576,6 +590,8 @@ fn create() {
 
     let color = rng.gen();
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         0,
@@ -619,6 +635,8 @@ fn create() {
 
     let err = Transaction::create(
         rng.next_u64(),
+        rng.next_u64(),
+        rng.next_u64(),
         maturity,
         0,
         rng.gen(),
@@ -661,6 +679,8 @@ fn create() {
 
     Transaction::create(
         rng.next_u64(),
+        rng.next_u64(),
+        rng.next_u64(),
         maturity,
         0,
         rng.gen(),
@@ -682,6 +702,8 @@ fn create() {
     .unwrap();
 
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         0,
@@ -706,6 +728,8 @@ fn create() {
     assert_eq!(ValidationError::TransactionCreateBytecodeLen, err);
 
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         1,
@@ -739,6 +763,8 @@ fn create() {
 
     Transaction::create(
         rng.next_u64(),
+        rng.next_u64(),
+        rng.next_u64(),
         maturity,
         0,
         rng.gen(),
@@ -762,6 +788,8 @@ fn create() {
     id.iter_mut().for_each(|i| *i = 0xff);
     static_contracts.push(id);
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         0,
@@ -788,6 +816,8 @@ fn create() {
     static_contracts.pop();
     static_contracts[0][0] = 0xff;
     let err = Transaction::create(
+        rng.next_u64(),
+        rng.next_u64(),
         rng.next_u64(),
         maturity,
         0,

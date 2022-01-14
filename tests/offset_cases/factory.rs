@@ -82,6 +82,8 @@ impl TransactionFactory {
                 self.rng.gen(),
                 self.rng.gen(),
                 self.rng.gen(),
+                self.rng.gen(),
+                self.rng.gen(),
                 (0..contracts).map(|_| self.rng.gen()).collect(),
                 (0..inputs).map(|_| self.input()).collect(),
                 (0..outputs).map(|_| self.output()).collect(),

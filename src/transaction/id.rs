@@ -311,6 +311,8 @@ mod tests {
                         let tx = Transaction::create(
                             rng.next_u64(),
                             rng.next_u64(),
+                            rng.next_u64(),
+                            rng.next_u64(),
                             rng.next_u32().to_be_bytes()[0],
                             rng.gen(),
                             static_contracts.clone(),

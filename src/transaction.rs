@@ -191,10 +191,10 @@ impl Transaction {
             .unique()
     }
 
-    pub const fn gas_price(&self) -> Option<Word> {
+    pub const fn gas_price(&self) -> Word {
         match self {
-            Self::Script { gas_price, .. } => Some(*gas_price),
-            Self::Create { gas_price, .. } => Some(*gas_price),
+            Self::Script { gas_price, .. } => *gas_price,
+            Self::Create { gas_price, .. } => *gas_price,
         }
     }
 
@@ -205,10 +205,10 @@ impl Transaction {
         }
     }
 
-    pub const fn gas_limit(&self) -> Option<Word> {
+    pub const fn gas_limit(&self) -> Word {
         match self {
-            Self::Script { gas_limit, .. } => Some(*gas_limit),
-            Self::Create { gas_limit, .. } => Some(*gas_limit),
+            Self::Script { gas_limit, .. } => *gas_limit,
+            Self::Create { gas_limit, .. } => *gas_limit,
         }
     }
 

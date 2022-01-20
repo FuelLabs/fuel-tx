@@ -180,10 +180,8 @@ mod tests {
     }
 
     fn assert_id_common_attrs(tx: &Transaction) {
-        if tx.is_script() {
-            assert_id_ne(tx, |t| t.set_gas_price(t.gas_price().unwrap().not()));
-            assert_id_ne(tx, |t| t.set_gas_limit(t.gas_limit().unwrap().not()));
-        }
+        assert_id_ne(tx, |t| t.set_gas_price(t.gas_price().not()));
+        assert_id_ne(tx, |t| t.set_gas_limit(t.gas_limit().not()));
         assert_id_ne(tx, |t| t.set_byte_price(t.byte_price().not()));
         assert_id_ne(tx, |t| t.set_maturity(t.maturity().not()));
 

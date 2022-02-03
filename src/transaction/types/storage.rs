@@ -11,18 +11,24 @@ pub const SLOT_SIZE: usize = Bytes64::LEN;
     feature = "serde-types-minimal",
     derive(serde::Serialize, serde::Deserialize)
 )]
-pub struct StorageSlot(Bytes32, Bytes32);
+pub struct StorageSlot {
+    key: Bytes32,
+    value: Bytes32,
+}
 
 impl StorageSlot {
     pub fn new(key: Bytes32, value: Bytes32) -> Self {
-        StorageSlot(key, value)
+        StorageSlot { key, value }
     }
 }
 
 #[cfg(feature = "random")]
 impl Distribution<StorageSlot> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> StorageSlot {
-        StorageSlot(rng.gen(), rng.gen())
+        StorageSlot {
+            key: rng.gen(),
+            value: rng.gen(),
+        }
     }
 }
 
@@ -31,8 +37,8 @@ impl io::Read for StorageSlot {
         if buf.len() < SLOT_SIZE {
             return Err(bytes::eof());
         }
-        buf = bytes::store_array_unchecked(buf, &self.0);
-        bytes::store_array_unchecked(buf, &self.1);
+        buf = bytes::store_array_unchecked(buf, &self.key);
+        bytes::store_array_unchecked(buf, &self.value);
         Ok(SLOT_SIZE)
     }
 }
@@ -47,8 +53,8 @@ impl io::Write for StorageSlot {
         let (key, buf) = unsafe { bytes::restore_array_unchecked(buf) };
         let (value, _) = unsafe { bytes::restore_array_unchecked(buf) };
 
-        self.0 = key.into();
-        self.1 = value.into();
+        self.key = key.into();
+        self.value = value.into();
         Ok(SLOT_SIZE)
     }
 
@@ -65,12 +71,12 @@ impl bytes::SizedBytes for StorageSlot {
 
 impl PartialOrd for StorageSlot {
     fn partial_cmp(&self, other: &StorageSlot) -> Option<Ordering> {
-        Some(self.0.cmp(&other.0))
+        Some(self.key.cmp(&other.key))
     }
 }
 
 impl Ord for StorageSlot {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.0.cmp(&other.0)
+        self.key.cmp(&other.key)
     }
 }

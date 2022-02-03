@@ -183,6 +183,8 @@ impl Transaction {
                     Err(ValidationError::TransactionCreateStaticContractsOrder)?;
                 }
 
+                // Restrict to subset of u16::MAX, allowing this to be increased in the future in
+                // a non-breaking way.
                 if storage_slots.len() > MAX_STORAGE_SLOTS as usize {
                     return Err(ValidationError::TransactionCreateStorageSlotMax);
                 }

@@ -21,12 +21,12 @@ impl StorageSlot {
         StorageSlot { key, value }
     }
 
-    pub fn key(&self) -> Bytes32 {
-        self.key
+    pub fn key(&self) -> &Bytes32 {
+        &self.key
     }
 
-    pub fn value(&self) -> Bytes32 {
-        self.value
+    pub fn value(&self) -> &Bytes32 {
+        &self.value
     }
 }
 

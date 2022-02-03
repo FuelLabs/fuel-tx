@@ -1,7 +1,6 @@
 use fuel_types::{bytes, Bytes32, Bytes64};
-use rand::distributions::Standard;
-use rand::prelude::Distribution;
-use rand::Rng;
+#[cfg(feature = "random")]
+use rand::{distributions::Standard, prelude::Distribution, Rng};
 use std::cmp::Ordering;
 use std::io;
 

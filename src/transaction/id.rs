@@ -103,7 +103,7 @@ mod tests {
     }
 
     fn invert_utxo_id(utxo_id: &mut UtxoId) {
-        let mut tx_id = utxo_id.tx_id().clone();
+        let mut tx_id = *utxo_id.tx_id();
         let mut out_idx = [utxo_id.output_index()];
 
         invert(&mut tx_id);
@@ -114,9 +114,9 @@ mod tests {
 
     fn invert_storage_slot(storage_slot: &mut StorageSlot) {
         let mut data = [0u8; 64];
-        storage_slot.read(&mut data).unwrap();
+        let _ = storage_slot.read(&mut data).unwrap();
         invert(&mut data);
-        storage_slot.write(&data).unwrap();
+        let _ = storage_slot.write(&data).unwrap();
     }
 
     fn inv_v(bytes: &mut Vec<u8>) {

@@ -862,7 +862,7 @@ fn create() {
     let mut storage_slots = (0..MAX_STORAGE_SLOTS as u64)
         .map(|i| {
             slot_data[..8].copy_from_slice(&i.to_be_bytes());
-            slot.write(&mut slot_data).unwrap();
+            let _ = slot.write(&slot_data).unwrap();
             slot.clone()
         })
         .collect::<Vec<StorageSlot>>();

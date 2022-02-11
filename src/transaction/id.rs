@@ -372,32 +372,23 @@ mod tests {
                                     } => invert(static_contracts.first_mut().unwrap()),
                                     _ => unreachable!(),
                                 });
+                            }
 
+                            assert_id_ne(&tx, |t| match t {
+                                Transaction::Create { salt, .. } => invert(salt),
+                                _ => unreachable!(),
+                            });
+
+                            if !storage_slots.is_empty() {
                                 assert_id_ne(&tx, |t| match t {
-                                    Transaction::Create { salt, .. } => invert(salt),
+                                    Transaction::Create { storage_slots, .. } => {
+                                        invert_storage_slot(storage_slots.first_mut().unwrap())
+                                    }
                                     _ => unreachable!(),
                                 });
-
-                                if !static_contracts.is_empty() {
-                                    assert_id_ne(&tx, |t| match t {
-                                        Transaction::Create {
-                                            static_contracts, ..
-                                        } => invert(static_contracts.first_mut().unwrap()),
-                                        _ => unreachable!(),
-                                    });
-                                }
-
-                                if !storage_slots.is_empty() {
-                                    assert_id_ne(&tx, |t| match t {
-                                        Transaction::Create { storage_slots, .. } => {
-                                            invert_storage_slot(storage_slots.first_mut().unwrap())
-                                        }
-                                        _ => unreachable!(),
-                                    });
-                                }
-
-                                assert_id_common_attrs(&tx);
                             }
+
+                            assert_id_common_attrs(&tx);
                         }
                     }
                 }

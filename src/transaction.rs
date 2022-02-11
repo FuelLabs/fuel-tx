@@ -362,6 +362,8 @@ impl Transaction {
     /// counterpart of the provided key. Sign all matches.
     #[cfg(feature = "std")]
     pub fn sign_inputs(&mut self, secret: &SecretKey) {
+        use itertools::Itertools;
+
         let pk = PublicKey::from(secret);
         let pk = Input::coin_owner(&pk);
         let id = self.id();
@@ -390,6 +392,7 @@ impl Transaction {
                 } if owner == &pk => Some(*witness_index as usize),
                 _ => None,
             })
+            .dedup()
             .for_each(|w| {
                 witnesses.get_mut(w).map(|w| *w = signature.as_ref().into());
             });

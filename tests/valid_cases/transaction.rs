@@ -191,6 +191,7 @@ fn max_iow() {
         .validate(block_height)
         .expect("Failed to validate transaction");
 
+    // Add inputs up to maximum and validate
     let mut builder = TransactionBuilder::create(MAX_WITNESSES - 1, rng.gen(), vec![], vec![]);
 
     builder
@@ -227,6 +228,7 @@ fn max_iow() {
         .validate(block_height)
         .expect("Failed to validate transaction");
 
+    // Overflow maximum inputs and expect error
     let mut builder = TransactionBuilder::create(MAX_WITNESSES - 1, rng.gen(), vec![], vec![]);
 
     builder
@@ -266,6 +268,7 @@ fn max_iow() {
 
     assert_eq!(ValidationError::TransactionInputsMax, err);
 
+    // Overflow outputs maximum and expect error
     let mut builder = TransactionBuilder::create(MAX_WITNESSES - 1, rng.gen(), vec![], vec![]);
 
     builder
@@ -305,6 +308,7 @@ fn max_iow() {
 
     assert_eq!(ValidationError::TransactionOutputsMax, err);
 
+    // Overflow witnesses maximum and expect error
     let mut builder = TransactionBuilder::create(MAX_WITNESSES - 1, rng.gen(), vec![], vec![]);
 
     builder

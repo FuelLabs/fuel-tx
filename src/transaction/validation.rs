@@ -1,7 +1,7 @@
 use super::{Input, Output, Transaction, Witness};
 use crate::consts::*;
 
-use fuel_types::{Color, Word};
+use fuel_types::{AssetId, Word};
 
 #[cfg(feature = "std")]
 use fuel_types::Bytes32;
@@ -179,7 +179,7 @@ impl Transaction {
                 .filter_map(|output| match output {
                     Output::Change { color, .. } if input_color == color => Some(()),
                     Output::Change { color, .. }
-                        if color != &Color::default() && input_color == color =>
+                        if color != &AssetId::default() && input_color == color =>
                     {
                         Some(())
                     }
@@ -317,7 +317,7 @@ impl Transaction {
                             Err(ValidationError::TransactionCreateOutputVariable { index })
                         }
 
-                        Output::Change { color, .. } if color != &Color::default() => {
+                        Output::Change { color, .. } if color != &AssetId::default() => {
                             Err(ValidationError::TransactionCreateOutputChangeNotBaseAsset {
                                 index,
                             })

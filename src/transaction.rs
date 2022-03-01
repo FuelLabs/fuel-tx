@@ -2,7 +2,7 @@ use crate::consts::*;
 
 use fuel_asm::Opcode;
 use fuel_types::bytes::WORD_SIZE;
-use fuel_types::{Bytes32, Color, ContractId, Salt, Word};
+use fuel_types::{AssetId, Bytes32, ContractId, Salt, Word};
 
 #[cfg(feature = "std")]
 use fuel_types::bytes::SizedBytes;
@@ -177,14 +177,14 @@ impl Transaction {
         }
     }
 
-    pub fn input_colors(&self) -> impl Iterator<Item = &Color> {
+    pub fn input_colors(&self) -> impl Iterator<Item = &AssetId> {
         self.inputs().iter().filter_map(|input| match input {
             Input::Coin { color, .. } => Some(color),
             _ => None,
         })
     }
 
-    pub fn input_colors_unique(&self) -> impl Iterator<Item = &Color> {
+    pub fn input_colors_unique(&self) -> impl Iterator<Item = &AssetId> {
         use itertools::Itertools;
 
         let colors = self.input_colors();
@@ -335,7 +335,7 @@ impl Transaction {
         utxo_id: UtxoId,
         owner: &PublicKey,
         amount: Word,
-        color: Color,
+        color: AssetId,
         maturity: Word,
         predicate: Vec<u8>,
         predicate_data: Vec<u8>,

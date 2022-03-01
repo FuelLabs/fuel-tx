@@ -12,8 +12,8 @@ description = "FuelVM transaction."
 
 [dependencies]
 fuel-asm = { version = "0.1", default-features = false }
-fuel-crypto = { version = "0.2", default-features = false }
-fuel-types = { version = "0.2", default-features = false }
+fuel-crypto = { version = "0.3", default-features = false }
+fuel-types = { version = "0.3", default-features = false }
 itertools = { version = "0.10", default-features = false }
 rand = { version = "0.8", default-features = false, features = ["std_rng"], optional = true }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }

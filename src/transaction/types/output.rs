@@ -1,5 +1,5 @@
 use fuel_types::bytes::{self, WORD_SIZE};
-use fuel_types::{Address, Bytes32, Color, ContractId, Word};
+use fuel_types::{Address, AssetId, Bytes32, ContractId, Word};
 
 #[cfg(feature = "std")]
 use fuel_types::bytes::SizedBytes;
@@ -10,7 +10,7 @@ use std::io;
 const OUTPUT_COIN_SIZE: usize = WORD_SIZE // Identifier
     + Address::LEN // To
     + WORD_SIZE // Amount
-    + Color::LEN; // Color
+    + AssetId::LEN; // Color
 
 const OUTPUT_CONTRACT_SIZE: usize = WORD_SIZE // Identifier
     + WORD_SIZE // Input index
@@ -73,7 +73,7 @@ pub enum Output {
     Coin {
         to: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
     },
 
     Contract {
@@ -85,19 +85,19 @@ pub enum Output {
     Withdrawal {
         to: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
     },
 
     Change {
         to: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
     },
 
     Variable {
         to: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
     },
 
     ContractCreated {
@@ -131,7 +131,7 @@ impl bytes::SizedBytes for Output {
 }
 
 impl Output {
-    pub const fn coin(to: Address, amount: Word, color: Color) -> Self {
+    pub const fn coin(to: Address, amount: Word, color: AssetId) -> Self {
         Self::Coin { to, amount, color }
     }
 
@@ -143,15 +143,15 @@ impl Output {
         }
     }
 
-    pub const fn withdrawal(to: Address, amount: Word, color: Color) -> Self {
+    pub const fn withdrawal(to: Address, amount: Word, color: AssetId) -> Self {
         Self::Withdrawal { to, amount, color }
     }
 
-    pub const fn change(to: Address, amount: Word, color: Color) -> Self {
+    pub const fn change(to: Address, amount: Word, color: AssetId) -> Self {
         Self::Change { to, amount, color }
     }
 
-    pub const fn variable(to: Address, amount: Word, color: Color) -> Self {
+    pub const fn variable(to: Address, amount: Word, color: AssetId) -> Self {
         Self::Variable { to, amount, color }
     }
 
@@ -162,7 +162,7 @@ impl Output {
         }
     }
 
-    pub const fn color(&self) -> Option<&Color> {
+    pub const fn color(&self) -> Option<&AssetId> {
         match self {
             Self::Coin { color, .. } => Some(color),
             Self::Withdrawal { color, .. } => Some(color),

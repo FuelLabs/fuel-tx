@@ -1,7 +1,7 @@
 use crate::UtxoId;
 
 use fuel_types::bytes::{self, WORD_SIZE};
-use fuel_types::{Address, Bytes32, Color, ContractId, Word};
+use fuel_types::{Address, AssetId, Bytes32, ContractId, Word};
 
 #[cfg(feature = "std")]
 use fuel_crypto::PublicKey;
@@ -19,7 +19,7 @@ const INPUT_COIN_FIXED_SIZE: usize = WORD_SIZE // Identifier
     + WORD_SIZE // UtxoId output_index
     + Address::LEN // Owner
     + WORD_SIZE // Amount
-    + Color::LEN // Color
+    + AssetId::LEN // Color
     + WORD_SIZE // Witness index
     + WORD_SIZE // Maturity
     + WORD_SIZE // Predicate size
@@ -65,7 +65,7 @@ pub enum Input {
         utxo_id: UtxoId,
         owner: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
         witness_index: u8,
         maturity: Word,
         predicate: Vec<u8>,
@@ -121,7 +121,7 @@ impl Input {
         utxo_id: UtxoId,
         owner: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
         witness_index: u8,
         maturity: Word,
         predicate: Vec<u8>,

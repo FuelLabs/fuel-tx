@@ -1,6 +1,6 @@
 use fuel_asm::InstructionResult;
 use fuel_types::bytes::{padded_len_usize, SizedBytes, WORD_SIZE};
-use fuel_types::{Address, Bytes32, Color, ContractId, Word};
+use fuel_types::{Address, AssetId, Bytes32, ContractId, Word};
 
 use alloc::vec::Vec;
 
@@ -21,7 +21,7 @@ pub enum Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: Color,
+        color: AssetId,
         gas: Word,
         a: Word,
         b: Word,
@@ -86,7 +86,7 @@ pub enum Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: Color,
+        color: AssetId,
         pc: Word,
         is: Word,
     },
@@ -95,7 +95,7 @@ pub enum Receipt {
         id: ContractId,
         to: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
         pc: Word,
         is: Word,
     },
@@ -111,7 +111,7 @@ impl Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: Color,
+        color: AssetId,
         gas: Word,
         a: Word,
         b: Word,
@@ -212,7 +212,7 @@ impl Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: Color,
+        color: AssetId,
         pc: Word,
         is: Word,
     ) -> Self {
@@ -230,7 +230,7 @@ impl Receipt {
         id: ContractId,
         to: Address,
         amount: Word,
-        color: Color,
+        color: AssetId,
         pc: Word,
         is: Word,
     ) -> Self {
@@ -317,7 +317,7 @@ impl Receipt {
         }
     }
 
-    pub const fn color(&self) -> Option<&Color> {
+    pub const fn color(&self) -> Option<&AssetId> {
         match self {
             Self::Call { color, .. } => Some(color),
             Self::Transfer { color, .. } => Some(color),
@@ -454,7 +454,7 @@ impl Receipt {
             ReceiptRepr::Call => {
                 ContractId::LEN // to
                 + WORD_SIZE // amount
-                + Color::LEN // color
+                + AssetId::LEN // color
                 + WORD_SIZE // gas
                 + WORD_SIZE // a
                 + WORD_SIZE // b
@@ -489,13 +489,13 @@ impl Receipt {
             ReceiptRepr::Transfer => {
                 ContractId::LEN // to
                 + WORD_SIZE // amount
-                + Color::LEN // digest
+                + AssetId::LEN // digest
             }
 
             ReceiptRepr::TransferOut => {
                 Address::LEN // to
                 + WORD_SIZE // amount
-                + Color::LEN // digest
+                + AssetId::LEN // digest
             }
 
             ReceiptRepr::ScriptResult => {

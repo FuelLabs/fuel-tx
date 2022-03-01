@@ -19,10 +19,10 @@ rand = { version = "0.8", default-features = false, features = ["std_rng"], opti
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]
-fuel-crypto = { version = "0.2", default-features = false, features = ["random"] }
+fuel-crypto = { version = "0.3", default-features = false, features = ["random"] }
 fuel-tx = { path = ".", features = ["builder", "random"] }
 fuel-tx-test-helpers = { path = "test-helpers" }
-fuel-types = { version = "0.2", default-features = false, features = ["random"] }
+fuel-types = { version = "0.3", default-features = false, features = ["random"] }
 rand = { version = "0.8", default-features = false, features = ["std_rng"] }
 
 [features]

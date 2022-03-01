@@ -356,9 +356,9 @@ fn output_change_color() {
     let maturity = 100;
     let block_height = 1000;
 
-    let a: Color = rng.gen();
-    let b: Color = rng.gen();
-    let c: Color = rng.gen();
+    let a: AssetId = rng.gen();
+    let b: AssetId = rng.gen();
+    let c: AssetId = rng.gen();
 
     let secret = SecretKey::random(rng);
 
@@ -461,7 +461,7 @@ fn script() {
     let block_height = 1000;
 
     let secret = SecretKey::random(rng);
-    let color: Color = rng.gen();
+    let color: AssetId = rng.gen();
 
     TransactionBuilder::script(
         vec![0xfa; MAX_SCRIPT_LENGTH as usize],
@@ -636,7 +636,7 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
@@ -650,8 +650,8 @@ fn create() {
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height)
         .err()
@@ -662,7 +662,7 @@ fn create() {
         ValidationError::TransactionOutputChangeColorDuplicated,
     ));
 
-    let color: Color = rng.gen();
+    let color: AssetId = rng.gen();
 
     let err = TransactionBuilder::create(0, rng.gen(), vec![], vec![])
         .gas_limit(MAX_GAS_PER_TX)
@@ -672,7 +672,7 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
@@ -686,7 +686,7 @@ fn create() {
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .add_output(Output::change(rng.gen(), rng.gen(), color))
         .finalize()
         .validate(block_height)
@@ -706,7 +706,7 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
@@ -740,12 +740,12 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .add_witness(vec![0xfa; CONTRACT_MAX_SIZE as usize / 4].into())
         .finalize()
         .validate(block_height)
@@ -759,12 +759,12 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .add_witness(vec![0xfa; 1 + CONTRACT_MAX_SIZE as usize].into())
         .finalize()
         .validate(block_height)
@@ -781,12 +781,12 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .add_witness(vec![0xfa; CONTRACT_MAX_SIZE as usize / 4].into())
         .finalize()
         .validate(block_height)
@@ -816,12 +816,12 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height)
         .expect("Failed to validate the transaction");
@@ -840,12 +840,12 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height)
         .err()
@@ -868,12 +868,12 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height)
         .err()
@@ -909,12 +909,12 @@ fn create() {
         rng.gen(),
         &secret,
         rng.gen(),
-        Color::default(),
+        AssetId::default(),
         maturity,
         vec![],
         vec![],
     )
-    .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+    .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
     .finalize()
     .validate(block_height)
     .expect("Failed to validate the transaction");
@@ -933,12 +933,12 @@ fn create() {
             rng.gen(),
             &secret,
             rng.gen(),
-            Color::default(),
+            AssetId::default(),
             maturity,
             vec![],
             vec![],
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height)
         .err()
@@ -964,12 +964,12 @@ fn create() {
         rng.gen(),
         &secret,
         rng.gen(),
-        Color::default(),
+        AssetId::default(),
         maturity,
         vec![],
         vec![],
     )
-    .add_output(Output::change(rng.gen(), rng.gen(), Color::default()))
+    .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
     .finalize()
     .validate(block_height)
     .err()

@@ -31,7 +31,7 @@ fn coin() {
         mut iter: I,
         utxo_id: UtxoId,
         amount: Word,
-        color: Color,
+        color: AssetId,
         maturity: Word,
         predicate: Vec<u8>,
         predicate_data: Vec<u8>,

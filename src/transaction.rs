@@ -394,7 +394,9 @@ impl Transaction {
             })
             .dedup()
             .for_each(|w| {
-                witnesses.get_mut(w).map(|w| *w = signature.as_ref().into());
+                if let Some(w) = witnesses.get_mut(w) {
+                    *w = signature.as_ref().into();
+                }
             });
     }
 

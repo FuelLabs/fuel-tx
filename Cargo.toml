@@ -11,7 +11,7 @@ repository = "https://github.com/FuelLabs/fuel-tx"
 description = "FuelVM transaction."
 
 [dependencies]
-fuel-asm = { version = "0.1", default-features = false }
+fuel-asm = { version = "0.2", default-features = false }
 fuel-crypto = { version = "0.3", default-features = false }
 fuel-types = { version = "0.3", default-features = false }
 itertools = { version = "0.10", default-features = false }

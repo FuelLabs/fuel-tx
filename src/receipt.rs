@@ -21,7 +21,7 @@ pub enum Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: AssetId,
+        asset_id: AssetId,
         gas: Word,
         a: Word,
         b: Word,
@@ -86,7 +86,7 @@ pub enum Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: AssetId,
+        asset_id: AssetId,
         pc: Word,
         is: Word,
     },
@@ -95,7 +95,7 @@ pub enum Receipt {
         id: ContractId,
         to: Address,
         amount: Word,
-        color: AssetId,
+        asset_id: AssetId,
         pc: Word,
         is: Word,
     },
@@ -111,7 +111,7 @@ impl Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: AssetId,
+        asset_id: AssetId,
         gas: Word,
         a: Word,
         b: Word,
@@ -122,7 +122,7 @@ impl Receipt {
             id,
             to,
             amount,
-            color,
+            asset_id,
             gas,
             a,
             b,
@@ -212,7 +212,7 @@ impl Receipt {
         id: ContractId,
         to: ContractId,
         amount: Word,
-        color: AssetId,
+        asset_id: AssetId,
         pc: Word,
         is: Word,
     ) -> Self {
@@ -220,7 +220,7 @@ impl Receipt {
             id,
             to,
             amount,
-            color,
+            asset_id,
             pc,
             is,
         }
@@ -230,7 +230,7 @@ impl Receipt {
         id: ContractId,
         to: Address,
         amount: Word,
-        color: AssetId,
+        asset_id: AssetId,
         pc: Word,
         is: Word,
     ) -> Self {
@@ -238,7 +238,7 @@ impl Receipt {
             id,
             to,
             amount,
-            color,
+            asset_id,
             pc,
             is,
         }
@@ -317,11 +317,11 @@ impl Receipt {
         }
     }
 
-    pub const fn color(&self) -> Option<&AssetId> {
+    pub const fn asset_id(&self) -> Option<&AssetId> {
         match self {
-            Self::Call { color, .. } => Some(color),
-            Self::Transfer { color, .. } => Some(color),
-            Self::TransferOut { color, .. } => Some(color),
+            Self::Call { asset_id, .. } => Some(asset_id),
+            Self::Transfer { asset_id, .. } => Some(asset_id),
+            Self::TransferOut { asset_id, .. } => Some(asset_id),
             _ => None,
         }
     }
@@ -454,7 +454,7 @@ impl Receipt {
             ReceiptRepr::Call => {
                 ContractId::LEN // to
                 + WORD_SIZE // amount
-                + AssetId::LEN // color
+                + AssetId::LEN // asset_id
                 + WORD_SIZE // gas
                 + WORD_SIZE // a
                 + WORD_SIZE // b

@@ -177,25 +177,25 @@ impl Transaction {
         }
     }
 
-    pub fn input_colors(&self) -> impl Iterator<Item = &AssetId> {
+    pub fn input_asset_ids(&self) -> impl Iterator<Item = &AssetId> {
         self.inputs().iter().filter_map(|input| match input {
-            Input::Coin { color, .. } => Some(color),
+            Input::Coin { asset_id, .. } => Some(asset_id),
             _ => None,
         })
     }
 
-    pub fn input_colors_unique(&self) -> impl Iterator<Item = &AssetId> {
+    pub fn input_asset_ids_unique(&self) -> impl Iterator<Item = &AssetId> {
         use itertools::Itertools;
 
-        let colors = self.input_colors();
+        let asset_ids = self.input_asset_ids();
 
         #[cfg(feature = "std")]
-        let colors = colors.unique();
+        let asset_ids = asset_ids.unique();
 
         #[cfg(not(feature = "std"))]
-        let colors = colors.sorted().dedup();
+        let asset_ids = asset_ids.sorted().dedup();
 
-        colors
+        asset_ids
     }
 
     #[cfg(feature = "std")]
@@ -335,7 +335,7 @@ impl Transaction {
         utxo_id: UtxoId,
         owner: &PublicKey,
         amount: Word,
-        color: AssetId,
+        asset_id: AssetId,
         maturity: Word,
         predicate: Vec<u8>,
         predicate_data: Vec<u8>,
@@ -347,7 +347,7 @@ impl Transaction {
             utxo_id,
             owner,
             amount,
-            color,
+            asset_id,
             witness_index,
             maturity,
             predicate,

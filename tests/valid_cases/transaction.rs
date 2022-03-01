@@ -350,7 +350,7 @@ fn max_iow() {
 }
 
 #[test]
-fn output_change_color() {
+fn output_change_asset_id() {
     let rng = &mut StdRng::seed_from_u64(8586);
 
     let maturity = 100;
@@ -419,7 +419,10 @@ fn output_change_color() {
         .err()
         .expect("Expected erroneous transaction");
 
-    assert_eq!(ValidationError::TransactionOutputChangeColorDuplicated, err);
+    assert_eq!(
+        ValidationError::TransactionOutputChangeAssetIdDuplicated,
+        err
+    );
 
     let err = TransactionBuilder::script(generate_bytes(rng), generate_bytes(rng))
         .gas_limit(MAX_GAS_PER_TX)
@@ -450,7 +453,7 @@ fn output_change_color() {
         .err()
         .expect("Expected erroneous transaction");
 
-    assert_eq!(ValidationError::TransactionOutputChangeColorNotFound, err);
+    assert_eq!(ValidationError::TransactionOutputChangeAssetIdNotFound, err);
 }
 
 #[test]
@@ -461,7 +464,7 @@ fn script() {
     let block_height = 1000;
 
     let secret = SecretKey::random(rng);
-    let color: AssetId = rng.gen();
+    let asset_id: AssetId = rng.gen();
 
     TransactionBuilder::script(
         vec![0xfa; MAX_SCRIPT_LENGTH as usize],
@@ -474,12 +477,12 @@ fn script() {
         rng.gen(),
         &secret,
         rng.gen(),
-        color,
+        asset_id,
         rng.gen(),
         generate_bytes(rng),
         generate_bytes(rng),
     )
-    .add_output(Output::change(rng.gen(), rng.gen(), color))
+    .add_output(Output::change(rng.gen(), rng.gen(), asset_id))
     .finalize()
     .validate(block_height)
     .expect("Failed to validate transaction");
@@ -495,7 +498,7 @@ fn script() {
         rng.gen(),
         &secret,
         rng.gen(),
-        color,
+        asset_id,
         rng.gen(),
         generate_bytes(rng),
         generate_bytes(rng),
@@ -522,7 +525,7 @@ fn script() {
         rng.gen(),
         &secret,
         rng.gen(),
-        color,
+        asset_id,
         rng.gen(),
         generate_bytes(rng),
         generate_bytes(rng),
@@ -546,7 +549,7 @@ fn script() {
         rng.gen(),
         &secret,
         rng.gen(),
-        color,
+        asset_id,
         rng.gen(),
         generate_bytes(rng),
         generate_bytes(rng),
@@ -659,10 +662,10 @@ fn create() {
 
     assert!(matches!(
         err,
-        ValidationError::TransactionOutputChangeColorDuplicated,
+        ValidationError::TransactionOutputChangeAssetIdDuplicated,
     ));
 
-    let color: AssetId = rng.gen();
+    let asset_id: AssetId = rng.gen();
 
     let err = TransactionBuilder::create(0, rng.gen(), vec![], vec![])
         .gas_limit(MAX_GAS_PER_TX)
@@ -681,13 +684,13 @@ fn create() {
             rng.gen(),
             &secret_b,
             rng.gen(),
-            color,
+            asset_id,
             maturity,
             vec![],
             vec![],
         )
         .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
-        .add_output(Output::change(rng.gen(), rng.gen(), color))
+        .add_output(Output::change(rng.gen(), rng.gen(), asset_id))
         .finalize()
         .validate(block_height)
         .err()

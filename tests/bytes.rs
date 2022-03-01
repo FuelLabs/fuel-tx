@@ -273,6 +273,7 @@ fn receipt() {
         ),
         Receipt::script_result(
             InstructionResult::error(
+                // TODO rename to AssetIdNotFound
                 PanicReason::ColorNotFound,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),

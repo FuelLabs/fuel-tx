@@ -460,6 +460,40 @@ fn output_change_asset_id() {
         err,
         ValidationError::TransactionOutputChangeAssetIdNotFound(asset_id) if asset_id == c
     ));
+
+    let err = TransactionBuilder::script(generate_bytes(rng), generate_bytes(rng))
+        .gas_limit(MAX_GAS_PER_TX)
+        .gas_price(rng.gen())
+        .maturity(maturity)
+        .add_unsigned_coin_input(
+            rng.gen(),
+            &secret,
+            rng.gen(),
+            a,
+            rng.gen(),
+            generate_bytes(rng),
+            generate_bytes(rng),
+        )
+        .add_unsigned_coin_input(
+            rng.gen(),
+            &secret,
+            rng.gen(),
+            b,
+            rng.gen(),
+            generate_bytes(rng),
+            generate_bytes(rng),
+        )
+        .add_output(Output::coin(rng.gen(), rng.next_u64(), a))
+        .add_output(Output::coin(rng.gen(), rng.next_u64(), c))
+        .finalize()
+        .validate(block_height)
+        .err()
+        .expect("Expected erroneous transaction");
+
+    assert!(matches!(
+        err,
+        ValidationError::TransactionOutputCoinAssetIdNotFound(asset_id) if asset_id == c
+    ));
 }
 
 #[test]

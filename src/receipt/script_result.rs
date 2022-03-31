@@ -1,3 +1,5 @@
+use fuel_types::Word;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde-types-minimal",
@@ -11,7 +13,7 @@ pub enum ScriptExecutionResult {
     GenericFailure(u64),
 }
 
-impl From<ScriptExecutionResult> for u64 {
+impl From<ScriptExecutionResult> for Word {
     fn from(result: ScriptExecutionResult) -> Self {
         match result {
             ScriptExecutionResult::Success => 0x00,
@@ -22,7 +24,7 @@ impl From<ScriptExecutionResult> for u64 {
     }
 }
 
-impl From<u64> for ScriptExecutionResult {
+impl From<Word> for ScriptExecutionResult {
     fn from(value: u64) -> Self {
         match value {
             0x00 => Self::Success,

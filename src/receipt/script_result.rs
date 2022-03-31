@@ -27,7 +27,7 @@ impl From<u64> for ScriptExecutionResult {
         match value {
             0x00 => Self::Success,
             0x01 => Self::Revert,
-            0x02 => Self::Revert,
+            0x02 => Self::Panic,
             value => Self::GenericFailure(value),
         }
     }

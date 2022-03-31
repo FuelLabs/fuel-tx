@@ -483,6 +483,10 @@ fn receipt() {
             rng.gen(),
             rng.gen(),
         ),
+        Receipt::script_result(ScriptExecutionResult::Success, rng.gen()),
+        Receipt::script_result(ScriptExecutionResult::Panic, rng.gen()),
+        Receipt::script_result(ScriptExecutionResult::Revert, rng.gen()),
+        Receipt::script_result(ScriptExecutionResult::GenericFailure(rng.gen()), rng.gen()),
     ]);
 }
 

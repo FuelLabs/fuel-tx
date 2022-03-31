@@ -347,7 +347,7 @@ impl io::Write for Receipt {
 
                 let result = ScriptExecutionResult::from(result);
 
-                *self = Self::script_result(result.into(), gas_used);
+                *self = Self::script_result(result, gas_used);
             }
         }
 

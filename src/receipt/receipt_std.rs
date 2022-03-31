@@ -170,7 +170,7 @@ impl io::Read for Receipt {
             Self::ScriptResult { result, gas_used } => {
                 let buf = bytes::store_number_unchecked(buf, ReceiptRepr::ScriptResult as Word);
 
-                let result: Word = (*result).into();
+                let result = Word::from(*result);
                 let buf = bytes::store_number_unchecked(buf, result);
 
                 bytes::store_number_unchecked(buf, *gas_used);

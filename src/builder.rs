@@ -1,9 +1,9 @@
 use crate::{Input, Output, StorageSlot, Transaction, UtxoId, Witness};
 
-use fuel_crypto::SecretKey;
+use fuel_crypto::{PublicKey, SecretKey};
 use fuel_types::{AssetId, ContractId, Salt, Word};
 
-use alloc::vec::Vec;
+use alloc::{collections::BTreeMap, vec::Vec};
 use core::mem;
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct TransactionBuilder<'a> {
 
     // We take the key by reference so this lib won't have the responsibility to properly zeroize
     // the keys
-    sign_keys: Vec<&'a SecretKey>,
+    sign_keys: BTreeMap<&'a SecretKey, PublicKey>,
 }
 
 impl<'a> TransactionBuilder<'a> {
@@ -35,7 +35,7 @@ impl<'a> TransactionBuilder<'a> {
             Default::default(),
             Default::default(),
         );
-        let sign_keys = Vec::new();
+        let sign_keys = BTreeMap::new();
 
         Self { tx, sign_keys }
     }
@@ -52,7 +52,7 @@ impl<'a> TransactionBuilder<'a> {
             Default::default(),
             Default::default(),
         );
-        let sign_keys = Vec::new();
+        let sign_keys = BTreeMap::new();
 
         Self { tx, sign_keys }
     }
@@ -91,12 +91,14 @@ impl<'a> TransactionBuilder<'a> {
         predicate: Vec<u8>,
         predicate_data: Vec<u8>,
     ) -> &mut Self {
-        let pk = secret.public_key();
+        let pk = self
+            .sign_keys
+            .entry(secret)
+            .or_insert_with(|| secret.public_key());
 
-        self.sign_keys.push(secret);
         self.tx.add_unsigned_coin_input(
             utxo_id,
-            &pk,
+            pk,
             amount,
             asset_id,
             maturity,
@@ -140,7 +142,7 @@ impl<'a> TransactionBuilder<'a> {
     pub fn finalize(&mut self) -> Transaction {
         let mut tx = mem::take(&mut self.tx);
 
-        self.sign_keys.iter().for_each(|k| tx.sign_inputs(k));
+        self.sign_keys.iter().for_each(|k| tx.sign_inputs(k.0));
 
         tx
     }

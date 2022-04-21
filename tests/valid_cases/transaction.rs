@@ -201,22 +201,21 @@ fn max_iow() {
         .gas_limit(MAX_GAS_PER_TX)
         .maturity(maturity);
 
-    let secrets: Vec<SecretKey> = (0..MAX_INPUTS as usize - builder.inputs().len())
-        .map(|_| SecretKey::random(rng))
-        .collect();
+    let secret = SecretKey::random(rng);
 
     let asset_id: AssetId = rng.gen();
-    secrets.iter().for_each(|k| {
+
+    for _ in 0..MAX_INPUTS as usize - builder.inputs().len() {
         builder.add_unsigned_coin_input(
             rng.gen(),
-            k,
+            &secret,
             rng.gen(),
             asset_id,
             maturity,
             generate_bytes(rng),
             generate_bytes(rng),
         );
-    });
+    }
 
     while builder.outputs().len() < MAX_OUTPUTS as usize {
         builder.add_output(Output::coin(rng.gen(), rng.gen(), asset_id));
@@ -239,21 +238,19 @@ fn max_iow() {
         .gas_limit(MAX_GAS_PER_TX)
         .maturity(maturity);
 
-    let secrets: Vec<SecretKey> = (0..1 + MAX_INPUTS as usize - builder.inputs().len())
-        .map(|_| SecretKey::random(rng))
-        .collect();
+    let secret = SecretKey::random(rng);
 
-    secrets.iter().for_each(|k| {
+    for _ in 0..1 + MAX_INPUTS as usize - builder.inputs().len() {
         builder.add_unsigned_coin_input(
             rng.gen(),
-            k,
+            &secret,
             rng.gen(),
             rng.gen(),
             maturity,
             generate_bytes(rng),
             generate_bytes(rng),
         );
-    });
+    }
 
     while builder.outputs().len() < MAX_OUTPUTS as usize {
         builder.add_output(Output::coin(rng.gen(), rng.gen(), rng.gen()));
@@ -279,21 +276,18 @@ fn max_iow() {
         .gas_limit(MAX_GAS_PER_TX)
         .maturity(maturity);
 
-    let secrets: Vec<SecretKey> = (0..MAX_INPUTS as usize - builder.inputs().len())
-        .map(|_| SecretKey::random(rng))
-        .collect();
-
-    secrets.iter().for_each(|k| {
+    let secret = SecretKey::random(rng);
+    for _ in 0..MAX_INPUTS as usize - builder.inputs().len() {
         builder.add_unsigned_coin_input(
             rng.gen(),
-            k,
+            &secret,
             rng.gen(),
             rng.gen(),
             maturity,
             generate_bytes(rng),
             generate_bytes(rng),
         );
-    });
+    }
 
     while builder.outputs().len() < 1 + MAX_OUTPUTS as usize {
         builder.add_output(Output::coin(rng.gen(), rng.gen(), rng.gen()));
@@ -319,21 +313,19 @@ fn max_iow() {
         .gas_limit(MAX_GAS_PER_TX)
         .maturity(maturity);
 
-    let secrets: Vec<SecretKey> = (0..MAX_INPUTS as usize - builder.inputs().len())
-        .map(|_| SecretKey::random(rng))
-        .collect();
+    let secret_key = SecretKey::random(rng);
 
-    secrets.iter().for_each(|k| {
+    for _ in 0..MAX_INPUTS as usize - builder.inputs().len() {
         builder.add_unsigned_coin_input(
             rng.gen(),
-            k,
+            &secret_key,
             rng.gen(),
             rng.gen(),
             maturity,
             generate_bytes(rng),
             generate_bytes(rng),
         );
-    });
+    }
 
     while builder.outputs().len() < MAX_OUTPUTS as usize {
         builder.add_output(Output::coin(rng.gen(), rng.gen(), rng.gen()));

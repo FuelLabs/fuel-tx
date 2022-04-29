@@ -152,7 +152,9 @@ impl Transaction {
 
     pub fn input_asset_ids(&self) -> impl Iterator<Item = &AssetId> {
         self.inputs().iter().filter_map(|input| match input {
-            Input::CoinSigned { asset_id, .. } => Some(asset_id),
+            Input::CoinPredicate { asset_id, .. } | Input::CoinSigned { asset_id, .. } => {
+                Some(asset_id)
+            }
             _ => None,
         })
     }

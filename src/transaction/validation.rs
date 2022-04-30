@@ -197,11 +197,13 @@ impl Transaction {
 
         self.inputs()
             .iter()
+            .filter(|input| !matches!(input, Input::Contract { .. }))
             .enumerate()
             .try_for_each(|(index, input)| {
                 if self
                     .inputs()
                     .iter()
+                    .filter(|input| !matches!(input, Input::Contract { .. }))
                     .filter(|other_input| other_input.utxo_id() == input.utxo_id())
                     .count()
                     > 1

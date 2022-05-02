@@ -142,7 +142,7 @@ impl<'a> TransactionBuilder<'a> {
     pub fn finalize(&mut self) -> Transaction {
         let mut tx = mem::take(&mut self.tx);
 
-        self.sign_keys.iter().for_each(|k| tx.sign_inputs(k.0));
+        self.sign_keys.keys().for_each(|k| tx.sign_inputs(k));
 
         tx
     }

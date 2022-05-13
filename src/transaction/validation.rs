@@ -306,13 +306,17 @@ impl Transaction {
                 inputs,
                 outputs,
                 witnesses,
+                bytecode_length,
                 bytecode_witness_index,
                 static_contracts,
                 storage_slots,
                 ..
             } => {
                 match witnesses.get(*bytecode_witness_index as usize) {
-                    Some(witness) if witness.as_ref().len() as u64 > CONTRACT_MAX_SIZE => {
+                    Some(witness)
+                        if witness.as_ref().len() as Word > CONTRACT_MAX_SIZE
+                            || witness.as_ref().len() as Word != *bytecode_length =>
+                    {
                         Err(ValidationError::TransactionCreateBytecodeLen)?
                     }
                     None => Err(ValidationError::TransactionCreateBytecodeWitnessIndex)?,

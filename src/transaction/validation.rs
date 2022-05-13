@@ -312,15 +312,15 @@ impl Transaction {
                 storage_slots,
                 ..
             } => {
-                match witnesses.get(*bytecode_witness_index as usize) {
-                    Some(witness)
-                        if witness.as_ref().len() as Word > CONTRACT_MAX_SIZE
-                            || (witness.as_ref().len() / 4) as Word != *bytecode_length =>
-                    {
-                        Err(ValidationError::TransactionCreateBytecodeLen)?
-                    }
-                    None => Err(ValidationError::TransactionCreateBytecodeWitnessIndex)?,
-                    _ => (),
+                let bytecode_witness_len = witnesses
+                    .get(*bytecode_witness_index as usize)
+                    .map(|w| w.as_ref().len() as Word)
+                    .ok_or(ValidationError::TransactionCreateBytecodeWitnessIndex)?;
+
+                if bytecode_witness_len > CONTRACT_MAX_SIZE
+                    || bytecode_witness_len / 4 != *bytecode_length
+                {
+                    return Err(ValidationError::TransactionCreateBytecodeLen);
                 }
 
                 if static_contracts.len() > MAX_STATIC_CONTRACTS as usize {

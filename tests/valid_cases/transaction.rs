@@ -1015,3 +1015,69 @@ fn create() {
 
     assert_eq!(ValidationError::TransactionCreateStorageSlotOrder, err);
 }
+
+#[test]
+fn tx_id_bytecode_len() {
+    let rng = &mut StdRng::seed_from_u64(8586);
+
+    let maturity = 100;
+    let gas_price = rng.gen();
+    let byte_price = rng.gen();
+    let salt = rng.gen();
+
+    let w_a = vec![0xfau8; 4].into();
+    let w_b = vec![0xfau8; 8].into();
+    let w_c = vec![0xfbu8; 4].into();
+
+    let tx_a = Transaction::create(
+        gas_price,
+        MAX_GAS_PER_TX,
+        byte_price,
+        maturity,
+        0,
+        salt,
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![w_a],
+    );
+
+    let tx_b = Transaction::create(
+        gas_price,
+        MAX_GAS_PER_TX,
+        byte_price,
+        maturity,
+        0,
+        salt,
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![w_b],
+    );
+
+    let tx_c = Transaction::create(
+        gas_price,
+        MAX_GAS_PER_TX,
+        byte_price,
+        maturity,
+        0,
+        salt,
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![w_c],
+    );
+
+    let id_a = tx_a.id();
+    let id_b = tx_b.id();
+    let id_c = tx_c.id();
+
+    // bytecode with different length should produce different id
+    assert_ne!(id_a, id_b);
+
+    // bytecode with same length and different content should produce same id
+    assert_eq!(id_a, id_c);
+}

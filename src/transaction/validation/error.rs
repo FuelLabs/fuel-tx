@@ -64,6 +64,8 @@ pub enum ValidationError {
     },
     TransactionGasLimit,
     TransactionMaturity,
+    /// When a transaction doesn't contain at least one coin input
+    TransactionNoCoinInput,
     TransactionInputsMax,
     TransactionOutputsMax,
     TransactionWitnessesMax,

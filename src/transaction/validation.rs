@@ -159,6 +159,10 @@ impl Transaction {
             Err(ValidationError::TransactionMaturity)?;
         }
 
+        if self.inputs().iter().filter(|input| input.is_coin()).count() == 0 {
+            Err(ValidationError::TransactionNoCoinInput)?;
+        }
+
         if self.inputs().len() > MAX_INPUTS as usize {
             Err(ValidationError::TransactionInputsMax)?
         }

@@ -315,7 +315,7 @@ impl Transaction {
                 match witnesses.get(*bytecode_witness_index as usize) {
                     Some(witness)
                         if witness.as_ref().len() as Word > CONTRACT_MAX_SIZE
-                            || witness.as_ref().len() as Word != *bytecode_length =>
+                            || (witness.as_ref().len() / 4) as Word != *bytecode_length =>
                     {
                         Err(ValidationError::TransactionCreateBytecodeLen)?
                     }

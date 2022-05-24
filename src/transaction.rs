@@ -192,6 +192,21 @@ impl Transaction {
             .unique()
     }
 
+    #[cfg(feature = "std")]
+    pub fn check_predicate_owners(&self) -> bool {
+        self.inputs()
+            .iter()
+            .filter_map(|i| match i {
+                Input::CoinPredicate {
+                    owner, predicate, ..
+                } => Some((owner, predicate)),
+                _ => None,
+            })
+            .fold(true, |result, (owner, predicate)| {
+                result && Input::is_predicate_owner_valid(owner, predicate)
+            })
+    }
+
     pub const fn gas_price(&self) -> Word {
         match self {
             Self::Script { gas_price, .. } => *gas_price,

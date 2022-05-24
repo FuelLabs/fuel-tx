@@ -1,5 +1,4 @@
 use fuel_asm::Opcode;
-use fuel_crypto::Hasher;
 use fuel_tx::consts::MAX_GAS_PER_TX;
 use fuel_tx::*;
 use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_bytes};
@@ -680,7 +679,7 @@ fn create_input_coin_data_offset() {
     let predicate = generate_nonempty_bytes(rng);
     let predicate_data = generate_bytes(rng);
 
-    let owner = (*Hasher::hash(predicate.as_slice())).into();
+    let owner = (*Contract::root_from_code(&predicate)).into();
 
     let input_coin = Input::coin_predicate(
         rng.gen(),
@@ -781,7 +780,7 @@ fn script_input_coin_data_offset() {
     let predicate = generate_nonempty_bytes(rng);
     let predicate_data = generate_bytes(rng);
 
-    let owner = (*Hasher::hash(predicate.as_slice())).into();
+    let owner = (*Contract::root_from_code(&predicate)).into();
 
     let input_coin = Input::coin_predicate(
         rng.gen(),

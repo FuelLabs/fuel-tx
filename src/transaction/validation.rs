@@ -2,7 +2,6 @@ use super::{Input, Output, Transaction, Witness};
 use crate::consts::*;
 use crate::transaction::internals;
 
-use fuel_crypto::Hasher;
 use fuel_types::{AssetId, Word};
 
 #[cfg(feature = "std")]
@@ -37,38 +36,47 @@ impl Input {
         txhash: &Bytes32,
         witnesses: &[Witness],
     ) -> Result<(), ValidationError> {
-        if let Input::CoinSigned {
-            witness_index,
-            owner,
-            ..
-        } = self
-        {
-            let witness = witnesses
-                .get(*witness_index as usize)
-                .ok_or(ValidationError::InputCoinWitnessIndexBounds { index })?
-                .as_ref();
+        match self {
+            Self::CoinSigned {
+                witness_index,
+                owner,
+                ..
+            } => {
+                let witness = witnesses
+                    .get(*witness_index as usize)
+                    .ok_or(ValidationError::InputCoinWitnessIndexBounds { index })?
+                    .as_ref();
 
-            if witness.len() != Signature::LEN {
-                return Err(ValidationError::InputCoinInvalidSignature { index });
+                if witness.len() != Signature::LEN {
+                    return Err(ValidationError::InputCoinInvalidSignature { index });
+                }
+
+                // Safety: checked length
+                let signature = unsafe { Signature::as_ref_unchecked(witness) };
+
+                // Safety: checked length
+                let message = unsafe { Message::as_ref_unchecked(txhash.as_ref()) };
+
+                let pk = signature
+                    .recover(message)
+                    .map_err(|_| ValidationError::InputCoinInvalidSignature { index })
+                    .map(|pk| Input::coin_owner(&pk))?;
+
+                if owner != &pk {
+                    return Err(ValidationError::InputCoinInvalidSignature { index });
+                }
+
+                Ok(())
             }
 
-            // Safety: checked length
-            let signature = unsafe { Signature::as_ref_unchecked(witness) };
-
-            // Safety: checked length
-            let message = unsafe { Message::as_ref_unchecked(txhash.as_ref()) };
-
-            let pk = signature
-                .recover(message)
-                .map_err(|_| ValidationError::InputCoinInvalidSignature { index })
-                .map(|pk| Input::coin_owner(&pk))?;
-
-            if owner != &pk {
-                return Err(ValidationError::InputCoinInvalidSignature { index });
+            Self::CoinPredicate {
+                owner, predicate, ..
+            } if !Input::is_predicate_owner_valid(owner, predicate) => {
+                Err(ValidationError::InputCoinPredicateOwner { index })
             }
+
+            _ => Ok(()),
         }
-
-        Ok(())
     }
 
     pub fn validate_without_signature(
@@ -88,12 +96,6 @@ impl Input {
                 if predicate_data.len() > MAX_PREDICATE_DATA_LENGTH as usize =>
             {
                 Err(ValidationError::InputCoinPredicateDataLength { index })
-            }
-
-            Self::CoinPredicate {
-                owner, predicate, ..
-            } if Hasher::hash(predicate.as_slice()).as_ref() != owner.as_ref() => {
-                Err(ValidationError::InputCoinPredicateOwner { index })
             }
 
             Self::CoinPredicate { .. } => Ok(()),

@@ -230,6 +230,16 @@ impl Input {
             _ => None,
         }
     }
+
+    #[cfg(feature = "std")]
+    pub fn is_predicate_owner_valid(owner: &Address, predicate: &[u8]) -> bool {
+        use crate::Contract;
+
+        // TODO use as no-std as soon as a no-std merkle backend is available
+        let root = Contract::root_from_code(predicate);
+
+        owner.as_ref() == root.as_ref()
+    }
 }
 
 #[cfg(feature = "std")]

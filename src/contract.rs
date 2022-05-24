@@ -7,15 +7,15 @@ use fuel_crypto::Hasher;
 use fuel_types::{Bytes32, ContractId, Salt};
 
 #[cfg(feature = "std")]
-use fuel_merkle::{binary::MerkleTree, common::StorageMap};
+use fuel_merkle::{binary, common::StorageMap, sparse};
 
 #[cfg(feature = "std")]
-use fuel_types::Bytes64;
+use fuel_types::Bytes8;
 
 use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
-use core::cmp;
+use core::iter;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -24,17 +24,40 @@ pub struct Contract(Vec<u8>);
 
 impl Contract {
     #[cfg(feature = "std")]
-    /// Calculate a binary merkle root with in-memory storage
-    fn ephemeral_merkle_root<L, I>(mut leaves: I) -> Bytes32
+    /// Calculate the code root of the contract, using [`Self::root_from_code`].
+    pub fn root(&self) -> Bytes32 {
+        Self::root_from_code(self)
+    }
+
+    #[cfg(feature = "std")]
+    /// Calculate the code root from a contract.
+    ///
+    /// <https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/identifiers.md#contract-id>
+    pub fn root_from_code<B>(bytes: B) -> Bytes32
     where
-        L: AsRef<[u8]>,
-        I: Iterator<Item = L>,
+        B: AsRef<[u8]>,
     {
         let mut storage = StorageMap::new();
-        let mut tree = MerkleTree::new(&mut storage);
+        let mut tree = binary::MerkleTree::new(&mut storage);
 
-        // TODO fuel-merkle should have infallible in-memory struct
-        leaves
+        bytes
+            .as_ref()
+            .chunks(Bytes8::LEN)
+            .map(|c| {
+                if c.len() == Bytes8::LEN {
+                    // Safety: checked len chunk
+                    unsafe { Bytes8::from_slice_unchecked(c) }
+                } else {
+                    // Potential collision with non-padded input. Consider adding an extra leaf
+                    // for padding?
+                    let mut b = [0u8; 8];
+
+                    let l = c.len();
+                    (&mut b[..l]).copy_from_slice(c);
+
+                    b.into()
+                }
+            })
             .try_for_each(|l| tree.push(l.as_ref()))
             .and_then(|_| tree.root())
             .expect("In-memory impl should be infallible")
@@ -42,35 +65,25 @@ impl Contract {
     }
 
     #[cfg(feature = "std")]
-    /// Calculate the code root from a contract.
-    ///
-    /// <https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/identifiers.md#contract-id>
-    pub fn root(&self) -> Bytes32 {
-        let root = self.0.chunks(8).map(|c| {
-            let mut bytes = [0u8; 8];
-
-            let l = cmp::min(c.len(), 8);
-            (&mut bytes[..l]).copy_from_slice(c);
-
-            bytes
-        });
-
-        Self::ephemeral_merkle_root(root)
-    }
-
-    #[cfg(feature = "std")]
     /// Calculate the root of the initial storage slots for this contract
-    /// TODO: Use a sparse merkle tree once the implementation is available
-    pub fn initial_state_root(storage_slots: &[StorageSlot]) -> Bytes32 {
-        let leaves = storage_slots.iter().map(Bytes64::from);
+    pub fn initial_state_root<'a, I>(mut storage_slots: I) -> Bytes32
+    where
+        I: Iterator<Item = &'a StorageSlot>,
+    {
+        let mut storage = StorageMap::new();
+        let mut tree = sparse::MerkleTree::new(&mut storage);
 
-        Self::ephemeral_merkle_root(leaves)
+        storage_slots
+            .try_for_each(|s| tree.update(s.key(), s.value().as_ref()))
+            .expect("In-memory impl should be infallible");
+
+        tree.root().into()
     }
 
     #[cfg(feature = "std")]
     /// The default state root value without any entries
     pub fn default_state_root() -> Bytes32 {
-        Self::initial_state_root(&[])
+        Self::initial_state_root(iter::empty())
     }
 
     /// Calculate and return the contract id, provided a salt, code root and state root.

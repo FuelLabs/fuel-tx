@@ -221,6 +221,14 @@ impl Input {
         INPUT_COIN_FIXED_SIZE
     }
 
+    pub fn coin_predicate_len(&self) -> Option<usize> {
+        match self {
+            Input::CoinPredicate { predicate, .. } => Some(bytes::padded_len(predicate.as_slice())),
+
+            _ => None,
+        }
+    }
+
     pub fn coin_predicate_data_offset(&self) -> Option<usize> {
         match self {
             Input::CoinPredicate { predicate, .. } => {

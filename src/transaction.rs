@@ -207,6 +207,15 @@ impl Transaction {
             })
     }
 
+    #[cfg(feature = "std")]
+    pub fn check_predicate_owner(&self, idx: usize) -> bool {
+        matches!(self.inputs().get(idx),
+        Some(Input::CoinPredicate {
+                            owner, predicate, ..
+                        }) if Input::is_predicate_owner_valid(owner, predicate)
+                )
+    }
+
     pub const fn gas_price(&self) -> Word {
         match self {
             Self::Script { gas_price, .. } => *gas_price,

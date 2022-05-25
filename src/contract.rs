@@ -155,3 +155,53 @@ impl TryFrom<&Transaction> for Contract {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use fuel_types::bytes::WORD_SIZE;
+    use proptest::{prop_assert_eq, proptest};
+    use rand::{rngs::StdRng, RngCore, SeedableRng};
+    use rstest::rstest;
+
+    macro_rules! set_snapshot_suffix {
+        ($($expr:expr),*) => {{
+            let mut settings = insta::Settings::clone_current();
+            settings.set_snapshot_suffix(format!($($expr,)*));
+            settings.bind_to_thread();
+        }}
+    }
+
+    // safe-guard against breaking changes to the code root calculation for valid
+    // sizes of bytecode (multiples of instruction size in bytes (half-word))
+    #[rstest]
+    fn code_root_snapshot(#[values(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100)] instructions: usize) {
+        let mut rng = StdRng::seed_from_u64(100);
+        let code_len = instructions * WORD_SIZE / 2;
+        let mut code = alloc::vec![0u8; code_len];
+        rng.fill_bytes(code.as_mut_slice());
+
+        // compute root
+        let root = Contract::root_from_code(code);
+
+        // take root snapshot
+        set_snapshot_suffix!("instructions-{}", instructions);
+        insta::assert_debug_snapshot!(root);
+    }
+
+    // validate code_root is always equivalent to contract.root
+    proptest! {
+        #[test]
+        fn contract_root_matches_code_root(instructions in 0usize..100) {
+            let mut rng = StdRng::seed_from_u64(100);
+            let code_len = instructions * WORD_SIZE / 2;
+            let mut code = alloc::vec![0u8; code_len];
+            rng.fill_bytes(code.as_mut_slice());
+            let contract = Contract::from(code.clone());
+            // compute root
+            let code_root = Contract::root_from_code(code);
+            let contract_root = contract.root();
+            prop_assert_eq!(code_root, contract_root);
+        }
+    }
+}

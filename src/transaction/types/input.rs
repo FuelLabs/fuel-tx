@@ -221,6 +221,14 @@ impl Input {
         INPUT_COIN_FIXED_SIZE
     }
 
+    pub fn coin_predicate_len(&self) -> Option<usize> {
+        match self {
+            Input::CoinPredicate { predicate, .. } => Some(bytes::padded_len(predicate.as_slice())),
+
+            _ => None,
+        }
+    }
+
     pub fn coin_predicate_data_offset(&self) -> Option<usize> {
         match self {
             Input::CoinPredicate { predicate, .. } => {
@@ -232,13 +240,24 @@ impl Input {
     }
 
     #[cfg(feature = "std")]
-    pub fn is_predicate_owner_valid(owner: &Address, predicate: &[u8]) -> bool {
+    pub fn predicate_owner<P>(predicate: P) -> Address
+    where
+        P: AsRef<[u8]>,
+    {
         use crate::Contract;
 
         // TODO use as no-std as soon as a no-std merkle backend is available
         let root = Contract::root_from_code(predicate);
 
-        owner.as_ref() == root.as_ref()
+        (*root).into()
+    }
+
+    #[cfg(feature = "std")]
+    pub fn is_predicate_owner_valid<P>(owner: &Address, predicate: P) -> bool
+    where
+        P: AsRef<[u8]>,
+    {
+        owner == &Self::predicate_owner(predicate)
     }
 }
 

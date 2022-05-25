@@ -6,11 +6,11 @@ pub struct ConsensusParameters {
     /// Maximum contract size, in bytes.
     pub contract_max_size: u64,
     /// Maximum number of inputs.
-    pub max_inputs: u8,
+    pub max_inputs: u64,
     /// Maximum number of outputs.
-    pub max_outputs: u8,
+    pub max_outputs: u64,
     /// Maximum number of witnesses.
-    pub max_witnesses: u8,
+    pub max_witnesses: u64,
     /// Maximum gas per transaction.
     pub max_gas_per_tx: u64,
     /// Maximum length of script, in instructions.
@@ -50,9 +50,9 @@ impl Default for ConsensusParameters {
 /// reasonable settings, they may not be useful for every network instantiation.
 pub mod default_parameters {
     pub const CONTRACT_MAX_SIZE: u64 = 16 * 1024 * 1024;
-    pub const MAX_INPUTS: u8 = 255;
-    pub const MAX_OUTPUTS: u8 = 255;
-    pub const MAX_WITNESSES: u8 = 255;
+    pub const MAX_INPUTS: u64 = 255;
+    pub const MAX_OUTPUTS: u64 = 255;
+    pub const MAX_WITNESSES: u64 = 255;
     pub const MAX_GAS_PER_TX: u64 = 100_000_000;
     pub const MAX_SCRIPT_LENGTH: u64 = 1024 * 1024;
     pub const MAX_SCRIPT_DATA_LENGTH: u64 = 1024 * 1024;

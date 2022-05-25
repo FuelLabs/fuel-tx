@@ -12,9 +12,9 @@ pub const MAX_STORAGE_SLOTS: u64 = 1024;
 pub const MAX_SCRIPT_LENGTH: u64 = 1024;
 pub const MAX_SCRIPT_DATA_LENGTH: u64 = 1024;
 pub const MAX_STATIC_CONTRACTS: u64 = 16;
-pub const MAX_INPUTS: u8 = 16;
-pub const MAX_OUTPUTS: u8 = 16;
-pub const MAX_WITNESSES: u8 = 16;
+pub const MAX_INPUTS: u64 = 16;
+pub const MAX_OUTPUTS: u64 = 16;
+pub const MAX_WITNESSES: u64 = 16;
 
 // Setup custom consensus params struct for testing
 pub const CONSENSUS_PARAMS: ConsensusParameters = ConsensusParameters {

@@ -159,7 +159,8 @@ impl TryFrom<&Transaction> for Contract {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fuel_types::bytes::WORD_SIZE;
+    use fuel_types::{bytes::WORD_SIZE, Bytes64};
+    use itertools::Itertools;
     use proptest::{prop_assert_eq, proptest};
     use rand::{rngs::StdRng, RngCore, SeedableRng};
     use rstest::rstest;
@@ -203,5 +204,22 @@ mod tests {
             let contract_root = contract.root();
             prop_assert_eq!(code_root, contract_root);
         }
+    }
+
+    #[rstest]
+    fn state_root_snapshot(
+        #[values(Vec::new(), vec![Bytes64::new([1u8; 64])])] state_slot_bytes: Vec<Bytes64>,
+    ) {
+        let slots: Vec<StorageSlot> = state_slot_bytes.iter().map(Into::into).collect_vec();
+        let state_root = Contract::initial_state_root(&mut slots.iter());
+        // take root snapshot
+        set_snapshot_suffix!("state-root-{}", slots.len());
+        insta::assert_debug_snapshot!(state_root);
+    }
+
+    #[test]
+    fn default_state_root_snapshot() {
+        let default_root = Contract::default_state_root();
+        insta::assert_debug_snapshot!(default_root);
     }
 }

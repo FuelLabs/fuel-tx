@@ -51,6 +51,7 @@ fn contract() {
         )
         .err()
         .unwrap();
+
     assert_eq!(ValidationError::OutputContractInputIndex { index: 2 }, err);
 
     let err = Output::contract(2, rng.gen(), rng.gen())
@@ -70,17 +71,38 @@ fn contract() {
         )
         .err()
         .unwrap();
+
     assert_eq!(ValidationError::OutputContractInputIndex { index: 2 }, err);
 }
 
 #[test]
-fn withdrawal() {
+fn message() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;
 
-    Output::withdrawal(rng.gen(), rng.next_u64(), rng.gen())
+    Output::message(Address::zeroed(), 0)
         .validate(1, &[])
-        .unwrap();
+        .expect("expected valid zeroed output");
+
+    let err = Output::message(rng.gen(), 0)
+        .validate(1, &[])
+        .err()
+        .expect("expected invalid output with recipient");
+
+    assert_eq!(
+        ValidationError::OutputMessageRecipientNotZero { index: 1 },
+        err
+    );
+
+    let err = Output::message(Address::zeroed(), rng.gen())
+        .validate(1, &[])
+        .err()
+        .expect("expected invalid output with amount");
+
+    assert_eq!(
+        ValidationError::OutputMessageAmountNotZero { index: 1 },
+        err
+    );
 }
 
 #[test]

@@ -84,6 +84,11 @@ impl Transaction {
 
             Output::Change { amount, .. } => *amount = 0,
 
+            Output::Message { recipient, amount } => {
+                recipient.iter_mut().for_each(|b| *b = 0);
+                *amount = 0;
+            }
+
             Output::Variable {
                 to,
                 amount,
@@ -106,7 +111,7 @@ impl Transaction {
 mod tests {
     use crate::*;
 
-    use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_bytes};
+    use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
     use rand::rngs::StdRng;
     use rand::{Rng, RngCore, SeedableRng};
     use std::io::{Read, Write};
@@ -248,9 +253,8 @@ mod tests {
             assert_io_eq!(tx, outputs_mut, Output::Contract, balance_root, invert);
             assert_io_eq!(tx, outputs_mut, Output::Contract, state_root, invert);
 
-            assert_io_ne!(tx, outputs_mut, Output::Withdrawal, to, invert);
-            assert_io_ne!(tx, outputs_mut, Output::Withdrawal, amount, not);
-            assert_io_ne!(tx, outputs_mut, Output::Withdrawal, asset_id, invert);
+            assert_io_eq!(tx, outputs_mut, Output::Message, recipient, invert);
+            assert_io_eq!(tx, outputs_mut, Output::Message, amount, not);
 
             assert_io_ne!(tx, outputs_mut, Output::Change, to, invert);
             assert_io_eq!(tx, outputs_mut, Output::Change, amount, not);
@@ -297,7 +301,7 @@ mod tests {
                     rng.next_u64(),
                     rng.gen(),
                     rng.next_u64(),
-                    generate_nonempty_bytes(rng),
+                    generate_nonempty_padded_bytes(rng),
                     generate_bytes(rng),
                 ),
                 Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
@@ -309,7 +313,7 @@ mod tests {
             vec![
                 Output::coin(rng.gen(), rng.next_u64(), rng.gen()),
                 Output::contract(rng.next_u32().to_be_bytes()[0], rng.gen(), rng.gen()),
-                Output::withdrawal(rng.gen(), rng.next_u64(), rng.gen()),
+                Output::message(rng.gen(), rng.next_u64()),
                 Output::change(rng.gen(), rng.next_u64(), rng.gen()),
                 Output::variable(rng.gen(), rng.next_u64(), rng.gen()),
                 Output::contract_created(rng.gen(), rng.gen()),

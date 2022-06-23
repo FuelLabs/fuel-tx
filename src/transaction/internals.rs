@@ -6,6 +6,7 @@ use itertools::Itertools;
 use alloc::vec::Vec;
 use core::hash::Hash;
 
+// TODO https://github.com/FuelLabs/fuel-tx/issues/148
 pub(crate) fn next_duplicate<U>(iter: impl Iterator<Item = U>) -> Option<U>
 where
     U: PartialEq + Ord + Copy + Hash,

@@ -1,13 +1,14 @@
 use crate::consts::*;
 
 use fuel_asm::Opcode;
-use fuel_types::{AssetId, Bytes32, ContractId, Salt, Word};
+use fuel_crypto::PublicKey;
+use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
 
 #[cfg(feature = "std")]
 use fuel_types::bytes::SizedBytes;
 
 #[cfg(feature = "std")]
-use fuel_crypto::{Message, PublicKey, SecretKey, Signature};
+use fuel_crypto::{Message, SecretKey, Signature};
 
 use alloc::vec::Vec;
 use core::mem;
@@ -180,7 +181,7 @@ impl Transaction {
     }
 
     #[cfg(feature = "std")]
-    pub fn input_contracts(&self) -> impl Iterator<Item = &ContractId> {
+    pub fn input_contracts(&self) -> impl Iterator<Item = &fuel_types::ContractId> {
         use itertools::Itertools;
 
         self.inputs()
@@ -326,7 +327,7 @@ impl Transaction {
         }
     }
 
-    /// Append a new unsigned input to the transaction.
+    /// Append a new unsigned coin input to the transaction.
     ///
     /// When the transaction is constructed, [`Transaction::sign_inputs`] should
     /// be called for every secret key used with this method.
@@ -334,7 +335,6 @@ impl Transaction {
     /// The production of the signatures can be done only after the full
     /// transaction skeleton is built because the input of the hash message
     /// is the ID of the final transaction.
-    #[cfg(feature = "std")]
     pub fn add_unsigned_coin_input(
         &mut self,
         utxo_id: UtxoId,
@@ -343,7 +343,7 @@ impl Transaction {
         asset_id: AssetId,
         maturity: Word,
     ) {
-        let owner = Input::coin_owner(owner);
+        let owner = Input::owner(owner);
 
         let witness_index = self.witnesses().len() as u8;
         let input = Input::coin_signed(utxo_id, owner, amount, asset_id, witness_index, maturity);
@@ -352,14 +352,50 @@ impl Transaction {
         self._add_input(input);
     }
 
-    /// For all inputs of type `coin`, check if its `owner` equals the public
+    /// Append a new unsigned message input to the transaction.
+    ///
+    /// When the transaction is constructed, [`Transaction::sign_inputs`] should
+    /// be called for every secret key used with this method.
+    ///
+    /// The production of the signatures can be done only after the full
+    /// transaction skeleton is built because the input of the hash message
+    /// is the ID of the final transaction.
+    pub fn add_unsigned_message_input(
+        &mut self,
+        sender: Address,
+        recipient: Address,
+        nonce: Word,
+        owner: &PublicKey,
+        amount: Word,
+        data: Vec<u8>,
+    ) {
+        let owner = Input::owner(owner);
+        let message_id = Input::message_id(&sender, &recipient, nonce, &owner, amount, &data);
+
+        let witness_index = self.witnesses().len() as u8;
+        let input = Input::message_signed(
+            message_id,
+            sender,
+            recipient,
+            amount,
+            nonce,
+            owner,
+            witness_index,
+            data,
+        );
+
+        self._add_witness(Witness::default());
+        self._add_input(input);
+    }
+
+    /// For all inputs of type `coin` or `message`, check if its `owner` equals the public
     /// counterpart of the provided key. Sign all matches.
     #[cfg(feature = "std")]
     pub fn sign_inputs(&mut self, secret: &SecretKey) {
         use itertools::Itertools;
 
         let pk = PublicKey::from(secret);
-        let pk = Input::coin_owner(&pk);
+        let pk = Input::owner(&pk);
         let id = self.id();
 
         // Safety: checked length
@@ -380,6 +416,11 @@ impl Transaction {
             .iter()
             .filter_map(|input| match input {
                 Input::CoinSigned {
+                    owner,
+                    witness_index,
+                    ..
+                }
+                | Input::MessageSigned {
                     owner,
                     witness_index,
                     ..

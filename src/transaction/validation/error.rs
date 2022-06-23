@@ -9,22 +9,28 @@ use std::{error, io};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum ValidationError {
-    InputCoinPredicateLength {
+    InputWitnessIndexBounds {
         index: usize,
     },
-    InputCoinPredicateDataLength {
+    InputPredicateEmpty {
         index: usize,
     },
-    InputCoinPredicateOwner {
+    InputPredicateLength {
         index: usize,
     },
-    InputCoinWitnessIndexBounds {
+    InputPredicateDataLength {
         index: usize,
     },
-    InputCoinInvalidSignature {
+    InputPredicateOwner {
+        index: usize,
+    },
+    InputInvalidSignature {
         index: usize,
     },
     InputContractAssociatedOutputContract {
+        index: usize,
+    },
+    InputMessageDataLength {
         index: usize,
     },
     DuplicateInputUtxoId {
@@ -34,6 +40,12 @@ pub enum ValidationError {
         contract_id: ContractId,
     },
     OutputContractInputIndex {
+        index: usize,
+    },
+    OutputMessageRecipientNotZero {
+        index: usize,
+    },
+    OutputMessageAmountNotZero {
         index: usize,
     },
     TransactionCreateInputContract {

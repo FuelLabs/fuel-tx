@@ -1,3 +1,4 @@
+use fuel_crypto::Hasher;
 use fuel_types::bytes::{self, WORD_SIZE};
 use fuel_types::{Address, AssetId, Bytes32, ContractId, Word};
 
@@ -180,6 +181,10 @@ impl Output {
             Self::Variable { asset_id, .. } => Some(asset_id),
             _ => None,
         }
+    }
+
+    pub fn message_nonce(txid: &Bytes32, idx: Word) -> Bytes32 {
+        Hasher::default().chain(txid).chain([idx as u8]).finalize()
     }
 }
 

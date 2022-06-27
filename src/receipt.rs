@@ -14,6 +14,8 @@ use receipt_repr::ReceiptRepr;
 
 pub use script_result::ScriptExecutionResult;
 
+use crate::Output;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Receipt {
@@ -285,6 +287,21 @@ impl Receipt {
 
     pub const fn script_result(result: ScriptExecutionResult, gas_used: Word) -> Self {
         Self::ScriptResult { result, gas_used }
+    }
+
+    pub fn message_out_from_tx_output(
+        txid: &Bytes32,
+        idx: Word,
+        sender: Address,
+        recipient: Address,
+        amount: Word,
+        data: Vec<u8>,
+    ) -> Self {
+        let nonce = Output::message_nonce(txid, idx);
+        let message_id = Output::message_id(&sender, &recipient, &nonce, amount, &data);
+        let digest = Output::message_digest(&data);
+
+        Self::message_out(message_id, sender, recipient, amount, nonce, digest, data)
     }
 
     pub fn message_out(

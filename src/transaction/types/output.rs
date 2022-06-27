@@ -1,6 +1,6 @@
 use fuel_crypto::Hasher;
 use fuel_types::bytes::{self, WORD_SIZE};
-use fuel_types::{Address, AssetId, Bytes32, ContractId, Word, MessageId};
+use fuel_types::{Address, AssetId, Bytes32, ContractId, MessageId, Word};
 
 #[cfg(feature = "std")]
 use fuel_types::bytes::SizedBytes;
@@ -203,6 +203,10 @@ impl Output {
 
     pub fn message_nonce(txid: &Bytes32, idx: Word) -> Bytes32 {
         Hasher::default().chain(txid).chain([idx as u8]).finalize()
+    }
+
+    pub fn message_digest(data: &[u8]) -> Bytes32 {
+        Hasher::hash(data)
     }
 }
 

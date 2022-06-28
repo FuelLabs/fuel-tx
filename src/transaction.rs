@@ -463,7 +463,9 @@ impl Transaction {
     ///
     /// 1) Zero all recipient and amount from message outputs
     pub fn prepare_init(&mut self) -> &mut Self {
-        self._outputs_mut().iter_mut().for_each(|o| o.prepare_init());
+        self._outputs_mut()
+            .iter_mut()
+            .for_each(|o| o.prepare_init());
         self
     }
 }

@@ -449,6 +449,16 @@ impl Transaction {
 
         self.serialized_size() - witness_data // Witness data size
     }
+
+    /// Prepare the transaction for VM initialization
+    ///
+    /// # Steps
+    ///
+    /// 1) Zero all recipient and amount from message outputs
+    pub fn prepare_init(&mut self) -> &mut Self {
+        self.outputs_mut().iter_mut().for_each(|o| o.prepare_init());
+        self
+    }
 }
 
 #[cfg(test)]

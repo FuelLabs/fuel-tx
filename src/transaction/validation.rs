@@ -1,7 +1,7 @@
 use super::{Input, Output, Transaction, Witness};
 use crate::transaction::internals;
 
-use fuel_types::{Address, AssetId, Word};
+use fuel_types::{AssetId, Word};
 
 #[cfg(feature = "std")]
 use fuel_types::Bytes32;
@@ -161,14 +161,6 @@ impl Output {
                 Some(Input::Contract { .. }) => Ok(()),
                 _ => Err(ValidationError::OutputContractInputIndex { index }),
             },
-
-            Self::Message { recipient, .. } if recipient != &Address::zeroed() => {
-                Err(ValidationError::OutputMessageRecipientNotZero { index })
-            }
-
-            Self::Message { amount, .. } if amount != &0 => {
-                Err(ValidationError::OutputMessageAmountNotZero { index })
-            }
 
             _ => Ok(()),
         }

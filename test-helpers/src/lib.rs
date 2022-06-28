@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-use fuel_types::bytes::{self, WORD_SIZE};
+use fuel_types::bytes;
 use rand::Rng;
 
 #[cfg(feature = "std")]

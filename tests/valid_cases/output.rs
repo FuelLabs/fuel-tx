@@ -76,36 +76,6 @@ fn contract() {
 }
 
 #[test]
-fn message() {
-    let mut rng_base = StdRng::seed_from_u64(8586);
-    let rng = &mut rng_base;
-
-    Output::message(Address::zeroed(), 0)
-        .validate(1, &[])
-        .expect("expected valid zeroed output");
-
-    let err = Output::message(rng.gen(), 0)
-        .validate(1, &[])
-        .err()
-        .expect("expected invalid output with recipient");
-
-    assert_eq!(
-        ValidationError::OutputMessageRecipientNotZero { index: 1 },
-        err
-    );
-
-    let err = Output::message(Address::zeroed(), rng.gen())
-        .validate(1, &[])
-        .err()
-        .expect("expected invalid output with amount");
-
-    assert_eq!(
-        ValidationError::OutputMessageAmountNotZero { index: 1 },
-        err
-    );
-}
-
-#[test]
 fn change() {
     let mut rng_base = StdRng::seed_from_u64(8586);
     let rng = &mut rng_base;

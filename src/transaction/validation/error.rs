@@ -42,12 +42,6 @@ pub enum ValidationError {
     OutputContractInputIndex {
         index: usize,
     },
-    OutputMessageRecipientNotZero {
-        index: usize,
-    },
-    OutputMessageAmountNotZero {
-        index: usize,
-    },
     TransactionCreateInputContract {
         index: usize,
     },

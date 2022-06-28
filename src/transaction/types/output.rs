@@ -208,6 +208,16 @@ impl Output {
     pub fn message_digest(data: &[u8]) -> Bytes32 {
         Hasher::hash(data)
     }
+
+    /// Prepare the output for VM initialization
+    pub fn prepare_init(&mut self) {
+        const ZERO_MESSAGE: Output = Output::message(Address::zeroed(), 0);
+
+        match self {
+            Output::Message { .. } => *self = ZERO_MESSAGE,
+            _ => (),
+        }
+    }
 }
 
 #[cfg(feature = "std")]

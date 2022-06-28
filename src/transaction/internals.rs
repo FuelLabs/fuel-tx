@@ -49,6 +49,24 @@ impl Transaction {
     pub fn set_bytecode(&mut self, bytecode: Witness) -> Option<()> {
         self._set_bytecode(bytecode)
     }
+
+    pub fn inputs_mut(&mut self) -> &mut [Input] {
+        match self {
+            Self::Script { inputs, .. } => inputs.as_mut_slice(),
+            Self::Create { inputs, .. } => inputs.as_mut_slice(),
+        }
+    }
+
+    pub fn outputs_mut(&mut self) -> &mut [Output] {
+        self._outputs_mut()
+    }
+
+    pub fn witnesses_mut(&mut self) -> &mut [Witness] {
+        match self {
+            Self::Script { witnesses, .. } => witnesses.as_mut_slice(),
+            Self::Create { witnesses, .. } => witnesses.as_mut_slice(),
+        }
+    }
 }
 
 impl Transaction {

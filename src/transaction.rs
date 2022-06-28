@@ -450,13 +450,20 @@ impl Transaction {
         self.serialized_size() - witness_data // Witness data size
     }
 
+    pub(crate) fn _outputs_mut(&mut self) -> &mut [Output] {
+        match self {
+            Self::Script { outputs, .. } => outputs.as_mut_slice(),
+            Self::Create { outputs, .. } => outputs.as_mut_slice(),
+        }
+    }
+
     /// Prepare the transaction for VM initialization
     ///
     /// # Steps
     ///
     /// 1) Zero all recipient and amount from message outputs
     pub fn prepare_init(&mut self) -> &mut Self {
-        self.outputs_mut().iter_mut().for_each(|o| o.prepare_init());
+        self._outputs_mut().iter_mut().for_each(|o| o.prepare_init());
         self
     }
 }

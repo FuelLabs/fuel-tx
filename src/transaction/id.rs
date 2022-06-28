@@ -1,46 +1,11 @@
-use crate::{Input, Metadata, Output, Transaction, UtxoId, Witness};
+use crate::{Input, Metadata, Output, Transaction, UtxoId};
 
 use fuel_crypto::Hasher;
 use fuel_types::bytes::SerializableVec;
 use fuel_types::Bytes32;
 
 impl Transaction {
-    pub(crate) fn inputs_mut(&mut self) -> &mut [Input] {
-        match self {
-            Self::Script { inputs, .. } => inputs.as_mut_slice(),
-            Self::Create { inputs, .. } => inputs.as_mut_slice(),
-        }
-    }
-
-    pub(crate) fn outputs_mut(&mut self) -> &mut [Output] {
-        match self {
-            Self::Script { outputs, .. } => outputs.as_mut_slice(),
-            Self::Create { outputs, .. } => outputs.as_mut_slice(),
-        }
-    }
-
-    pub(crate) fn witnesses_mut(&mut self) -> &mut [Witness] {
-        match self {
-            Self::Script { witnesses, .. } => witnesses.as_mut_slice(),
-            Self::Create { witnesses, .. } => witnesses.as_mut_slice(),
-        }
-    }
-
-    pub fn id(&self) -> Bytes32 {
-        self.metadata()
-            .map(Metadata::id)
-            .copied()
-            .unwrap_or_else(|| self._id())
-    }
-
-    pub(crate) fn _id(&self) -> Bytes32 {
-        let mut tx = self.clone();
-        tx.prepare_sign();
-
-        Hasher::hash(tx.to_bytes().as_slice())
-    }
-
-    pub(crate) fn prepare_sign(&mut self) {
+    pub(crate) fn prepare_sign(&mut self) -> &mut Self {
         self.set_receipts_root(Default::default());
 
         let (inputs, outputs, witnesses) = match self {
@@ -104,6 +69,22 @@ impl Transaction {
         });
 
         witnesses.clear();
+
+        self
+    }
+
+    pub fn id(&self) -> Bytes32 {
+        self.metadata()
+            .map(Metadata::id)
+            .copied()
+            .unwrap_or_else(|| self._id())
+    }
+
+    pub(crate) fn _id(&self) -> Bytes32 {
+        let mut tx = self.clone();
+        tx.prepare_sign();
+
+        Hasher::hash(tx.to_bytes().as_slice())
     }
 }
 

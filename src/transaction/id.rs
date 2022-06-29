@@ -198,56 +198,56 @@ mod tests {
         assert_id_ne(tx, |t| t.set_maturity(t.maturity().not()));
 
         if !tx.inputs().is_empty() {
-            assert_io_ne!(tx, inputs_mut, Input::CoinSigned, utxo_id, invert_utxo_id);
-            assert_io_ne!(tx, inputs_mut, Input::CoinSigned, owner, invert);
-            assert_io_ne!(tx, inputs_mut, Input::CoinSigned, amount, not);
-            assert_io_ne!(tx, inputs_mut, Input::CoinSigned, asset_id, invert);
-            assert_io_ne!(tx, inputs_mut, Input::CoinSigned, witness_index, not);
-            assert_io_ne!(tx, inputs_mut, Input::CoinSigned, maturity, not);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, utxo_id, invert_utxo_id);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, owner, invert);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, amount, not);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, asset_id, invert);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, witness_index, not);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, maturity, not);
 
             assert_io_ne!(
                 tx,
-                inputs_mut,
+                _inputs_mut,
                 Input::CoinPredicate,
                 utxo_id,
                 invert_utxo_id
             );
-            assert_io_ne!(tx, inputs_mut, Input::CoinPredicate, owner, invert);
-            assert_io_ne!(tx, inputs_mut, Input::CoinPredicate, amount, not);
-            assert_io_ne!(tx, inputs_mut, Input::CoinPredicate, asset_id, invert);
-            assert_io_ne!(tx, inputs_mut, Input::CoinPredicate, maturity, not);
-            assert_io_ne!(tx, inputs_mut, Input::CoinPredicate, predicate, inv_v);
-            assert_io_ne!(tx, inputs_mut, Input::CoinPredicate, predicate_data, inv_v);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, owner, invert);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, amount, not);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, asset_id, invert);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, maturity, not);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, predicate, inv_v);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, predicate_data, inv_v);
 
-            assert_io_eq!(tx, inputs_mut, Input::Contract, utxo_id, invert_utxo_id);
-            assert_io_eq!(tx, inputs_mut, Input::Contract, balance_root, invert);
-            assert_io_eq!(tx, inputs_mut, Input::Contract, state_root, invert);
-            assert_io_ne!(tx, inputs_mut, Input::Contract, contract_id, invert);
+            assert_io_eq!(tx, _inputs_mut, Input::Contract, utxo_id, invert_utxo_id);
+            assert_io_eq!(tx, _inputs_mut, Input::Contract, balance_root, invert);
+            assert_io_eq!(tx, _inputs_mut, Input::Contract, state_root, invert);
+            assert_io_ne!(tx, _inputs_mut, Input::Contract, contract_id, invert);
         }
 
         if !tx.outputs().is_empty() {
-            assert_io_ne!(tx, outputs_mut, Output::Coin, to, invert);
-            assert_io_ne!(tx, outputs_mut, Output::Coin, amount, not);
-            assert_io_ne!(tx, outputs_mut, Output::Coin, asset_id, invert);
+            assert_io_ne!(tx, _outputs_mut, Output::Coin, to, invert);
+            assert_io_ne!(tx, _outputs_mut, Output::Coin, amount, not);
+            assert_io_ne!(tx, _outputs_mut, Output::Coin, asset_id, invert);
 
-            assert_io_ne!(tx, outputs_mut, Output::Contract, input_index, not);
-            assert_io_eq!(tx, outputs_mut, Output::Contract, balance_root, invert);
-            assert_io_eq!(tx, outputs_mut, Output::Contract, state_root, invert);
+            assert_io_ne!(tx, _outputs_mut, Output::Contract, input_index, not);
+            assert_io_eq!(tx, _outputs_mut, Output::Contract, balance_root, invert);
+            assert_io_eq!(tx, _outputs_mut, Output::Contract, state_root, invert);
 
-            assert_io_eq!(tx, outputs_mut, Output::Message, recipient, invert);
-            assert_io_eq!(tx, outputs_mut, Output::Message, amount, not);
+            assert_io_eq!(tx, _outputs_mut, Output::Message, recipient, invert);
+            assert_io_eq!(tx, _outputs_mut, Output::Message, amount, not);
 
-            assert_io_ne!(tx, outputs_mut, Output::Change, to, invert);
-            assert_io_eq!(tx, outputs_mut, Output::Change, amount, not);
-            assert_io_ne!(tx, outputs_mut, Output::Change, asset_id, invert);
+            assert_io_ne!(tx, _outputs_mut, Output::Change, to, invert);
+            assert_io_eq!(tx, _outputs_mut, Output::Change, amount, not);
+            assert_io_ne!(tx, _outputs_mut, Output::Change, asset_id, invert);
 
-            assert_io_eq!(tx, outputs_mut, Output::Variable, to, invert);
-            assert_io_eq!(tx, outputs_mut, Output::Variable, amount, not);
-            assert_io_eq!(tx, outputs_mut, Output::Variable, asset_id, invert);
+            assert_io_eq!(tx, _outputs_mut, Output::Variable, to, invert);
+            assert_io_eq!(tx, _outputs_mut, Output::Variable, amount, not);
+            assert_io_eq!(tx, _outputs_mut, Output::Variable, asset_id, invert);
 
             assert_io_ne!(
                 tx,
-                outputs_mut,
+                _outputs_mut,
                 Output::ContractCreated,
                 contract_id,
                 invert
@@ -256,7 +256,7 @@ mod tests {
 
         if !tx.witnesses().is_empty() {
             assert_id_eq(tx, |t| {
-                inv_v(t.witnesses_mut().first_mut().unwrap().as_vec_mut())
+                inv_v(t._witnesses_mut().first_mut().unwrap().as_vec_mut())
             });
         }
     }

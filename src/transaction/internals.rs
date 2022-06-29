@@ -51,10 +51,7 @@ impl Transaction {
     }
 
     pub fn inputs_mut(&mut self) -> &mut [Input] {
-        match self {
-            Self::Script { inputs, .. } => inputs.as_mut_slice(),
-            Self::Create { inputs, .. } => inputs.as_mut_slice(),
-        }
+        self._inputs_mut()
     }
 
     pub fn outputs_mut(&mut self) -> &mut [Output] {
@@ -62,10 +59,7 @@ impl Transaction {
     }
 
     pub fn witnesses_mut(&mut self) -> &mut [Witness] {
-        match self {
-            Self::Script { witnesses, .. } => witnesses.as_mut_slice(),
-            Self::Create { witnesses, .. } => witnesses.as_mut_slice(),
-        }
+        self._witnesses_mut()
     }
 }
 

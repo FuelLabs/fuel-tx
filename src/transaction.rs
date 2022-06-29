@@ -450,10 +450,24 @@ impl Transaction {
         self.serialized_size() - witness_data // Witness data size
     }
 
+    pub(crate) fn _inputs_mut(&mut self) -> &mut [Input] {
+        match self {
+            Self::Script { inputs, .. } => inputs.as_mut_slice(),
+            Self::Create { inputs, .. } => inputs.as_mut_slice(),
+        }
+    }
+
     pub(crate) fn _outputs_mut(&mut self) -> &mut [Output] {
         match self {
             Self::Script { outputs, .. } => outputs.as_mut_slice(),
             Self::Create { outputs, .. } => outputs.as_mut_slice(),
+        }
+    }
+
+    pub(crate) fn _witnesses_mut(&mut self) -> &mut [Witness] {
+        match self {
+            Self::Script { witnesses, .. } => witnesses.as_mut_slice(),
+            Self::Create { witnesses, .. } => witnesses.as_mut_slice(),
         }
     }
 

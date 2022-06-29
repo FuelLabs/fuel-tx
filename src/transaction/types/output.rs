@@ -212,9 +212,11 @@ impl Output {
     /// Prepare the output for VM initialization
     pub fn prepare_init(&mut self) {
         const ZERO_MESSAGE: Output = Output::message(Address::zeroed(), 0);
+        const ZERO_VARIABLE: Output = Output::variable(Address::zeroed(), 0, AssetId::zeroed());
 
         match self {
             Output::Message { .. } => *self = ZERO_MESSAGE,
+            Output::Variable { .. } => *self = ZERO_VARIABLE,
             _ => (),
         }
     }

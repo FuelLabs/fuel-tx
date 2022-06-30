@@ -382,17 +382,7 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
     let rng = &mut StdRng::seed_from_u64(8586);
     let message_id = rng.gen();
 
-    let a = Input::message_signed(
-        message_id,
-        rng.gen(),
-        rng.gen(),
-        rng.gen(),
-        0,
-        rng.gen(),
-        0,
-        generate_bytes(rng),
-    );
-    let b = Input::message_signed(
+    let message_input = Input::message_signed(
         message_id,
         rng.gen(),
         rng.gen(),
@@ -404,8 +394,9 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
     );
 
     let err = TransactionBuilder::script(vec![], vec![])
-        .add_input(a)
-        .add_input(b)
+        .add_input(message_input.clone())
+        // duplicate input
+        .add_input(message_input)
         .add_witness(rng.gen())
         .finalize()
         .validate_without_signature(0, &Default::default())

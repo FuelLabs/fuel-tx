@@ -266,6 +266,12 @@ impl Transaction {
             return Err(ValidationError::DuplicateInputContractId { contract_id });
         }
 
+        // Check for duplicated input message id
+        let duplicated_message_id = self.inputs().iter().filter_map(Input::message_id);
+        if let Some(message_id) = internals::next_duplicate(duplicated_message_id).copied() {
+            return Err(ValidationError::DuplicateMessageInputId { message_id });
+        }
+
         // Validate the inputs without checking signature
         self.inputs()
             .iter()

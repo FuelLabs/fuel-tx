@@ -289,6 +289,15 @@ impl Input {
         }
     }
 
+    pub const fn message_id(&self) -> Option<&MessageId> {
+        match self {
+            Self::MessagePredicate { message_id, .. } | Self::MessageSigned { message_id, .. } => {
+                Some(message_id)
+            }
+            _ => None,
+        }
+    }
+
     /// Return a tuple containing the predicate and its data if the input is of
     /// type `CoinPredicate`
     pub fn predicate(&self) -> Option<(&[u8], &[u8])> {
@@ -341,7 +350,7 @@ impl Input {
         }
     }
 
-    pub fn message_id(
+    pub fn compute_message_id(
         sender: &Address,
         recipient: &Address,
         nonce: Word,

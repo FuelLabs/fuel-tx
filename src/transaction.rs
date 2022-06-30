@@ -370,7 +370,8 @@ impl Transaction {
         data: Vec<u8>,
     ) {
         let owner = Input::owner(owner);
-        let message_id = Input::message_id(&sender, &recipient, nonce, &owner, amount, &data);
+        let message_id =
+            Input::compute_message_id(&sender, &recipient, nonce, &owner, amount, &data);
 
         let witness_index = self.witnesses().len() as u8;
         let input = Input::message_signed(

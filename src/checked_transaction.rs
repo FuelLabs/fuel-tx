@@ -16,6 +16,10 @@ pub struct CheckedTransaction {
     initial_free_balances: BTreeMap<AssetId, Word>,
     /// The block height this tx was verified with
     block_height: Word,
+    /// Max potential fee
+    max_fee: Word,
+    /// Min guaranteed fee
+    min_fee: Word,
 }
 
 impl CheckedTransaction {
@@ -27,12 +31,18 @@ impl CheckedTransaction {
         // fully validate transaction (with signature)
         transaction.validate(block_height, params)?;
         // validate fees and compute free balances
-        let initial_free_balances = Self::_initial_free_balances(&transaction, params)?;
+        let AvailableBalances {
+            free_balances: initial_free_balances,
+            max_fee,
+            min_fee,
+        } = Self::_initial_free_balances(&transaction, params)?;
 
         Ok(CheckedTransaction {
             transaction,
             initial_free_balances,
             block_height,
+            max_fee,
+            min_fee,
         })
     }
 
@@ -48,10 +58,18 @@ impl CheckedTransaction {
         self.block_height
     }
 
+    pub fn max_fee(&self) -> Word {
+        self.max_fee
+    }
+
+    pub fn min_fee(&self) -> Word {
+        self.min_fee
+    }
+
     fn _initial_free_balances(
         transaction: &Transaction,
         params: &ConsensusParameters,
-    ) -> Result<BTreeMap<AssetId, Word>, ValidationError> {
+    ) -> Result<AvailableBalances, ValidationError> {
         let mut balances = BTreeMap::<AssetId, Word>::new();
 
         // Add up all the inputs for each asset ID
@@ -128,8 +146,18 @@ impl CheckedTransaction {
                     })?;
         }
 
-        Ok(balances)
+        Ok(AvailableBalances {
+            free_balances: balances,
+            max_fee: fee,
+            min_fee: bytes,
+        })
     }
+}
+
+struct AvailableBalances {
+    free_balances: BTreeMap<AssetId, Word>,
+    max_fee: Word,
+    min_fee: Word,
 }
 
 impl AsRef<Transaction> for CheckedTransaction {
@@ -151,24 +179,45 @@ mod tests {
     fn checked_tx_accepts_valid_tx() {
         // simple smoke test that valid txs can be checked
         let rng = &mut StdRng::seed_from_u64(2322u64);
-        let secret = SecretKey::random(rng);
-        let asset = rng.gen();
-        let tx = TransactionBuilder::script(vec![], vec![])
-            .gas_price(1)
-            .gas_limit(100)
-            .add_unsigned_coin_input(rng.gen(), &secret, 1_000, AssetId::default(), 0)
-            .add_unsigned_coin_input(rng.gen(), &secret, 1_000, asset, 0)
-            .add_input(Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()))
-            .add_output(Output::change(rng.gen(), 0, AssetId::default()))
-            .add_output(Output::contract(2, rng.gen(), rng.gen()))
-            .add_output(Output::coin(rng.gen(), 10, asset))
-            .add_output(Output::change(rng.gen(), 0, asset))
-            .finalize();
+        let tx = valid_tx(rng);
 
         let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 
         assert_eq!(checked.transaction(), &tx);
+    }
+
+    #[test]
+    fn max_fee() {
+        // verify max fee a transaction can consume based on gas limit is correct
+        let rng = &mut StdRng::seed_from_u64(2322u64);
+        let tx = valid_tx(rng);
+
+        let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
+            .expect("Expected valid transaction");
+
+        let factor = ConsensusParameters::DEFAULT.gas_price_factor as f64;
+        let bytes =
+            f64::ceil(tx.metered_bytes_size() as f64 * tx.byte_price() as f64 / factor) as u64;
+        let gas = f64::ceil(tx.gas_limit() as f64 * tx.gas_price() as f64 / factor) as u64;
+
+        assert_eq!(bytes + gas, checked.max_fee);
+    }
+
+    #[test]
+    fn min_fee() {
+        // verify max fee a transaction can consume based on gas limit is correct
+        let rng = &mut StdRng::seed_from_u64(2322u64);
+        let tx = valid_tx(rng);
+
+        let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
+            .expect("Expected valid transaction");
+
+        let factor = ConsensusParameters::DEFAULT.gas_price_factor as f64;
+        let bytes =
+            f64::ceil(tx.metered_bytes_size() as f64 * tx.byte_price() as f64 / factor) as u64;
+
+        assert_eq!(bytes, checked.min_fee);
     }
 
     #[test]
@@ -387,5 +436,18 @@ mod tests {
             },
             checked
         );
+    }
+
+    fn valid_tx(rng: &mut StdRng) -> Transaction {
+        let asset = AssetId::default();
+        TransactionBuilder::script(vec![], vec![])
+            .gas_price(1)
+            .gas_limit(100)
+            .add_unsigned_coin_input(rng.gen(), &rng.gen(), 1_000, asset, 0)
+            .add_input(Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()))
+            .add_output(Output::contract(1, rng.gen(), rng.gen()))
+            .add_output(Output::coin(rng.gen(), 10, asset))
+            .add_output(Output::change(rng.gen(), 0, asset))
+            .finalize()
     }
 }

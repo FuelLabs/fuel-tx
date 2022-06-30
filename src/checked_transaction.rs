@@ -32,7 +32,7 @@ impl CheckedTransaction {
         transaction.validate(block_height, params)?;
         // validate fees and compute free balances
         let AvailableBalances {
-            free_balances: initial_free_balances,
+            initial_free_balances,
             max_fee,
             min_fee,
         } = Self::_initial_free_balances(&transaction, params)?;
@@ -147,7 +147,7 @@ impl CheckedTransaction {
         }
 
         Ok(AvailableBalances {
-            free_balances: balances,
+            initial_free_balances: balances,
             max_fee: fee,
             min_fee: bytes,
         })
@@ -155,7 +155,7 @@ impl CheckedTransaction {
 }
 
 struct AvailableBalances {
-    free_balances: BTreeMap<AssetId, Word>,
+    initial_free_balances: BTreeMap<AssetId, Word>,
     max_fee: Word,
     min_fee: Word,
 }

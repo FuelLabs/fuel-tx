@@ -378,6 +378,44 @@ fn transaction_with_duplicate_coin_inputs_is_invalid() {
 }
 
 #[test]
+fn transaction_with_duplicate_message_inputs_is_invalid() {
+    let rng = &mut StdRng::seed_from_u64(8586);
+    let message_id = rng.gen();
+
+    let a = Input::message_signed(
+        message_id,
+        rng.gen(),
+        rng.gen(),
+        rng.gen(),
+        0,
+        rng.gen(),
+        0,
+        generate_bytes(rng),
+    );
+    let b = Input::message_signed(
+        message_id,
+        rng.gen(),
+        rng.gen(),
+        rng.gen(),
+        0,
+        rng.gen(),
+        0,
+        generate_bytes(rng),
+    );
+
+    let err = TransactionBuilder::script(vec![], vec![])
+        .add_input(a)
+        .add_input(b)
+        .add_witness(rng.gen())
+        .finalize()
+        .validate_without_signature(0, &Default::default())
+        .err()
+        .expect("Expected validation failure");
+
+    assert_eq!(err, ValidationError::DuplicateMessageInputId { message_id });
+}
+
+#[test]
 fn transaction_with_duplicate_contract_inputs_is_invalid() {
     let rng = &mut StdRng::seed_from_u64(8586);
     let contract_id = rng.gen();

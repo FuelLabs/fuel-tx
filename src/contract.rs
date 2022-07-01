@@ -1,22 +1,11 @@
-use crate::{Transaction, ValidationError};
-
-#[cfg(feature = "std")]
-use crate::StorageSlot;
+use crate::{StorageSlot, Transaction, ValidationError};
 
 use fuel_crypto::Hasher;
-use fuel_types::{Bytes32, ContractId, Salt};
-
-#[cfg(feature = "std")]
-// use fuel_merkle::{binary, common::StorageMap, sparse};
 use fuel_merkle::binary::in_memory::MerkleTree as BinaryMerkleTree;
 use fuel_merkle::sparse::in_memory::MerkleTree as SparseMerkleTree;
-
-#[cfg(feature = "std")]
-use fuel_types::Bytes8;
+use fuel_types::{Bytes32, Bytes8, ContractId, Salt};
 
 use alloc::vec::Vec;
-
-#[cfg(feature = "std")]
 use core::iter;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]

@@ -36,7 +36,7 @@ alloc = ["fuel-types/alloc", "itertools/use_alloc", "serde?/alloc"]
 builder = ["alloc", "internals"]
 internals = []
 random = ["fuel-crypto/random", "fuel-types/random", "rand"]
-std = ["alloc", "fuel-asm/std", "fuel-crypto/std", "fuel-merkle/std", "fuel-types/std", "itertools/default", "rand/default", "serde?/default"]
+std = ["alloc", "fuel-asm/std", "fuel-crypto/std", "fuel-merkle/std", "fuel-types/std", "itertools/default", "rand?/default", "serde?/default"]
 serde = ["dep:serde", "fuel-asm/serde", "fuel-crypto/serde", "fuel-types/serde"]
 
 [[test]]

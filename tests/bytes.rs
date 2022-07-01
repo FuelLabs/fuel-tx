@@ -1,6 +1,6 @@
 use fuel_asm::Opcode;
 use fuel_tx::*;
-use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_bytes};
+use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
 use fuel_types::{bytes, Immediate24};
 use rand::rngs::StdRng;
 use rand::{Rng, RngCore, SeedableRng};
@@ -106,10 +106,31 @@ fn input() {
             rng.next_u64(),
             rng.gen(),
             rng.gen(),
-            generate_nonempty_bytes(rng),
+            generate_nonempty_padded_bytes(rng),
             generate_bytes(rng),
         ),
         Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()),
+        Input::message_signed(
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            generate_bytes(rng),
+        ),
+        Input::message_predicate(
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            generate_bytes(rng),
+            generate_nonempty_padded_bytes(rng),
+            generate_bytes(rng),
+        ),
     ]);
 }
 
@@ -120,7 +141,7 @@ fn output() {
     assert_encoding_correct(&[
         Output::coin(rng.gen(), rng.next_u64(), rng.gen()),
         Output::contract(rng.gen(), rng.gen(), rng.gen()),
-        Output::withdrawal(rng.gen(), rng.next_u64(), rng.gen()),
+        Output::message(rng.gen(), rng.next_u64()),
         Output::change(rng.gen(), rng.next_u64(), rng.gen()),
         Output::variable(rng.gen(), rng.next_u64(), rng.gen()),
         Output::contract_created(rng.gen(), rng.gen()),
@@ -148,7 +169,6 @@ fn receipt() {
             rng.gen(),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
             vec![rng.gen(), rng.gen()],
             rng.gen(),
             rng.gen(),
@@ -164,7 +184,6 @@ fn receipt() {
             rng.gen(),
         ),
         Receipt::log_data(
-            rng.gen(),
             rng.gen(),
             rng.gen(),
             rng.gen(),
@@ -461,6 +480,15 @@ fn receipt() {
         Receipt::script_result(ScriptExecutionResult::Panic, rng.gen()),
         Receipt::script_result(ScriptExecutionResult::Revert, rng.gen()),
         Receipt::script_result(ScriptExecutionResult::GenericFailure(rng.gen()), rng.gen()),
+        Receipt::message_out(
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            vec![rng.gen()],
+        ),
     ]);
 }
 
@@ -478,7 +506,6 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen::<Witness>().into_inner(),
             rng.gen::<Witness>().into_inner(),
             vec![i.clone()],
@@ -486,7 +513,6 @@ fn transaction() {
             vec![w.clone()],
         ),
         Transaction::script(
-            rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
@@ -500,7 +526,6 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen::<Witness>().into_inner(),
             vec![],
             vec![i.clone()],
@@ -511,7 +536,6 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             vec![],
             vec![],
             vec![i.clone()],
@@ -522,7 +546,6 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             vec![],
             vec![],
             vec![],
@@ -533,7 +556,6 @@ fn transaction() {
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
-            rng.next_u64(),
             vec![],
             vec![],
             vec![],
@@ -541,7 +563,6 @@ fn transaction() {
             vec![w.clone()],
         ),
         Transaction::script(
-            rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
             rng.next_u64(),
@@ -554,7 +575,6 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             ConsensusParameters::DEFAULT.max_gas_per_tx,
-            rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
             rng.gen(),
@@ -567,7 +587,6 @@ fn transaction() {
             rng.next_u64(),
             ConsensusParameters::DEFAULT.max_gas_per_tx,
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![s],
@@ -578,7 +597,6 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             ConsensusParameters::DEFAULT.max_gas_per_tx,
-            rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
             rng.gen(),
@@ -591,7 +609,6 @@ fn transaction() {
             rng.next_u64(),
             ConsensusParameters::DEFAULT.max_gas_per_tx,
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![],
@@ -603,7 +620,6 @@ fn transaction() {
             rng.next_u64(),
             ConsensusParameters::DEFAULT.max_gas_per_tx,
             rng.next_u64(),
-            rng.next_u64(),
             rng.gen(),
             rng.gen(),
             vec![],
@@ -614,7 +630,6 @@ fn transaction() {
         Transaction::create(
             rng.next_u64(),
             ConsensusParameters::DEFAULT.max_gas_per_tx,
-            rng.next_u64(),
             rng.next_u64(),
             rng.gen(),
             rng.gen(),
@@ -632,7 +647,6 @@ fn create_input_coin_data_offset() {
 
     let gas_price = 100;
     let gas_limit = 1000;
-    let byte_price = 20;
     let maturity = 10;
     let bytecode_witness_index = 0x00;
     let salt = rng.gen();
@@ -649,7 +663,7 @@ fn create_input_coin_data_offset() {
         vec![Output::coin(rng.gen(), rng.next_u64(), rng.gen())],
         vec![
             Output::contract(rng.gen(), rng.gen(), rng.gen()),
-            Output::withdrawal(rng.gen(), rng.next_u64(), rng.gen()),
+            Output::message(rng.gen(), rng.next_u64()),
         ],
     ];
     let witnesses: Vec<Vec<Witness>> = vec![
@@ -658,7 +672,7 @@ fn create_input_coin_data_offset() {
         vec![generate_bytes(rng).into(), generate_bytes(rng).into()],
     ];
 
-    let predicate = generate_nonempty_bytes(rng);
+    let predicate = generate_nonempty_padded_bytes(rng);
     let predicate_data = generate_bytes(rng);
 
     let owner = (*Contract::root_from_code(&predicate)).into();
@@ -687,7 +701,6 @@ fn create_input_coin_data_offset() {
                     let mut tx = Transaction::create(
                         gas_price,
                         gas_limit,
-                        byte_price,
                         maturity,
                         bytecode_witness_index,
                         salt,
@@ -732,7 +745,6 @@ fn script_input_coin_data_offset() {
 
     let gas_price = 100;
     let gas_limit = 1000;
-    let byte_price = 20;
     let maturity = 10;
 
     let script: Vec<Vec<u8>> = vec![vec![], generate_bytes(rng)];
@@ -751,7 +763,7 @@ fn script_input_coin_data_offset() {
         vec![Output::coin(rng.gen(), rng.next_u64(), rng.gen())],
         vec![
             Output::contract(rng.gen(), rng.gen(), rng.gen()),
-            Output::withdrawal(rng.gen(), rng.next_u64(), rng.gen()),
+            Output::message(rng.gen(), rng.next_u64()),
         ],
     ];
     let witnesses: Vec<Vec<Witness>> = vec![
@@ -760,7 +772,7 @@ fn script_input_coin_data_offset() {
         vec![generate_bytes(rng).into(), generate_bytes(rng).into()],
     ];
 
-    let mut predicate = generate_nonempty_bytes(rng);
+    let mut predicate = generate_nonempty_padded_bytes(rng);
 
     // force word-unaligned predicate
     if predicate.len() % 2 == 0 {
@@ -794,7 +806,6 @@ fn script_input_coin_data_offset() {
                         let mut tx = Transaction::script(
                             gas_price,
                             gas_limit,
-                            byte_price,
                             maturity,
                             script.clone(),
                             script_data.clone(),

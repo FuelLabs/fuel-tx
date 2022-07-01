@@ -1,17 +1,12 @@
+use super::PARAMS;
+
 use fuel_crypto::SecretKey;
 use fuel_tx::*;
 use fuel_tx_test_helpers::generate_bytes;
 use rand::{rngs::StdRng, Rng, RngCore, SeedableRng};
-use std::{cmp, io::Write};
 
-// override default settings to reduce testing overhead
-pub const PARAMS: ConsensusParameters = ConsensusParameters::DEFAULT
-    .with_max_storage_slots(1024)
-    .with_max_script_length(1024)
-    .with_max_script_data_length(1024)
-    .with_max_inputs(16)
-    .with_max_outputs(16)
-    .with_max_witnesses(16);
+use std::cmp;
+use std::io::Write;
 
 #[test]
 fn gas_limit() {
@@ -23,7 +18,6 @@ fn gas_limit() {
     Transaction::script(
         rng.gen(),
         PARAMS.max_gas_per_tx,
-        rng.gen(),
         maturity,
         generate_bytes(rng),
         generate_bytes(rng),
@@ -37,7 +31,6 @@ fn gas_limit() {
     Transaction::create(
         rng.gen(),
         PARAMS.max_gas_per_tx,
-        rng.gen(),
         maturity,
         0,
         rng.gen(),
@@ -52,7 +45,6 @@ fn gas_limit() {
     let err = Transaction::script(
         rng.gen(),
         PARAMS.max_gas_per_tx + 1,
-        rng.gen(),
         maturity,
         generate_bytes(rng),
         generate_bytes(rng),
@@ -69,7 +61,6 @@ fn gas_limit() {
     let err = Transaction::create(
         rng.gen(),
         PARAMS.max_gas_per_tx + 1,
-        rng.gen(),
         maturity,
         0,
         rng.gen(),
@@ -94,7 +85,6 @@ fn maturity() {
     Transaction::script(
         rng.gen(),
         PARAMS.max_gas_per_tx,
-        rng.gen(),
         block_height,
         vec![],
         vec![],
@@ -108,7 +98,6 @@ fn maturity() {
     Transaction::create(
         rng.gen(),
         PARAMS.max_gas_per_tx,
-        rng.gen(),
         1000,
         0,
         rng.gen(),
@@ -123,7 +112,6 @@ fn maturity() {
     let err = Transaction::script(
         rng.gen(),
         PARAMS.max_gas_per_tx,
-        rng.gen(),
         1001,
         vec![],
         vec![],
@@ -140,7 +128,6 @@ fn maturity() {
     let err = Transaction::create(
         rng.gen(),
         PARAMS.max_gas_per_tx,
-        rng.gen(),
         1001,
         0,
         rng.gen(),
@@ -173,7 +160,7 @@ fn max_iow() {
         .gas_price(rng.gen())
         .gas_limit(PARAMS.max_gas_per_tx)
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), asset_id, maturity);
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), asset_id, maturity);
 
     while builder.outputs().len() < PARAMS.max_outputs as usize {
         builder.add_output(Output::coin(rng.gen(), rng.gen(), asset_id));
@@ -203,7 +190,7 @@ fn max_iow() {
 
     let asset_id: AssetId = rng.gen();
     secrets.iter().for_each(|k| {
-        builder.add_unsigned_coin_input(rng.gen(), k, rng.gen(), asset_id, maturity);
+        builder.add_unsigned_coin_input(k, rng.gen(), rng.gen(), asset_id, maturity);
     });
 
     while builder.outputs().len() < PARAMS.max_outputs as usize {
@@ -232,7 +219,7 @@ fn max_iow() {
         .collect();
 
     secrets.iter().for_each(|k| {
-        builder.add_unsigned_coin_input(rng.gen(), k, rng.gen(), rng.gen(), maturity);
+        builder.add_unsigned_coin_input(k, rng.gen(), rng.gen(), rng.gen(), maturity);
     });
 
     while builder.outputs().len() < PARAMS.max_outputs as usize {
@@ -264,7 +251,7 @@ fn max_iow() {
         .collect();
 
     secrets.iter().for_each(|k| {
-        builder.add_unsigned_coin_input(rng.gen(), k, rng.gen(), rng.gen(), maturity);
+        builder.add_unsigned_coin_input(k, rng.gen(), rng.gen(), rng.gen(), maturity);
     });
 
     while builder.outputs().len() < 1 + PARAMS.max_outputs as usize {
@@ -296,7 +283,7 @@ fn max_iow() {
         .collect();
 
     secrets.iter().for_each(|k| {
-        builder.add_unsigned_coin_input(rng.gen(), k, rng.gen(), rng.gen(), maturity);
+        builder.add_unsigned_coin_input(k, rng.gen(), rng.gen(), rng.gen(), maturity);
     });
 
     while builder.outputs().len() < PARAMS.max_outputs as usize {
@@ -333,8 +320,8 @@ fn output_change_asset_id() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), a, rng.gen())
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), b, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), a, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), b, rng.gen())
         .add_output(Output::change(rng.gen(), rng.next_u64(), a))
         .add_output(Output::change(rng.gen(), rng.next_u64(), b))
         .finalize()
@@ -345,8 +332,8 @@ fn output_change_asset_id() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), a, rng.gen())
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), b, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), a, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), b, rng.gen())
         .add_output(Output::change(rng.gen(), rng.next_u64(), a))
         .add_output(Output::change(rng.gen(), rng.next_u64(), a))
         .finalize()
@@ -363,8 +350,8 @@ fn output_change_asset_id() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), a, rng.gen())
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), b, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), a, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), b, rng.gen())
         .add_output(Output::change(rng.gen(), rng.next_u64(), a))
         .add_output(Output::change(rng.gen(), rng.next_u64(), c))
         .finalize()
@@ -381,8 +368,8 @@ fn output_change_asset_id() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), a, rng.gen())
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), b, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), a, rng.gen())
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), b, rng.gen())
         .add_output(Output::coin(rng.gen(), rng.next_u64(), a))
         .add_output(Output::coin(rng.gen(), rng.next_u64(), c))
         .finalize()
@@ -413,7 +400,7 @@ fn script() {
     .gas_limit(PARAMS.max_gas_per_tx)
     .gas_price(rng.gen())
     .maturity(maturity)
-    .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), asset_id, rng.gen())
+    .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), asset_id, rng.gen())
     .add_output(Output::change(rng.gen(), rng.gen(), asset_id))
     .finalize()
     .validate(block_height, &PARAMS)
@@ -426,7 +413,7 @@ fn script() {
     .gas_limit(PARAMS.max_gas_per_tx)
     .gas_price(rng.gen())
     .maturity(maturity)
-    .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), asset_id, rng.gen())
+    .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), asset_id, rng.gen())
     .add_output(Output::contract_created(rng.gen(), rng.gen()))
     .finalize()
     .validate(block_height, &PARAMS)
@@ -445,7 +432,7 @@ fn script() {
     .gas_limit(PARAMS.max_gas_per_tx)
     .gas_price(rng.gen())
     .maturity(maturity)
-    .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), asset_id, rng.gen())
+    .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), asset_id, rng.gen())
     .add_output(Output::contract_created(rng.gen(), rng.gen()))
     .finalize()
     .validate(block_height, &PARAMS)
@@ -461,7 +448,7 @@ fn script() {
     .gas_limit(PARAMS.max_gas_per_tx)
     .gas_price(rng.gen())
     .maturity(maturity)
-    .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), asset_id, rng.gen())
+    .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), asset_id, rng.gen())
     .add_output(Output::contract_created(rng.gen(), rng.gen()))
     .finalize()
     .validate(block_height, &PARAMS)
@@ -485,7 +472,7 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), rng.gen(), maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), rng.gen(), maturity)
         .finalize()
         .validate(block_height, &PARAMS)
         .expect("Failed to validate tx");
@@ -510,7 +497,7 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), rng.gen(), maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), rng.gen(), maturity)
         .add_output(Output::variable(rng.gen(), rng.gen(), rng.gen()))
         .finalize()
         .validate(block_height, &PARAMS)
@@ -526,8 +513,8 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret_b, rng.gen(), rng.gen(), maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
+        .add_unsigned_coin_input(&secret_b, rng.gen(), rng.gen(), rng.gen(), maturity)
         .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
@@ -546,8 +533,8 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret_b, rng.gen(), asset_id, maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
+        .add_unsigned_coin_input(&secret_b, rng.gen(), rng.gen(), asset_id, maturity)
         .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .add_output(Output::change(rng.gen(), rng.gen(), asset_id))
         .finalize()
@@ -564,8 +551,8 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret_b, rng.gen(), rng.gen(), maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
+        .add_unsigned_coin_input(&secret_b, rng.gen(), rng.gen(), rng.gen(), maturity)
         .add_output(Output::contract_created(rng.gen(), rng.gen()))
         .add_output(Output::contract_created(rng.gen(), rng.gen()))
         .finalize()
@@ -586,7 +573,7 @@ fn create() {
     .gas_limit(PARAMS.max_gas_per_tx)
     .gas_price(rng.gen())
     .maturity(maturity)
-    .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
+    .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
     .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
     .finalize()
     .validate(block_height, &PARAMS)
@@ -600,7 +587,7 @@ fn create() {
     .gas_limit(PARAMS.max_gas_per_tx)
     .gas_price(rng.gen())
     .maturity(maturity)
-    .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
+    .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
     .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
     .finalize()
     .validate(block_height, &PARAMS)
@@ -612,7 +599,6 @@ fn create() {
     let err = Transaction::create(
         rng.gen(),
         PARAMS.max_gas_per_tx,
-        rng.gen(),
         maturity,
         0,
         rng.gen(),
@@ -631,7 +617,7 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
         .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height, &PARAMS)
@@ -653,7 +639,7 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
         .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height, &PARAMS)
@@ -669,7 +655,7 @@ fn create() {
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
-        .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
+        .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
         .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
         .finalize()
         .validate(block_height, &PARAMS)
@@ -688,7 +674,7 @@ fn create() {
             .gas_limit(PARAMS.max_gas_per_tx)
             .gas_price(rng.gen())
             .maturity(maturity)
-            .add_unsigned_coin_input(rng.gen(), &secret, rng.gen(), AssetId::default(), maturity)
+            .add_unsigned_coin_input(&secret, rng.gen(), rng.gen(), AssetId::default(), maturity)
             .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
             .finalize()
             .validate(block_height, &PARAMS)
@@ -704,7 +690,6 @@ fn tx_id_bytecode_len() {
 
     let maturity = 100;
     let gas_price = rng.gen();
-    let byte_price = rng.gen();
     let salt = rng.gen();
 
     let w_a = vec![0xfau8; 4].into();
@@ -714,7 +699,6 @@ fn tx_id_bytecode_len() {
     let tx_a = Transaction::create(
         gas_price,
         PARAMS.max_gas_per_tx,
-        byte_price,
         maturity,
         0,
         salt,
@@ -727,7 +711,6 @@ fn tx_id_bytecode_len() {
     let tx_b = Transaction::create(
         gas_price,
         PARAMS.max_gas_per_tx,
-        byte_price,
         maturity,
         0,
         salt,
@@ -740,7 +723,6 @@ fn tx_id_bytecode_len() {
     let tx_c = Transaction::create(
         gas_price,
         PARAMS.max_gas_per_tx,
-        byte_price,
         maturity,
         0,
         salt,

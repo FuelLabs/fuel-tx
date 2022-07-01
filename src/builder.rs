@@ -21,7 +21,6 @@ impl<'a> TransactionBuilder<'a> {
             Default::default(),
             Default::default(),
             Default::default(),
-            Default::default(),
             salt,
             storage_slots,
             Default::default(),
@@ -38,7 +37,6 @@ impl<'a> TransactionBuilder<'a> {
 
     pub fn script(script: Vec<u8>, script_data: Vec<u8>) -> Self {
         let tx = Transaction::script(
-            Default::default(),
             Default::default(),
             Default::default(),
             Default::default(),
@@ -69,12 +67,6 @@ impl<'a> TransactionBuilder<'a> {
         self
     }
 
-    pub fn byte_price(&mut self, byte_price: Word) -> &mut Self {
-        self.tx.set_byte_price(byte_price);
-
-        self
-    }
-
     pub fn maturity(&mut self, maturity: Word) -> &mut Self {
         self.tx.set_maturity(maturity);
 
@@ -84,8 +76,8 @@ impl<'a> TransactionBuilder<'a> {
     #[cfg(feature = "std")]
     pub fn add_unsigned_coin_input(
         &mut self,
-        utxo_id: crate::UtxoId,
         secret: &'a SecretKey,
+        utxo_id: crate::UtxoId,
         amount: Word,
         asset_id: fuel_types::AssetId,
         maturity: Word,
@@ -95,6 +87,25 @@ impl<'a> TransactionBuilder<'a> {
         self.sign_keys.push(secret);
         self.tx
             .add_unsigned_coin_input(utxo_id, &pk, amount, asset_id, maturity);
+
+        self
+    }
+
+    #[cfg(feature = "std")]
+    pub fn add_unsigned_message_input(
+        &mut self,
+        secret: &'a SecretKey,
+        sender: fuel_types::Address,
+        recipient: fuel_types::Address,
+        nonce: Word,
+        amount: Word,
+        data: Vec<u8>,
+    ) -> &mut Self {
+        let pk = secret.public_key();
+
+        self.sign_keys.push(secret);
+        self.tx
+            .add_unsigned_message_input(sender, recipient, nonce, &pk, amount, data);
 
         self
     }

@@ -198,7 +198,7 @@ mod tests {
         assert_eq!(checked.transaction(), &tx);
     }
 
-    // use quickcheck to fuzz any rounding or precision errors
+    // use quickcheck to fuzz any rounding or precision errors in the max fee
     #[quickcheck]
     fn max_fee(
         gas_price: u64,
@@ -207,21 +207,28 @@ mod tests {
         gas_price_factor: u64,
         seed: u64,
     ) -> TestResult {
+        // verify max fee a transaction can consume based on gas limit is correct
+
+        // dont divide by zero
         if gas_price_factor == 0 {
             return TestResult::discard();
         }
 
-        // verify max fee a transaction can consume based on gas limit is correct
         let rng = &mut StdRng::seed_from_u64(seed);
         let params = ConsensusParameters::DEFAULT.with_gas_price_factor(gas_price_factor);
         let tx = predicate_tx(rng, gas_price, gas_limit, input_amount);
 
         if let Ok(available_balances) = CheckedTransaction::_initial_free_balances(&tx, &params) {
+            // cant overflow as metered bytes * gas_per_byte < u64::MAX
             let bytes = (tx.metered_bytes_size() as u128)
-                * ConsensusParameters::DEFAULT.gas_per_byte as u128
+                * params.gas_per_byte as u128
                 * tx.gas_price() as u128;
             let gas = tx.gas_limit() as u128 * tx.gas_price() as u128;
-            let rounded_fee = div_ceil(bytes + gas, gas_price_factor as u128) as u64;
+            let total = bytes + gas;
+            // use different division mechanism than impl
+            let fee = total / params.gas_price_factor as u128;
+            let fee_remainder = (total.rem_euclid(params.gas_price_factor as u128) > 0) as u128;
+            let rounded_fee = (fee + fee_remainder) as u64;
 
             TestResult::from_bool(rounded_fee == available_balances.max_fee)
         } else {
@@ -229,23 +236,39 @@ mod tests {
         }
     }
 
-    #[test]
-    fn min_fee() {
-        // verify max fee a transaction can consume based on gas limit is correct
-        let rng = &mut StdRng::seed_from_u64(2322u64);
-        let tx = valid_tx(rng);
+    // use quickcheck to fuzz any rounding or precision errors in the min fee
+    #[quickcheck]
+    fn min_fee(
+        gas_price: u64,
+        gas_limit: u64,
+        input_amount: u64,
+        gas_price_factor: u64,
+        seed: u64,
+    ) -> TestResult {
+        // verify min fee a transaction can consume based on bytes is correct
 
-        let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
-            .expect("Expected valid transaction");
+        // dont divide by zero
+        if gas_price_factor == 0 {
+            return TestResult::discard();
+        }
+        let rng = &mut StdRng::seed_from_u64(seed);
+        let params = ConsensusParameters::DEFAULT.with_gas_price_factor(gas_price_factor);
+        let tx = predicate_tx(rng, gas_price, gas_limit, input_amount);
 
-        let bytes = div_ceil(
-            tx.metered_bytes_size() as u64
-                * tx.gas_price()
-                * ConsensusParameters::DEFAULT.gas_per_byte,
-            ConsensusParameters::DEFAULT.gas_price_factor,
-        );
+        if let Ok(available_balances) = CheckedTransaction::_initial_free_balances(&tx, &params) {
+            // cant overflow as metered bytes * gas_per_byte < u64::MAX
+            let bytes = (tx.metered_bytes_size() as u128)
+                * params.gas_per_byte as u128
+                * tx.gas_price() as u128;
+            // use different division mechanism than impl
+            let fee = bytes / params.gas_price_factor as u128;
+            let fee_remainder = (bytes.rem_euclid(params.gas_price_factor as u128) > 0) as u128;
+            let rounded_fee = (fee + fee_remainder) as u64;
 
-        assert_eq!(bytes, checked.min_fee);
+            TestResult::from_bool(rounded_fee == available_balances.min_fee)
+        } else {
+            TestResult::discard()
+        }
     }
 
     #[test]

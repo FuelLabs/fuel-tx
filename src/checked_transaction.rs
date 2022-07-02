@@ -467,7 +467,7 @@ mod tests {
     }
 
     #[test]
-    fn check_tx_fails_if_asset_is_overspent_by_coin_output() {
+    fn checked_tx_fails_if_asset_is_overspent_by_coin_output() {
         let input_amount = 1_000;
         let rng = &mut StdRng::seed_from_u64(2322u64);
         let secret = SecretKey::random(rng);

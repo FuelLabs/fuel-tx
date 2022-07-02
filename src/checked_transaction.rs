@@ -192,12 +192,19 @@ mod tests {
         let rng = &mut StdRng::seed_from_u64(2322u64);
         let gas_price = 10;
         let gas_limit = 1000;
-        let tx = valid_coin_tx(rng, gas_price, gas_limit);
+        let input_amount = 1000;
+        let tx = valid_coin_tx(rng, gas_price, gas_limit, input_amount);
 
         let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 
+        // verify transaction getter works
         assert_eq!(checked.transaction(), &tx);
+        // verify available balance was decreased by max fee
+        assert_eq!(
+            checked.initial_free_balances[&AssetId::default()],
+            input_amount - checked.max_fee
+        );
     }
 
     #[test]
@@ -534,12 +541,17 @@ mod tests {
         Ok(rounded_fee == available_balances.min_fee)
     }
 
-    fn valid_coin_tx(rng: &mut StdRng, gas_price: u64, gas_limit: u64) -> Transaction {
+    fn valid_coin_tx(
+        rng: &mut StdRng,
+        gas_price: u64,
+        gas_limit: u64,
+        input_amount: u64,
+    ) -> Transaction {
         let asset = AssetId::default();
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
             .gas_limit(gas_limit)
-            .add_unsigned_coin_input(&rng.gen(), rng.gen(), 1_000, asset, 0)
+            .add_unsigned_coin_input(&rng.gen(), rng.gen(), input_amount, asset, 0)
             .add_input(Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()))
             .add_output(Output::contract(1, rng.gen(), rng.gen()))
             .add_output(Output::coin(rng.gen(), 10, asset))

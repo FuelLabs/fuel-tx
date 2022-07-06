@@ -13,6 +13,7 @@ use fuel_crypto::{Message, SecretKey, Signature};
 use alloc::vec::Vec;
 use core::mem;
 
+mod fee;
 mod internals;
 mod metadata;
 mod offset;
@@ -29,6 +30,7 @@ mod txio;
 pub mod consensus_parameters;
 
 pub use consensus_parameters::ConsensusParameters;
+pub use fee::TransactionFee;
 pub use metadata::Metadata;
 pub use repr::TransactionRepr;
 pub use types::{Input, Output, StorageSlot, UtxoId, Witness};

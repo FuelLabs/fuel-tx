@@ -32,7 +32,6 @@ pub struct CheckedTransaction {
 
 impl CheckedTransaction {
     /// Fully verify transaction, including signatures.
-    #[cfg(feature = "std")]
     pub fn check(
         transaction: Transaction,
         block_height: Word,

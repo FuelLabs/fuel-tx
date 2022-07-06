@@ -4,12 +4,17 @@
 //! This allows the VM to accept transactions that have been already verified upstream,
 //! and consolidates logic around fee calculations and free balances.
 
-use crate::ValidationError::InsufficientFeeAmount;
-use crate::{ConsensusParameters, Input, Output, Transaction, ValidationError};
+use crate::{
+    ConsensusParameters, Input, Output, Transaction, ValidationError,
+    ValidationError::InsufficientFeeAmount,
+};
 use alloc::collections::BTreeMap;
 use fuel_types::{AssetId, Word};
 use num_integer::div_ceil;
 
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+// Avoid serde serialization of this type. Since checked tx would need to be re-validated on
+// deserialization anyways, it's cleaner to redo the tx check.
 pub struct CheckedTransaction {
     /// The transaction that was validated
     transaction: Transaction,
@@ -21,16 +26,32 @@ pub struct CheckedTransaction {
     max_fee: Word,
     /// Min guaranteed fee
     min_fee: Word,
+    /// Signatures verified
+    checked_signatures: bool,
 }
 
 impl CheckedTransaction {
+    /// Fully verify transaction, including signatures.
+    #[cfg(feature = "std")]
     pub fn check(
         transaction: Transaction,
         block_height: Word,
         params: &ConsensusParameters,
     ) -> Result<Self, ValidationError> {
+        let mut checked_tx = Self::check_unsigned(transaction, block_height, params)?;
+        checked_tx.transaction.validate_input_signature()?;
+        checked_tx.checked_signatures = true;
+        Ok(checked_tx)
+    }
+
+    /// Verify transaction, without signature checks.
+    pub fn check_unsigned(
+        transaction: Transaction,
+        block_height: Word,
+        params: &ConsensusParameters,
+    ) -> Result<Self, ValidationError> {
         // fully validate transaction (with signature)
-        transaction.validate(block_height, params)?;
+        transaction.validate_without_signature(block_height, params)?;
         // validate fees and compute free balances
         let AvailableBalances {
             initial_free_balances,
@@ -44,27 +65,33 @@ impl CheckedTransaction {
             block_height,
             max_fee,
             min_fee,
+            checked_signatures: false,
         })
     }
 
-    pub fn transaction(&self) -> &Transaction {
+    pub const fn transaction(&self) -> &Transaction {
         &self.transaction
     }
 
+    // TODO: const blocked by https://github.com/rust-lang/rust/issues/92476
     pub fn free_balances(&self) -> impl Iterator<Item = (&AssetId, &Word)> {
         self.initial_free_balances.iter()
     }
 
-    pub fn block_height(&self) -> Word {
+    pub const fn block_height(&self) -> Word {
         self.block_height
     }
 
-    pub fn max_fee(&self) -> Word {
+    pub const fn max_fee(&self) -> Word {
         self.max_fee
     }
 
-    pub fn min_fee(&self) -> Word {
+    pub const fn min_fee(&self) -> Word {
         self.min_fee
+    }
+
+    pub const fn checked_signatures(&self) -> bool {
+        self.checked_signatures
     }
 
     fn _initial_free_balances(
@@ -101,6 +128,7 @@ impl CheckedTransaction {
             .checked_mul(params.gas_per_byte as u128)
             .ok_or(ValidationError::ArithmeticOverflow)?;
 
+        // TODO: use native div_ceil once stabilized out from nightly
         let safe_factored_bytes: u64 = div_ceil(bytes, params.gas_price_factor as u128)
             .try_into()
             .map_err(|_| ValidationError::ArithmeticOverflow)?;
@@ -193,7 +221,8 @@ mod tests {
         let gas_price = 10;
         let gas_limit = 1000;
         let input_amount = 1000;
-        let tx = valid_coin_tx(rng, gas_price, gas_limit, input_amount);
+        let output_amount = 10;
+        let tx = valid_coin_tx(rng, gas_price, gas_limit, input_amount, output_amount);
 
         let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
@@ -203,7 +232,7 @@ mod tests {
         // verify available balance was decreased by max fee
         assert_eq!(
             checked.initial_free_balances[&AssetId::default()],
-            input_amount - checked.max_fee
+            input_amount - checked.max_fee - output_amount
         );
     }
 
@@ -546,6 +575,7 @@ mod tests {
         gas_price: u64,
         gas_limit: u64,
         input_amount: u64,
+        output_amount: u64,
     ) -> Transaction {
         let asset = AssetId::default();
         TransactionBuilder::script(vec![], vec![])
@@ -554,7 +584,7 @@ mod tests {
             .add_unsigned_coin_input(&rng.gen(), rng.gen(), input_amount, asset, 0)
             .add_input(Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen()))
             .add_output(Output::contract(1, rng.gen(), rng.gen()))
-            .add_output(Output::coin(rng.gen(), 10, asset))
+            .add_output(Output::coin(rng.gen(), output_amount, asset))
             .add_output(Output::change(rng.gen(), 0, asset))
             .finalize()
     }

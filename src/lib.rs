@@ -27,7 +27,6 @@ mod receipt;
 #[cfg(feature = "alloc")]
 mod transaction;
 
-#[cfg(feature = "std")]
 mod checked_transaction;
 
 #[cfg(feature = "builder")]

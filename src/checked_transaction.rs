@@ -415,8 +415,14 @@ mod tests {
             .err()
             .expect("Expected invalid transaction");
 
-        // assert that tx without a valid signature fails
-        assert_eq!(ValidationError::InputInvalidSignature { index: 0 }, checked);
+        // assert that tx without base input assets fails
+        assert_eq!(
+            InsufficientFeeAmount {
+                expected: 1,
+                provided: 0
+            },
+            checked
+        );
     }
 
     #[test]

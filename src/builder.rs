@@ -146,6 +146,8 @@ impl<'a> TransactionBuilder<'a> {
 
         self.sign_keys.iter().for_each(|k| tx.sign_inputs(k));
 
+        tx.precompute_metadata();
+
         tx
     }
 }

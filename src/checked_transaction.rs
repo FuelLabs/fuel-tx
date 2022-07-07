@@ -4,14 +4,15 @@
 //! This allows the VM to accept transactions that have been already verified upstream,
 //! and consolidates logic around fee calculations and free balances.
 
-use crate::{ConsensusParameters, Input, Output, Transaction, TransactionFee, ValidationError};
-
-use alloc::collections::BTreeMap;
+use crate::{
+    ConsensusParameters, Input, Metadata, Output, Transaction, TransactionFee, ValidationError,
+};
 use fuel_types::{AssetId, Word};
 
+use alloc::collections::BTreeMap;
 use core::borrow::Borrow;
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 // Avoid serde serialization of this type. Since checked tx would need to be re-validated on
 // deserialization anyways, it's cleaner to redo the tx check.
 pub struct CheckedTransaction {
@@ -29,6 +30,13 @@ pub struct CheckedTransaction {
     checked_signatures: bool,
 }
 
+impl Default for CheckedTransaction {
+    fn default() -> Self {
+        Self::check(Default::default(), Default::default(), &Default::default())
+            .expect("default tx should produce a valid checked transaction")
+    }
+}
+
 impl CheckedTransaction {
     /// Fully verify transaction, including signatures.
     pub fn check(
@@ -44,12 +52,14 @@ impl CheckedTransaction {
 
     /// Verify transaction, without signature checks.
     pub fn check_unsigned(
-        transaction: Transaction,
+        mut transaction: Transaction,
         block_height: Word,
         params: &ConsensusParameters,
     ) -> Result<Self, ValidationError> {
         // fully validate transaction (with signature)
         transaction.validate_without_signature(block_height, params)?;
+        transaction.precompute_metadata();
+
         // validate fees and compute free balances
         let AvailableBalances {
             initial_free_balances,
@@ -90,6 +100,10 @@ impl CheckedTransaction {
 
     pub const fn checked_signatures(&self) -> bool {
         self.checked_signatures
+    }
+
+    pub const fn metadata(&self) -> Option<&Metadata> {
+        self.transaction.metadata()
     }
 
     fn _initial_free_balances(
@@ -192,6 +206,11 @@ mod tests {
     use quickcheck_macros::quickcheck;
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
+
+    #[test]
+    fn checked_tx_has_default() {
+        CheckedTransaction::default();
+    }
 
     #[test]
     fn checked_tx_accepts_valid_tx() {

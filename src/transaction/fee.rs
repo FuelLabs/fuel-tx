@@ -1,11 +1,8 @@
-use fuel_asm::{PanicReason, Word};
+use fuel_asm::Word;
 
-use crate::{ConsensusParameters, ValidationError};
+use crate::ConsensusParameters;
 
-#[cfg(feature = "std")]
 use crate::Transaction;
-
-#[cfg(feature = "std")]
 use core::borrow::Borrow;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -43,23 +40,23 @@ impl TransactionFee {
     }
 
     /// Attempt to subtract the maximum fee value from a given balance
-    pub fn try_deduct_max(&self, balance: Word) -> Result<Word, ValidationError> {
+    ///
+    /// Will return `None` if arithmetic overflow occurs.
+    pub fn checked_deduct_total(&self, balance: Word) -> Option<Word> {
         let fee = self.total();
 
-        balance
-            .checked_sub(fee)
-            .ok_or(ValidationError::InsufficientFeeAmount {
-                expected: fee,
-                provided: balance,
-            })
+        balance.checked_sub(fee)
     }
 
-    pub fn from_values(
+    /// Attempt to create a transaction fee from parameters and value arguments
+    ///
+    /// Will return `None` if arithmetic overflow occurs.
+    pub fn checked_from_values(
         params: &ConsensusParameters,
         metered_bytes: Word,
         gas_limit: Word,
         gas_price: Word,
-    ) -> Result<Self, PanicReason> {
+    ) -> Option<Self> {
         let factor = params.gas_price_factor as u128;
 
         // TODO: use native div_ceil once stabilized out from nightly
@@ -76,11 +73,12 @@ impl TransactionFee {
         bytes
             .zip(total)
             .map(|(bytes, total)| Self::new(bytes, total))
-            .ok_or(PanicReason::ArithmeticOverflow)
     }
 
-    #[cfg(feature = "std")]
-    pub fn from_tx<T>(params: &ConsensusParameters, tx: T) -> Result<Self, PanicReason>
+    /// Attempt to create a transaction fee from parameters and transaction internals
+    ///
+    /// Will return `None` if arithmetic overflow occurs.
+    pub fn checked_from_tx<T>(params: &ConsensusParameters, tx: T) -> Option<Self>
     where
         T: Borrow<Transaction>,
     {
@@ -90,6 +88,110 @@ impl TransactionFee {
         let gas_limit = tx.gas_limit();
         let gas_price = tx.gas_price();
 
-        Self::from_values(params, metered_bytes, gas_limit, gas_price)
+        Self::checked_from_values(params, metered_bytes, gas_limit, gas_price)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{ConsensusParameters, TransactionFee, Word};
+
+    const PARAMS: ConsensusParameters = ConsensusParameters::DEFAULT
+        .with_gas_per_byte(2)
+        .with_gas_price_factor(3);
+
+    #[test]
+    fn base_fee_is_calculated_correctly() {
+        let metered_bytes = 5;
+        let gas_limit = 7;
+        let gas_price = 11;
+
+        let fee: Word =
+            TransactionFee::checked_from_values(&PARAMS, metered_bytes, gas_limit, gas_price)
+                .expect("failed to calculate fee")
+                .into();
+
+        let expected = PARAMS.gas_per_byte * metered_bytes + gas_limit;
+        let expected = expected * gas_price;
+        let expected = expected as f64 / PARAMS.gas_price_factor as f64;
+        let expected = expected.ceil() as Word;
+
+        assert_eq!(expected, fee);
+    }
+
+    #[test]
+    fn base_fee_ceils() {
+        let metered_bytes = 5;
+        let gas_limit = 7;
+        let gas_price = 11;
+
+        let fee: Word =
+            TransactionFee::checked_from_values(&PARAMS, metered_bytes, gas_limit, gas_price)
+                .expect("failed to calculate fee")
+                .into();
+
+        let expected = PARAMS.gas_per_byte * metered_bytes + gas_limit;
+        let expected = expected * gas_price;
+        let expected = expected as f64 / PARAMS.gas_price_factor as f64;
+        let truncated = expected as Word;
+        let expected = expected.ceil() as Word;
+
+        assert_ne!(truncated, expected);
+        assert_eq!(expected, fee);
+    }
+
+    #[test]
+    fn base_fee_zeroes() {
+        let metered_bytes = 5;
+        let gas_limit = 7;
+        let gas_price = 0;
+
+        let fee: Word =
+            TransactionFee::checked_from_values(&PARAMS, metered_bytes, gas_limit, gas_price)
+                .expect("failed to calculate fee")
+                .into();
+
+        let expected = 0u64;
+
+        assert_eq!(expected, fee);
+    }
+
+    #[test]
+    fn base_fee_wont_overflow_on_bytes() {
+        let metered_bytes = Word::MAX;
+        let gas_limit = 7;
+        let gas_price = 11;
+
+        let overflow =
+            TransactionFee::checked_from_values(&PARAMS, metered_bytes, gas_limit, gas_price)
+                .is_none();
+
+        assert!(overflow);
+    }
+
+    #[test]
+    fn base_fee_wont_overflow_on_limit() {
+        let metered_bytes = 5;
+        let gas_limit = Word::MAX;
+        let gas_price = 11;
+
+        let overflow =
+            TransactionFee::checked_from_values(&PARAMS, metered_bytes, gas_limit, gas_price)
+                .is_none();
+
+        assert!(overflow);
+    }
+
+    #[test]
+    fn base_fee_wont_overflow_on_price() {
+        let metered_bytes = 5;
+        let gas_limit = 7;
+        let gas_price = Word::MAX;
+
+        let overflow =
+            TransactionFee::checked_from_values(&PARAMS, metered_bytes, gas_limit, gas_price)
+                .is_none();
+
+        assert!(overflow);
     }
 }

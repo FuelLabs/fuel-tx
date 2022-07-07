@@ -47,11 +47,6 @@ path = "tests/bytes.rs"
 required-features = ["serde", "std"]
 
 [[test]]
-name = "test-fee"
-path = "tests/fee.rs"
-required-features = ["std"]
-
-[[test]]
 name = "test-offsets"
 path = "tests/offset.rs"
 required-features = ["std"]

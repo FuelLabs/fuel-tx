@@ -2,10 +2,8 @@ use crate::consts::*;
 
 use fuel_asm::Opcode;
 use fuel_crypto::PublicKey;
+use fuel_types::bytes::{self, SizedBytes};
 use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
-
-#[cfg(feature = "std")]
-use fuel_types::bytes::SizedBytes;
 
 #[cfg(feature = "std")]
 use fuel_crypto::{Message, SecretKey, Signature};
@@ -418,7 +416,6 @@ impl Transaction {
     }
 
     /// Used for accounting purposes when charging byte based fees
-    #[cfg(feature = "std")]
     pub fn metered_bytes_size(&self) -> usize {
         // Just use the default serialized size for now until
         // the compressed representation for accounting purposes
@@ -463,6 +460,46 @@ impl Transaction {
             .iter_mut()
             .for_each(|o| o.prepare_init());
         self
+    }
+}
+
+impl SizedBytes for Transaction {
+    fn serialized_size(&self) -> usize {
+        let inputs = self
+            .inputs()
+            .iter()
+            .map(|i| i.serialized_size())
+            .sum::<usize>();
+
+        let outputs = self
+            .outputs()
+            .iter()
+            .map(|o| o.serialized_size())
+            .sum::<usize>();
+
+        let witnesses = self
+            .witnesses()
+            .iter()
+            .map(|w| w.serialized_size())
+            .sum::<usize>();
+
+        let n = match self {
+            Self::Script {
+                script,
+                script_data,
+                ..
+            } => {
+                TRANSACTION_SCRIPT_FIXED_SIZE
+                    + bytes::padded_len(script.as_slice())
+                    + bytes::padded_len(script_data.as_slice())
+            }
+
+            Self::Create { storage_slots, .. } => {
+                TRANSACTION_CREATE_FIXED_SIZE + storage_slots.len() * StorageSlot::SLOT_SIZE
+            }
+        };
+
+        n + inputs + outputs + witnesses
     }
 }
 

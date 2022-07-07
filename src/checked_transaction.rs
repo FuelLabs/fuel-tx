@@ -118,13 +118,18 @@ impl CheckedTransaction {
 
         // Deduct fee from base asset
 
-        let fee = TransactionFee::from_tx(params, transaction)
-            .map_err(|_| ValidationError::ArithmeticOverflow)?;
+        let fee = TransactionFee::checked_from_tx(params, transaction)
+            .ok_or(ValidationError::ArithmeticOverflow)?;
 
         let base_asset = AssetId::default();
         let base_asset_balance = balances.entry(base_asset).or_default();
 
-        *base_asset_balance = fee.try_deduct_max(*base_asset_balance)?;
+        *base_asset_balance = fee.checked_deduct_total(*base_asset_balance).ok_or(
+            ValidationError::InsufficientFeeAmount {
+                expected: fee.total(),
+                provided: *base_asset_balance,
+            },
+        )?;
 
         let (min_fee, max_fee) = fee.into_inner();
 

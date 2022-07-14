@@ -113,47 +113,66 @@ impl CheckedTransaction {
     /// `revert` will signal if the execution was reverted. It will refund the unused gas cost to
     /// the base asset and reset output changes to their initial balances.
     ///
-    /// `unused_gas` will be added to the output that contains the base asset
+    /// `remaining_gas` expects the raw content of `$ggas`
     ///
     /// `balances` will contain the current state of the free balances
-    pub fn update_outputs<I>(&mut self, revert: bool, unused_gas: Word, balances: &I)
+    pub fn update_outputs<I>(
+        &mut self,
+        params: &ConsensusParameters,
+        revert: bool,
+        remaining_gas: Word,
+        balances: &I,
+    ) -> Result<(), ValidationError>
     where
         I: for<'a> Index<&'a AssetId, Output = Word>,
     {
+        let factor = params.gas_price_factor as f64;
+        let gas_refund = self
+            .transaction()
+            .gas_price()
+            .checked_mul(remaining_gas)
+            .ok_or(ValidationError::ArithmeticOverflow)? as f64;
+
+        let gas_refund = (gas_refund / factor).floor() as Word;
+
         self.transaction
             ._outputs_mut()
             .iter_mut()
-            .for_each(|o| match o {
+            .try_for_each(|o| match o {
                 // If revert, set base asset to initial balance and refund unused gas
                 //
                 // Note: the initial balance deducts the gas limit from base asset
                 Output::Change {
                     asset_id, amount, ..
-                } if revert && asset_id == &BASE_ASSET => {
-                    *amount = self.initial_free_balances[&BASE_ASSET] + unused_gas
-                }
+                } if revert && asset_id == &BASE_ASSET => self.initial_free_balances[&BASE_ASSET]
+                    .checked_add(gas_refund)
+                    .map(|v| *amount = v)
+                    .ok_or(ValidationError::ArithmeticOverflow),
 
                 // If revert, reset any non-base asset to its initial balance
                 Output::Change {
                     asset_id, amount, ..
-                } if revert => *amount = self.initial_free_balances[asset_id],
+                } if revert => Ok(*amount = self.initial_free_balances[asset_id]),
 
                 // The change for the base asset will be the available balance + unused gas
                 Output::Change {
                     asset_id, amount, ..
-                } if asset_id == &BASE_ASSET => *amount = balances[asset_id] + unused_gas,
+                } if asset_id == &BASE_ASSET => balances[asset_id]
+                    .checked_add(gas_refund)
+                    .map(|v| *amount = v)
+                    .ok_or(ValidationError::ArithmeticOverflow),
 
                 // Set changes to the remainder provided balances
                 Output::Change {
                     asset_id, amount, ..
-                } => *amount = balances[asset_id],
+                } => Ok(*amount = balances[asset_id]),
 
                 // If revert, zeroes all variable output values
-                Output::Variable { amount, .. } if revert => *amount = 0,
+                Output::Variable { amount, .. } if revert => Ok(*amount = 0),
 
                 // Other outputs are unaffected
-                _ => (),
-            });
+                _ => Ok(()),
+            })
     }
 
     fn _initial_free_balances(

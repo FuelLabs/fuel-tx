@@ -154,6 +154,15 @@ impl TransactionBuilder {
     }
 
     #[cfg(feature = "std")]
+    pub fn finalize_without_signature(&mut self) -> Transaction {
+        let mut tx = core::mem::take(&mut self.tx);
+
+        tx.precompute_metadata();
+
+        tx
+    }
+
+    #[cfg(feature = "std")]
     pub fn finalize_checked(
         &mut self,
         height: Word,
@@ -170,7 +179,7 @@ impl TransactionBuilder {
         height: Word,
         params: &ConsensusParameters,
     ) -> CheckedTransaction {
-        self.finalize()
+        self.finalize_without_signature()
             .check_without_signature(height, params)
             .expect("failed to check tx")
     }

@@ -62,12 +62,14 @@ where
 
             let err = d
                 .read(buffer.as_mut_slice())
-                .expect_err("Insufficient buffer should fail!");
+                .err()
+                .expect("Insufficient buffer should fail!");
             assert_eq!(io::ErrorKind::UnexpectedEof, err.kind());
 
             let err = d_p
                 .write(buffer.as_slice())
-                .expect_err("Insufficient buffer should fail!");
+                .err()
+                .expect("Insufficient buffer should fail!");
             assert_eq!(io::ErrorKind::UnexpectedEof, err.kind());
 
             if buffer.is_empty() {

@@ -92,7 +92,8 @@ fn coin_signed() {
     let block_height = rng.gen();
     let err = tx
         .validate(block_height, &Default::default())
-        .expect_err("Expected failure");
+        .err()
+        .expect("Expected failure");
 
     assert_eq!(ValidationError::InputWitnessIndexBounds { index: 0 }, err);
 }
@@ -256,7 +257,8 @@ fn message() {
     let block_height = rng.gen();
     let err = tx
         .validate(block_height, &Default::default())
-        .expect_err("Expected failure");
+        .err()
+        .expect("Expected failure");
 
     assert_eq!(ValidationError::InputWitnessIndexBounds { index: 0 }, err,);
 
@@ -276,7 +278,8 @@ fn message() {
         generate_bytes(rng),
     )
     .validate(1, &txhash, &[], &[], &Default::default())
-    .expect_err("Expected failure");
+    .err()
+    .expect("Expected failure");
 
     assert_eq!(ValidationError::InputPredicateOwner { index: 1 }, err);
 
@@ -293,7 +296,8 @@ fn message() {
         data.clone(),
     )
     .validate(1, &txhash, &[], &[vec![].into()], &Default::default())
-    .expect_err("expected max data length error");
+    .err()
+    .expect("expected max data length error");
 
     assert_eq!(ValidationError::InputMessageDataLength { index: 1 }, err,);
 
@@ -304,12 +308,13 @@ fn message() {
         rng.gen(),
         rng.gen(),
         rng.gen(),
-        data,
+        data.clone(),
         generate_nonempty_padded_bytes(rng),
         generate_bytes(rng),
     )
     .validate(1, &txhash, &[], &[], &Default::default())
-    .expect_err("expected max data length error");
+    .err()
+    .expect("expected max data length error");
 
     assert_eq!(ValidationError::InputMessageDataLength { index: 1 }, err,);
 
@@ -327,7 +332,8 @@ fn message() {
         generate_bytes(rng),
     )
     .validate(1, &txhash, &[], &[], &Default::default())
-    .expect_err("expected max predicate length error");
+    .err()
+    .expect("expected max predicate length error");
 
     assert_eq!(ValidationError::InputPredicateLength { index: 1 }, err,);
 
@@ -345,7 +351,8 @@ fn message() {
         predicate_data,
     )
     .validate(1, &txhash, &[], &[], &Default::default())
-    .expect_err("expected max predicate data length error");
+    .err()
+    .expect("expected max predicate data length error");
 
     assert_eq!(ValidationError::InputPredicateDataLength { index: 1 }, err,);
 }
@@ -364,7 +371,8 @@ fn transaction_with_duplicate_coin_inputs_is_invalid() {
         .add_witness(rng.gen())
         .finalize()
         .validate_without_signature(0, &Default::default())
-        .expect_err("Expected validation failure");
+        .err()
+        .expect("Expected validation failure");
 
     assert_eq!(err, ValidationError::DuplicateInputUtxoId { utxo_id });
 }
@@ -392,7 +400,8 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
         .add_witness(rng.gen())
         .finalize()
         .validate_without_signature(0, &Default::default())
-        .expect_err("Expected validation failure");
+        .err()
+        .expect("Expected validation failure");
 
     assert_eq!(err, ValidationError::DuplicateMessageInputId { message_id });
 }
@@ -415,7 +424,8 @@ fn transaction_with_duplicate_contract_inputs_is_invalid() {
         .add_output(p)
         .finalize()
         .validate_without_signature(0, &Default::default())
-        .expect_err("Expected validation failure");
+        .err()
+        .expect("Expected validation failure");
 
     assert_eq!(
         err,

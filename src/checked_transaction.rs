@@ -225,7 +225,7 @@ mod tests {
         let gas_limit = 1000;
         let tx = signed_message_tx(rng, gas_price, gas_limit, input_amount, output_amont);
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
+        let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 
         // verify available balance was decreased by max fee
@@ -246,7 +246,7 @@ mod tests {
         let gas_limit = 1000;
         let tx = signed_message_tx(rng, gas_price, gas_limit, input_amount, output_amont);
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
+        let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 
         // verify available balance was decreased by max fee
@@ -390,8 +390,9 @@ mod tests {
             .add_witness(Default::default())
             .finalize();
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
-            .expect_err("Expected invalid transaction");
+        let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
+            .err()
+            .expect("Expected invalid transaction");
 
         // assert that tx without base input assets fails
         assert_eq!(
@@ -416,7 +417,8 @@ mod tests {
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
         let err = CheckedTransaction::check(transaction, 0, &params)
-            .expect_err("insufficient fee amount expected");
+            .err()
+            .expect("insufficient fee amount expected");
 
         let provided = match err {
             ValidationError::InsufficientFeeAmount { provided, .. } => provided,
@@ -440,7 +442,8 @@ mod tests {
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
         let err = CheckedTransaction::check(transaction, 0, &params)
-            .expect_err("insufficient fee amount expected");
+            .err()
+            .expect("insufficient fee amount expected");
 
         let provided = match err {
             ValidationError::InsufficientFeeAmount { provided, .. } => provided,
@@ -460,10 +463,11 @@ mod tests {
         let params = ConsensusParameters::default().with_gas_price_factor(1);
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
-        let err =
-            CheckedTransaction::check(transaction, 0, &params).expect_err("overflow expected");
+        let err = CheckedTransaction::check(transaction, 0, &params)
+            .err()
+            .expect("overflow expected");
 
-        assert_eq!(err, ValidationError::ArithmeticOverflow);
+        assert_eq!(err, ValidationError::ArithmeticOverflow.into());
     }
 
     #[test]
@@ -476,10 +480,11 @@ mod tests {
 
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
-        let err =
-            CheckedTransaction::check(transaction, 0, &params).expect_err("overflow expected");
+        let err = CheckedTransaction::check(transaction, 0, &params)
+            .err()
+            .expect("overflow expected");
 
-        assert_eq!(err, ValidationError::ArithmeticOverflow);
+        assert_eq!(err, ValidationError::ArithmeticOverflow.into());
     }
 
     #[test]
@@ -500,8 +505,9 @@ mod tests {
             .add_output(Output::change(rng.gen(), 0, any_asset))
             .finalize();
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
-            .expect_err("Expected valid transaction");
+        let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
+            .err()
+            .expect("Expected valid transaction");
 
         assert_eq!(
             ValidationError::InsufficientInputAmount {
@@ -517,7 +523,7 @@ mod tests {
         tx: &Transaction,
         params: &ConsensusParameters,
     ) -> Result<bool, ValidationError> {
-        let available_balances = CheckedTransaction::_initial_free_balances(tx, params)?;
+        let available_balances = CheckedTransaction::_initial_free_balances(&tx, &params)?;
         // cant overflow as metered bytes * gas_per_byte < u64::MAX
         let bytes = (tx.metered_bytes_size() as u128)
             * params.gas_per_byte as u128
@@ -536,7 +542,7 @@ mod tests {
         tx: &Transaction,
         params: &ConsensusParameters,
     ) -> Result<bool, ValidationError> {
-        let available_balances = CheckedTransaction::_initial_free_balances(tx, params)?;
+        let available_balances = CheckedTransaction::_initial_free_balances(&tx, &params)?;
         // cant overflow as metered bytes * gas_per_byte < u64::MAX
         let bytes = (tx.metered_bytes_size() as u128)
             * params.gas_per_byte as u128

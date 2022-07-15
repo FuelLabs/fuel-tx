@@ -127,7 +127,7 @@ impl CheckedTransaction {
         I: for<'a> Index<&'a AssetId, Output = Word>,
     {
         let gas_refund =
-            TransactionFee::gas_to_value(params, remaining_gas, self.transaction.gas_price())
+            TransactionFee::gas_refund_value(params, remaining_gas, self.transaction.gas_price())
                 .ok_or(ValidationError::ArithmeticOverflow)?;
 
         self.transaction

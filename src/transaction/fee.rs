@@ -79,7 +79,7 @@ impl TransactionFee {
     /// parameters.
     ///
     /// Will return `None` if overflow occurs
-    pub fn gas_to_value(params: &ConsensusParameters, gas: Word, price: Word) -> Option<Word> {
+    pub fn gas_refund_value(params: &ConsensusParameters, gas: Word, price: Word) -> Option<Word> {
         let gas = gas as u128;
         let price = price as u128;
         let factor = params.gas_price_factor as u128;

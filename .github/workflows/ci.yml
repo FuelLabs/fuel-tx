@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings -D clippy::dbg_macro
 
 jobs:
   cancel-previous-runs:
@@ -29,7 +30,7 @@ jobs:
           - command: fmt
             args: --all --verbose -- --check
           - command: clippy
-            args: --all-targets --all-features -- -D warnings -D clippy::dbg_macro
+            args: --all-targets --all-features
           - command: check
             args: --all-targets
           - command: check

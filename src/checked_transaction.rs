@@ -308,7 +308,12 @@ mod tests {
 
     #[test]
     fn checked_tx_has_default() {
-        CheckedTransaction::default();
+        let height = 1;
+
+        CheckedTransaction::default()
+            .transaction()
+            .validate(height, &Default::default())
+            .expect("default checked tx should be valid");
     }
 
     #[test]

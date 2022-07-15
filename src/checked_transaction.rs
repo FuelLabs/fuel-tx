@@ -147,7 +147,10 @@ impl CheckedTransaction {
                 // If revert, reset any non-base asset to its initial balance
                 Output::Change {
                     asset_id, amount, ..
-                } if revert => Ok(*amount = self.initial_free_balances[asset_id]),
+                } if revert => {
+                    *amount = self.initial_free_balances[asset_id];
+                    Ok(())
+                }
 
                 // The change for the base asset will be the available balance + unused gas
                 Output::Change {
@@ -160,10 +163,16 @@ impl CheckedTransaction {
                 // Set changes to the remainder provided balances
                 Output::Change {
                     asset_id, amount, ..
-                } => Ok(*amount = balances[asset_id]),
+                } => {
+                    *amount = balances[asset_id];
+                    Ok(())
+                }
 
                 // If revert, zeroes all variable output values
-                Output::Variable { amount, .. } if revert => Ok(*amount = 0),
+                Output::Variable { amount, .. } if revert => {
+                    *amount = 0;
+                    Ok(())
+                }
 
                 // Other outputs are unaffected
                 _ => Ok(()),

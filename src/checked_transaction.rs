@@ -7,10 +7,15 @@
 use crate::{
     ConsensusParameters, Input, Metadata, Output, Transaction, TransactionFee, ValidationError,
 };
-use fuel_types::{AssetId, Word};
+use fuel_asm::PanicReason;
+use fuel_types::bytes::SerializableVec;
+use fuel_types::{Address, AssetId, Bytes32, Word};
 
 use alloc::collections::BTreeMap;
 use core::{borrow::Borrow, ops::Index};
+
+use core::mem;
+use std::io::{self, Read};
 
 const BASE_ASSET: AssetId = AssetId::zeroed();
 
@@ -106,6 +111,70 @@ impl CheckedTransaction {
 
     pub const fn metadata(&self) -> Option<&Metadata> {
         self.transaction.metadata()
+    }
+
+    pub fn tx_bytes(&mut self) -> Vec<u8> {
+        self.transaction.to_bytes()
+    }
+
+    pub fn tx_output_to_mem(&mut self, idx: usize, buf: &mut [u8]) -> io::Result<usize> {
+        self.transaction
+            ._outputs_mut()
+            .get_mut(idx)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Invalid output idx"))
+            .and_then(|o| o.read(buf))
+    }
+
+    pub fn tx_set_receipts_root(&mut self, root: Bytes32) -> Option<Bytes32> {
+        self.transaction.set_receipts_root(root)
+    }
+
+    pub fn tx_replace_message_output(
+        &mut self,
+        idx: usize,
+        output: Output,
+    ) -> Result<(), PanicReason> {
+        // TODO increase the error granularity for this case - create a new variant of panic reason
+        if !matches!(&output, Output::Message {
+                recipient,
+                ..
+            } if recipient != &Address::zeroed())
+        {
+            return Err(PanicReason::OutputNotFound);
+        }
+
+        self.transaction
+            ._outputs_mut()
+            .get_mut(idx)
+            .and_then(|o| match o {
+                Output::Message { recipient, .. } if recipient == &Address::zeroed() => Some(o),
+                _ => None,
+            })
+            .map(|o| mem::replace(o, output))
+            .map(|_| ())
+            .ok_or(PanicReason::NonZeroMessageOutputRecipient)
+    }
+
+    pub fn tx_replace_variable_output(
+        &mut self,
+        idx: usize,
+        output: Output,
+    ) -> Result<(), PanicReason> {
+        if !output.is_variable() {
+            return Err(PanicReason::ExpectedOutputVariable);
+        }
+
+        // TODO increase the error granularity for this case - create a new variant of panic reason
+        self.transaction
+            ._outputs_mut()
+            .get_mut(idx)
+            .and_then(|o| match o {
+                Output::Variable { amount, .. } if amount == &0 => Some(o),
+                _ => None,
+            })
+            .map(|o| mem::replace(o, output))
+            .map(|_| ())
+            .ok_or(PanicReason::OutputNotFound)
     }
 
     /// Update change and variable outputs.
@@ -263,6 +332,7 @@ impl AsRef<Transaction> for CheckedTransaction {
     }
 }
 
+#[cfg(feature = "internals")]
 impl AsMut<Transaction> for CheckedTransaction {
     fn as_mut(&mut self) -> &mut Transaction {
         &mut self.transaction

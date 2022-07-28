@@ -151,13 +151,14 @@ mod tests {
         ($($expr:expr),*) => {{
             let mut settings = insta::Settings::clone_current();
             settings.set_snapshot_suffix(format!($($expr,)*));
-            settings.bind_to_thread();
+            settings.bind_to_scope();
         }}
     }
 
     // safe-guard against breaking changes to the code root calculation for valid
     // sizes of bytecode (multiples of instruction size in bytes (half-word))
     #[rstest]
+    #[ignore]
     fn code_root_snapshot(#[values(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100)] instructions: usize) {
         let mut rng = StdRng::seed_from_u64(100);
         let code_len = instructions * WORD_SIZE / 2;
@@ -187,6 +188,7 @@ mod tests {
     }
 
     #[rstest]
+    #[ignore]
     fn state_root_snapshot(
         #[values(Vec::new(), vec![Bytes64::new([1u8; 64])])] state_slot_bytes: Vec<Bytes64>,
     ) {
@@ -198,6 +200,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn default_state_root_snapshot() {
         let default_root = Contract::default_state_root();
         insta::assert_debug_snapshot!(default_root);

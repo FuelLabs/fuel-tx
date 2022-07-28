@@ -35,9 +35,9 @@ fn tx_offset() {
     let mut tested_output_contract_created_id = false;
     let mut tested_output_recipient = false;
 
-    let cases = 3;
+    let cases = 2;
 
-    TransactionFactory::from_seed(1296)
+    TransactionFactory::from_seed(1295)
         .take(cases)
         .for_each(|(mut tx, _)| {
             let bytes = tx.to_bytes();

@@ -150,7 +150,6 @@ mod tests {
     // safe-guard against breaking changes to the code root calculation for valid
     // sizes of bytecode (multiples of instruction size in bytes (half-word))
     #[rstest]
-    // TODO https://github.com/FuelLabs/fuel-tx/issues/171
     fn code_root_snapshot(#[values(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100)] instructions: usize) {
         let mut rng = StdRng::seed_from_u64(100);
         let code_len = instructions * WORD_SIZE / 2;
@@ -184,7 +183,6 @@ mod tests {
     }
 
     #[rstest]
-    // TODO https://github.com/FuelLabs/fuel-tx/issues/171
     fn state_root_snapshot(
         #[values(Vec::new(), vec![Bytes64::new([1u8; 64])])] state_slot_bytes: Vec<Bytes64>,
     ) {

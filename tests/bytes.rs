@@ -728,11 +728,11 @@ fn create_input_coin_data_offset() {
                         .expect("Failed to serialize input");
 
                     let (offset, len) = tx
-                        .input_coin_predicate_offset(last_input)
+                        .input_predicate_offset(last_input)
                         .expect("Failed to fetch offset");
 
                     let (offset_p, _) = tx_p
-                        .input_coin_predicate_offset(last_input)
+                        .input_predicate_offset(last_input)
                         .expect("Failed to fetch offset from tx with precomputed metadata!");
 
                     assert_eq!(offset, offset_p);
@@ -858,10 +858,10 @@ fn script_input_coin_data_offset() {
                         );
 
                         let (offset, len) = tx
-                            .input_coin_predicate_offset(offset)
+                            .input_predicate_offset(offset)
                             .expect("Failed to fetch offset");
 
-                        assert_ne!(predicate.len(), len);
+                        assert_ne!(bytes::padded_len(&predicate), predicate.len());
                         assert_eq!(bytes::padded_len(&predicate), len);
 
                         assert_eq!(

@@ -147,19 +147,10 @@ mod tests {
     use rand::{rngs::StdRng, RngCore, SeedableRng};
     use rstest::rstest;
 
-    macro_rules! set_snapshot_suffix {
-        ($($expr:expr),*) => {{
-            let mut settings = insta::Settings::clone_current();
-            settings.set_snapshot_suffix(format!($($expr,)*));
-            settings.bind_to_scope();
-        }}
-    }
-
     // safe-guard against breaking changes to the code root calculation for valid
     // sizes of bytecode (multiples of instruction size in bytes (half-word))
     #[rstest]
     // TODO https://github.com/FuelLabs/fuel-tx/issues/171
-    #[ignore]
     fn code_root_snapshot(#[values(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100)] instructions: usize) {
         let mut rng = StdRng::seed_from_u64(100);
         let code_len = instructions * WORD_SIZE / 2;
@@ -170,8 +161,12 @@ mod tests {
         let root = Contract::root_from_code(code);
 
         // take root snapshot
-        set_snapshot_suffix!("instructions-{}", instructions);
-        insta::assert_debug_snapshot!(root);
+        insta::with_settings!(
+            {snapshot_suffix => format!("instructions-{}", instructions)},
+            {
+                insta::assert_debug_snapshot!(root);
+            }
+        );
     }
 
     // validate code_root is always equivalent to contract.root
@@ -190,15 +185,18 @@ mod tests {
 
     #[rstest]
     // TODO https://github.com/FuelLabs/fuel-tx/issues/171
-    #[ignore]
     fn state_root_snapshot(
         #[values(Vec::new(), vec![Bytes64::new([1u8; 64])])] state_slot_bytes: Vec<Bytes64>,
     ) {
         let slots: Vec<StorageSlot> = state_slot_bytes.iter().map(Into::into).collect_vec();
         let state_root = Contract::initial_state_root(&mut slots.iter());
         // take root snapshot
-        set_snapshot_suffix!("state-root-{}", slots.len());
-        insta::assert_debug_snapshot!(state_root);
+        insta::with_settings!(
+            {snapshot_suffix => format!("state-root-{}", slots.len())},
+            {
+                insta::assert_debug_snapshot!(state_root);
+            }
+        );
     }
 
     #[test]

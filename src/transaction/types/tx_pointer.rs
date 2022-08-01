@@ -96,8 +96,11 @@ impl io::Write for TxPointer {
         let (block_height, buf) = unsafe { bytes::restore_word_unchecked(buf) };
         let (tx_index, _) = unsafe { bytes::restore_word_unchecked(buf) };
 
-        self.block_height = block_height as u32;
-        self.tx_index = tx_index as u16;
+        self.block_height =
+            u32::try_from(block_height).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
+        self.tx_index =
+            u16::try_from(tx_index).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
         Ok(Self::LEN)
     }

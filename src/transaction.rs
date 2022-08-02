@@ -470,6 +470,9 @@ impl Transaction {
     }
 
     /// Prepare the transaction for VM initialization for script execution
+    ///
+    /// note: Fields dependent on storage/state such as balance and state roots, or tx pointers,
+    /// should already set by the client beforehand.
     #[cfg(feature = "std")]
     pub fn prepare_init_script(&mut self) -> io::Result<&mut Self> {
         let outputs = match self {

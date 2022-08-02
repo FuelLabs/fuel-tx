@@ -642,7 +642,7 @@ fn transaction() {
 }
 
 #[test]
-fn create_input_coin_data_offset() {
+fn create_input_data_offset() {
     let rng = &mut StdRng::seed_from_u64(8586);
 
     let gas_price = 100;

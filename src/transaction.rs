@@ -22,6 +22,9 @@ mod repr;
 mod types;
 mod validation;
 
+#[cfg(feature = "serde")]
+mod display;
+
 #[cfg(feature = "std")]
 mod id;
 

@@ -74,8 +74,8 @@ fn input_coin_message_signature() {
         let amount = rng.gen();
         let data = generate_bytes(rng);
 
-        sign_and_validate(rng, txs.by_ref(), |tx, public| {
-            tx.add_unsigned_message_input(sender, recipient, nonce, public, amount, data.clone())
+        sign_and_validate(rng, txs.by_ref(), |tx, _| {
+            tx.add_unsigned_message_input(sender, recipient, nonce, amount, data.clone())
         })
         .expect("Failed to validate transaction");
     }
@@ -234,15 +234,14 @@ fn message() {
     let txhash: Bytes32 = rng.gen();
 
     let predicate = generate_nonempty_padded_bytes(rng);
-    let owner = (*Contract::root_from_code(&predicate)).into();
+    let recipient = (*Contract::root_from_code(&predicate)).into();
 
     Input::message_predicate(
         rng.gen(),
         rng.gen(),
+        recipient,
         rng.gen(),
         rng.gen(),
-        rng.gen(),
-        owner,
         generate_bytes(rng),
         predicate,
         generate_bytes(rng),
@@ -253,7 +252,6 @@ fn message() {
     let mut tx = Transaction::default();
 
     let input = Input::message_signed(
-        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),
@@ -273,16 +271,15 @@ fn message() {
     assert_eq!(ValidationError::InputWitnessIndexBounds { index: 0 }, err,);
 
     let mut predicate = generate_nonempty_padded_bytes(rng);
-    let owner = (*Contract::root_from_code(&predicate)).into();
+    let recipient = (*Contract::root_from_code(&predicate)).into();
     predicate[0] = predicate[0].wrapping_add(1);
 
     let err = Input::message_predicate(
         rng.gen(),
         rng.gen(),
+        recipient,
         rng.gen(),
         rng.gen(),
-        rng.gen(),
-        owner,
         generate_bytes(rng),
         predicate,
         generate_bytes(rng),
@@ -300,7 +297,6 @@ fn message() {
         rng.gen(),
         rng.gen(),
         rng.gen(),
-        rng.gen(),
         0,
         data.clone(),
     )
@@ -310,7 +306,6 @@ fn message() {
     assert_eq!(ValidationError::InputMessageDataLength { index: 1 }, err,);
 
     let err = Input::message_predicate(
-        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),
@@ -333,7 +328,6 @@ fn message() {
         rng.gen(),
         rng.gen(),
         rng.gen(),
-        rng.gen(),
         generate_bytes(rng),
         predicate,
         generate_bytes(rng),
@@ -346,7 +340,6 @@ fn message() {
     let predicate_data = vec![0xff; PARAMS.max_predicate_data_length as usize + 1];
 
     let err = Input::message_predicate(
-        rng.gen(),
         rng.gen(),
         rng.gen(),
         rng.gen(),
@@ -408,7 +401,6 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
         rng.gen(),
         rng.gen(),
         0,
-        rng.gen(),
         0,
         generate_bytes(rng),
     );

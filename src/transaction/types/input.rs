@@ -250,11 +250,8 @@ impl Input {
             | Self::CoinPredicate { owner, .. }
             | Self::MessageSigned {
                 recipient: owner, ..
-            }
-            | Self::MessagePredicate {
-                recipient: owner, ..
             } => Some(owner),
-            Self::Contract { .. } => None,
+            Self::MessagePredicate { .. } | Self::Contract { .. } => None,
         }
     }
 

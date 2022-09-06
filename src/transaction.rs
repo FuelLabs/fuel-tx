@@ -414,6 +414,11 @@ impl Transaction {
                     owner,
                     witness_index,
                     ..
+                }
+                | Input::MessageSigned {
+                    recipient: owner,
+                    witness_index,
+                    ..
                 } if owner == &pk => Some(*witness_index as usize),
                 _ => None,
             })

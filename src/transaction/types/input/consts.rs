@@ -29,7 +29,7 @@ pub(super) const INPUT_MESSAGE_ID_OFFSET: usize = WORD_SIZE; // Identifier
 pub(super) const INPUT_MESSAGE_SENDER_OFFSET: usize = INPUT_MESSAGE_ID_OFFSET + MessageId::LEN; // message_id
 pub(super) const INPUT_MESSAGE_RECIPIENT_OFFSET: usize = INPUT_MESSAGE_SENDER_OFFSET + Address::LEN; // sender
 
-pub(super) const INPUT_MESSAGE_FIXED_SIZE: usize = INPUT_MESSAGE_RECIPIENT_OFFSET    
+pub(super) const INPUT_MESSAGE_FIXED_SIZE: usize = INPUT_MESSAGE_RECIPIENT_OFFSET
     + Address::LEN // recipient
     + WORD_SIZE //amount
     + WORD_SIZE // nonce

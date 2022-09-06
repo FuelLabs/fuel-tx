@@ -246,12 +246,10 @@ impl Input {
 
     pub const fn input_owner(&self) -> Option<&Address> {
         match self {
-            Self::CoinSigned { owner, .. }
-            | Self::CoinPredicate { owner, .. }
-            | Self::MessageSigned {
-                recipient: owner, ..
-            } => Some(owner),
-            Self::MessagePredicate { .. } | Self::Contract { .. } => None,
+            Self::CoinSigned { owner, .. } | Self::CoinPredicate { owner, .. } => Some(owner),
+            Self::MessageSigned { .. } | Self::MessagePredicate { .. } | Self::Contract { .. } => {
+                None
+            }
         }
     }
 

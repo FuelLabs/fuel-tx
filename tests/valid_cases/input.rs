@@ -74,13 +74,7 @@ fn input_coin_message_signature() {
         let data = generate_bytes(rng);
 
         sign_and_validate(rng, txs.by_ref(), |tx, public| {
-            tx.add_unsigned_message_input(
-                sender,
-                Input::owner(&public),
-                nonce,
-                amount,
-                data.clone(),
-            )
+            tx.add_unsigned_message_input(sender, Input::owner(public), nonce, amount, data.clone())
         })
         .expect("Failed to validate transaction");
     }

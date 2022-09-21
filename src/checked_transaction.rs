@@ -17,7 +17,7 @@ use core::{borrow::Borrow, ops::Index};
 use core::mem;
 use std::io::{self, Read};
 
-const BASE_ASSET: AssetId = AssetId::zeroed();
+pub const BASE_ASSET: AssetId = AssetId::zeroed();
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 // Avoid serde serialization of this type. Since checked tx would need to be re-validated on

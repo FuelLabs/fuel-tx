@@ -1,3 +1,4 @@
+use crate::checked_transaction::BASE_ASSET;
 use crate::{TxPointer, UtxoId};
 
 use fuel_crypto::{Hasher, PublicKey};
@@ -234,6 +235,8 @@ impl Input {
         }
     }
 
+    // TODO: Maybe we need to move `ResourceId` from `fuel-core` into `fuel-tx`(or `fuel-type`) and
+    //  use it here? We can replace `utxo_id` and `message_id` with `resource_id`.
     pub const fn utxo_id(&self) -> Option<&UtxoId> {
         match self {
             Self::CoinSigned { utxo_id, .. }
@@ -247,9 +250,10 @@ impl Input {
     pub const fn input_owner(&self) -> Option<&Address> {
         match self {
             Self::CoinSigned { owner, .. } | Self::CoinPredicate { owner, .. } => Some(owner),
-            Self::MessageSigned { .. } | Self::MessagePredicate { .. } | Self::Contract { .. } => {
-                None
+            Self::MessageSigned { recipient, .. } | Self::MessagePredicate { recipient, .. } => {
+                Some(recipient)
             }
+            Self::Contract { .. } => None,
         }
     }
 
@@ -258,9 +262,8 @@ impl Input {
             Input::CoinSigned { asset_id, .. } | Input::CoinPredicate { asset_id, .. } => {
                 Some(asset_id)
             }
-            Input::Contract { .. }
-            | Input::MessageSigned { .. }
-            | Input::MessagePredicate { .. } => None,
+            Input::MessageSigned { .. } | Input::MessagePredicate { .. } => Some(&BASE_ASSET),
+            Input::Contract { .. } => None,
         }
     }
 
@@ -386,10 +389,15 @@ impl Input {
     }
 
     /// Return a tuple containing the predicate and its data if the input is of
-    /// type `CoinPredicate`
+    /// type `CoinPredicate` or `MessagePredicate`
     pub fn predicate(&self) -> Option<(&[u8], &[u8])> {
         match self {
             Input::CoinPredicate {
+                predicate,
+                predicate_data,
+                ..
+            }
+            | Input::MessagePredicate {
                 predicate,
                 predicate_data,
                 ..

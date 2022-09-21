@@ -4,6 +4,7 @@
 //! This allows the VM to accept transactions that have been already verified upstream,
 //! and consolidates logic around fee calculations and free balances.
 
+use crate::consts::BASE_ASSET;
 use crate::{
     ConsensusParameters, Input, Metadata, Output, Transaction, TransactionFee, ValidationError,
 };
@@ -16,8 +17,6 @@ use core::{borrow::Borrow, ops::Index};
 
 use core::mem;
 use std::io::{self, Read};
-
-pub const BASE_ASSET: AssetId = AssetId::zeroed();
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 // Avoid serde serialization of this type. Since checked tx would need to be re-validated on

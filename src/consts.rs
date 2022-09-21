@@ -1,5 +1,7 @@
 use fuel_types::bytes::WORD_SIZE;
-use fuel_types::{Bytes32, Salt};
+use fuel_types::{AssetId, Bytes32, Salt};
+
+pub const BASE_ASSET: AssetId = AssetId::zeroed();
 
 pub const TRANSACTION_SCRIPT_FIXED_SIZE: usize = WORD_SIZE // Identifier
     + WORD_SIZE // Gas price

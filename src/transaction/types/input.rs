@@ -1,4 +1,4 @@
-use crate::checked_transaction::BASE_ASSET;
+use crate::consts::BASE_ASSET;
 use crate::{TxPointer, UtxoId};
 
 use fuel_crypto::{Hasher, PublicKey};

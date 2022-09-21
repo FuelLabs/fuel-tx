@@ -1,4 +1,3 @@
-use crate::checked_transaction::BASE_ASSET;
 use crate::consts::*;
 
 use fuel_asm::Opcode;

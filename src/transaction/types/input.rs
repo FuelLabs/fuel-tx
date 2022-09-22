@@ -1,4 +1,3 @@
-use crate::consts::BASE_ASSET;
 use crate::{TxPointer, UtxoId};
 
 use fuel_crypto::{Hasher, PublicKey};
@@ -235,8 +234,6 @@ impl Input {
         }
     }
 
-    // TODO: Maybe we need to move `ResourceId` from `fuel-core` into `fuel-tx`(or `fuel-type`) and
-    //  use it here? We can replace `utxo_id` and `message_id` with `resource_id`.
     pub const fn utxo_id(&self) -> Option<&UtxoId> {
         match self {
             Self::CoinSigned { utxo_id, .. }
@@ -250,10 +247,9 @@ impl Input {
     pub const fn input_owner(&self) -> Option<&Address> {
         match self {
             Self::CoinSigned { owner, .. } | Self::CoinPredicate { owner, .. } => Some(owner),
-            Self::MessageSigned { recipient, .. } | Self::MessagePredicate { recipient, .. } => {
-                Some(recipient)
+            Self::MessageSigned { .. } | Self::MessagePredicate { .. } | Self::Contract { .. } => {
+                None
             }
-            Self::Contract { .. } => None,
         }
     }
 
@@ -262,7 +258,7 @@ impl Input {
             Input::CoinSigned { asset_id, .. } | Input::CoinPredicate { asset_id, .. } => {
                 Some(asset_id)
             }
-            Input::MessageSigned { .. } | Input::MessagePredicate { .. } => Some(&BASE_ASSET),
+            Input::MessageSigned { .. } | Input::MessagePredicate { .. } => Some(&AssetId::BASE),
             Input::Contract { .. } => None,
         }
     }

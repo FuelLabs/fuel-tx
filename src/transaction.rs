@@ -158,7 +158,7 @@ impl Transaction {
             Input::CoinPredicate { asset_id, .. } | Input::CoinSigned { asset_id, .. } => {
                 Some(asset_id)
             }
-            Input::MessagePredicate { .. } | Input::MessageSigned { .. } => Some(&BASE_ASSET),
+            Input::MessagePredicate { .. } | Input::MessageSigned { .. } => Some(&AssetId::BASE),
             _ => None,
         })
     }

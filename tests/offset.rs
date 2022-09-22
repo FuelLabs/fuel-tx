@@ -99,7 +99,7 @@ fn tx_offset() {
                 }
 
                 if let Some(asset_id) = i.asset_id() {
-                    // Messages don't store `AssetId` explicitly but work with base asset
+                    // Message doesn't store `AssetId` explicitly but works with base asset
                     if let Some(offset) = i.repr().asset_id_offset() {
                         tested_asset_id = true;
 

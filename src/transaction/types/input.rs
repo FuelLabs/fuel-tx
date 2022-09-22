@@ -558,9 +558,7 @@ impl io::Read for Input {
             } => {
                 let buf = bytes::store_number_unchecked(buf, InputRepr::Coin as Word);
 
-                let n = utxo_id.read(buf)?;
-                let buf = &mut buf[n..];
-
+                let buf = bytes::store_array_unchecked(buf, utxo_id);
                 let buf = bytes::store_array_unchecked(buf, owner);
                 let buf = bytes::store_number_unchecked(buf, *amount);
                 let buf = bytes::store_array_unchecked(buf, asset_id);
@@ -590,9 +588,7 @@ impl io::Read for Input {
             } => {
                 let buf = bytes::store_number_unchecked(buf, InputRepr::Coin as Word);
 
-                let n = utxo_id.read(buf)?;
-                let buf = &mut buf[n..];
-
+                let buf = bytes::store_array_unchecked(buf, utxo_id);
                 let buf = bytes::store_array_unchecked(buf, owner);
                 let buf = bytes::store_number_unchecked(buf, *amount);
                 let buf = bytes::store_array_unchecked(buf, asset_id);
@@ -620,8 +616,7 @@ impl io::Read for Input {
                 contract_id,
             } => {
                 let buf = bytes::store_number_unchecked(buf, InputRepr::Contract as Word);
-                let buf = bytes::store_array_unchecked(buf, utxo_id.tx_id());
-                let buf = bytes::store_number_unchecked(buf, utxo_id.output_index() as Word);
+                let buf = bytes::store_array_unchecked(buf, utxo_id);
                 let buf = bytes::store_array_unchecked(buf, balance_root);
                 let buf = bytes::store_array_unchecked(buf, state_root);
 
@@ -707,10 +702,8 @@ impl io::Write for Input {
             InputRepr::Coin => {
                 let mut n = INPUT_COIN_FIXED_SIZE;
 
-                let utxo_id = UtxoId::from_bytes(buf)?;
-                let buf = &buf[utxo_id.serialized_size()..];
-
                 // Safety: buf len is checked
+                let (utxo_id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
                 let (owner, buf) = unsafe { bytes::restore_array_unchecked(buf) };
                 let (amount, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (asset_id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
@@ -730,6 +723,7 @@ impl io::Write for Input {
                 let (size, predicate_data, _) = bytes::restore_raw_bytes(buf, predicate_data_len)?;
                 n += size;
 
+                let utxo_id = utxo_id.into();
                 let owner = owner.into();
                 let asset_id = asset_id.into();
 
@@ -762,10 +756,8 @@ impl io::Write for Input {
             InputRepr::Contract if buf.len() < INPUT_CONTRACT_SIZE - WORD_SIZE => Err(bytes::eof()),
 
             InputRepr::Contract => {
-                let utxo_id = UtxoId::from_bytes(buf)?;
-                let buf = &buf[utxo_id.serialized_size()..];
-
                 // Safety: checked buffer len
+                let (utxo_id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
                 let (balance_root, buf) = unsafe { bytes::restore_array_unchecked(buf) };
                 let (state_root, buf) = unsafe { bytes::restore_array_unchecked(buf) };
 
@@ -774,6 +766,7 @@ impl io::Write for Input {
 
                 let (contract_id, _) = unsafe { bytes::restore_array_unchecked(buf) };
 
+                let utxo_id = utxo_id.into();
                 let balance_root = balance_root.into();
                 let state_root = state_root.into();
                 let contract_id = contract_id.into();

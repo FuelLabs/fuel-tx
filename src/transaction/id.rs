@@ -108,16 +108,6 @@ mod tests {
         bytes.as_mut().iter_mut().for_each(|b| *b = b.not());
     }
 
-    fn invert_utxo_id(utxo_id: &mut UtxoId) {
-        let mut tx_id = *utxo_id.tx_id();
-        let mut out_idx = [utxo_id.output_index()];
-
-        invert(&mut tx_id);
-        invert(&mut out_idx);
-
-        *utxo_id = UtxoId::new(tx_id, out_idx[0])
-    }
-
     fn invert_storage_slot(storage_slot: &mut StorageSlot) {
         let mut data = [0u8; 64];
         let _ = storage_slot.read(&mut data).unwrap();
@@ -199,20 +189,14 @@ mod tests {
         assert_id_ne(tx, |t| t.set_maturity(t.maturity().not()));
 
         if !tx.inputs().is_empty() {
-            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, utxo_id, invert_utxo_id);
+            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, utxo_id, invert);
             assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, owner, invert);
             assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, amount, not);
             assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, asset_id, invert);
             assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, witness_index, not);
             assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, maturity, not);
 
-            assert_io_ne!(
-                tx,
-                _inputs_mut,
-                Input::CoinPredicate,
-                utxo_id,
-                invert_utxo_id
-            );
+            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, utxo_id, invert);
             assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, owner, invert);
             assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, amount, not);
             assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, asset_id, invert);
@@ -220,7 +204,7 @@ mod tests {
             assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, predicate, inv_v);
             assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, predicate_data, inv_v);
 
-            assert_io_eq!(tx, _inputs_mut, Input::Contract, utxo_id, invert_utxo_id);
+            assert_io_eq!(tx, _inputs_mut, Input::Contract, utxo_id, invert);
             assert_io_eq!(tx, _inputs_mut, Input::Contract, balance_root, invert);
             assert_io_eq!(tx, _inputs_mut, Input::Contract, state_root, invert);
             assert_io_ne!(tx, _inputs_mut, Input::Contract, contract_id, invert);

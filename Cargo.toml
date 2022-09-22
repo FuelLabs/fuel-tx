@@ -67,3 +67,6 @@ required-features = ["std"]
 name = "test-valid"
 path = "tests/valid.rs"
 required-features = ["std"]
+
+[patch.crates-io]
+fuel-types = { path = "../fuel-types" }

@@ -125,6 +125,7 @@ impl Write for Transaction {
                 }
 
                 // Safety: buffer size is checked
+                let (chain_id, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (gas_price, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (gas_limit, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (maturity, buf) = unsafe { bytes::restore_number_unchecked(buf) };
@@ -165,6 +166,7 @@ impl Write for Transaction {
                 }
 
                 *self = Transaction::Script {
+                    chain_id,
                     gas_price,
                     gas_limit,
                     maturity,
@@ -187,6 +189,7 @@ impl Write for Transaction {
                 }
 
                 // Safety: buffer size is checked
+                let (chain_id, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (gas_price, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (gas_limit, buf) = unsafe { bytes::restore_number_unchecked(buf) };
                 let (maturity, buf) = unsafe { bytes::restore_number_unchecked(buf) };
@@ -229,6 +232,7 @@ impl Write for Transaction {
                 }
 
                 *self = Self::Create {
+                    chain_id,
                     gas_price,
                     gas_limit,
                     maturity,

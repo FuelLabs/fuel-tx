@@ -7,6 +7,7 @@ use fuel_crypto::SecretKey;
 use fuel_types::{Salt, Word};
 
 use alloc::vec::Vec;
+use itertools::chain;
 
 #[derive(Debug, Clone)]
 pub struct TransactionBuilder {
@@ -40,6 +41,7 @@ impl TransactionBuilder {
             Default::default(),
             Default::default(),
             Default::default(),
+            Default::default(),
             salt,
             storage_slots,
             Default::default(),
@@ -54,6 +56,7 @@ impl TransactionBuilder {
 
     pub fn script(script: Vec<u8>, script_data: Vec<u8>) -> Self {
         let tx = Transaction::script(
+            Default::default(),
             Default::default(),
             Default::default(),
             Default::default(),
@@ -83,6 +86,12 @@ impl TransactionBuilder {
 
     pub fn sign_keys(&self) -> &[SecretKey] {
         self.sign_keys.as_slice()
+    }
+
+    pub fn chain_id(&mut self, chain_id: Word) -> &mut Self {
+        self.tx.set_chain_id(chain_id);
+
+        self
     }
 
     pub fn gas_price(&mut self, gas_price: Word) -> &mut Self {

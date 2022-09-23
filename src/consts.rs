@@ -2,6 +2,7 @@ use fuel_types::bytes::WORD_SIZE;
 use fuel_types::{Bytes32, Salt};
 
 pub const TRANSACTION_SCRIPT_FIXED_SIZE: usize = WORD_SIZE // Identifier
+    + WORD_SIZE // Chain Id
     + WORD_SIZE // Gas price
     + WORD_SIZE // Gas limit
     + WORD_SIZE // Maturity
@@ -13,6 +14,7 @@ pub const TRANSACTION_SCRIPT_FIXED_SIZE: usize = WORD_SIZE // Identifier
     + Bytes32::LEN; // Receipts root
 
 pub const TRANSACTION_CREATE_FIXED_SIZE: usize = WORD_SIZE // Identifier
+    + WORD_SIZE // Chain Id
     + WORD_SIZE // Gas price
     + WORD_SIZE // Gas limit
     + WORD_SIZE // Maturity

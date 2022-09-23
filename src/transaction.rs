@@ -44,6 +44,7 @@ pub type TxId = Bytes32;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Transaction {
     Script {
+        chain_id: Word,
         gas_price: Word,
         gas_limit: Word,
         maturity: Word,
@@ -57,6 +58,7 @@ pub enum Transaction {
     },
 
     Create {
+        chain_id: Word,
         gas_price: Word,
         gas_limit: Word,
         maturity: Word,
@@ -82,6 +84,7 @@ impl Default for Transaction {
 
         Transaction::script(
             0,
+            0,
             ConsensusParameters::DEFAULT.max_gas_per_tx,
             0,
             script,
@@ -95,6 +98,7 @@ impl Default for Transaction {
 
 impl Transaction {
     pub const fn script(
+        chain_id: Word,
         gas_price: Word,
         gas_limit: Word,
         maturity: Word,
@@ -107,6 +111,7 @@ impl Transaction {
         let receipts_root = Bytes32::zeroed();
 
         Self::Script {
+            chain_id,
             gas_price,
             gas_limit,
             maturity,
@@ -121,6 +126,7 @@ impl Transaction {
     }
 
     pub fn create(
+        chain_id: Word,
         gas_price: Word,
         gas_limit: Word,
         maturity: Word,
@@ -139,6 +145,7 @@ impl Transaction {
             .unwrap_or(0);
 
         Self::Create {
+            chain_id,
             gas_price,
             gas_limit,
             maturity,
@@ -236,6 +243,20 @@ impl Transaction {
                             owner, predicate, ..
                         }) if Input::is_predicate_owner_valid(owner, predicate)
                 )
+    }
+
+    pub const fn chain_id(&self) -> Word {
+        match self {
+            Self::Script { chain_id, .. } => *chain_id,
+            Self::Create { chain_id, .. } => *chain_id,
+        }
+    }
+
+    pub fn set_chain_id(&mut self, id: Word) {
+        match self {
+            Self::Script { chain_id, .. } => *chain_id = id,
+            Self::Create { chain_id, .. } => *chain_id = id,
+        }
     }
 
     pub const fn gas_price(&self) -> Word {
@@ -629,6 +650,7 @@ mod tests {
     fn metered_data_excludes_witnesses() {
         // test script
         let script_with_no_witnesses = Transaction::Script {
+            chain_id: 0,
             gas_price: 0,
             gas_limit: 0,
             maturity: 0,
@@ -641,6 +663,7 @@ mod tests {
             metadata: None,
         };
         let script_with_witnesses = Transaction::Script {
+            chain_id: 0,
             gas_price: 0,
             gas_limit: 0,
             maturity: 0,
@@ -659,6 +682,7 @@ mod tests {
         );
         // test create
         let create_with_no_witnesses = Transaction::Create {
+            chain_id: 0,
             gas_price: 0,
             gas_limit: 0,
             maturity: 0,
@@ -672,6 +696,7 @@ mod tests {
             metadata: None,
         };
         let create_with_witnesses = Transaction::Create {
+            chain_id: 0,
             gas_price: 0,
             gas_limit: 0,
             maturity: 0,

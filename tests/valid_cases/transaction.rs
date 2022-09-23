@@ -8,6 +8,8 @@ use rand::{rngs::StdRng, Rng, RngCore, SeedableRng};
 use std::cmp;
 use std::io::Write;
 
+const default_chain_id: Word = 0;
+
 #[test]
 fn gas_limit() {
     let rng = &mut StdRng::seed_from_u64(8586);
@@ -16,6 +18,7 @@ fn gas_limit() {
     let block_height = 1000;
 
     Transaction::script(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx,
         maturity,
@@ -29,6 +32,7 @@ fn gas_limit() {
     .expect("Failed to validate transaction");
 
     Transaction::create(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx,
         maturity,
@@ -43,6 +47,7 @@ fn gas_limit() {
     .expect("Failed to validate transaction");
 
     let err = Transaction::script(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx + 1,
         maturity,
@@ -58,6 +63,7 @@ fn gas_limit() {
     assert_eq!(ValidationError::TransactionGasLimit, err);
 
     let err = Transaction::create(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx + 1,
         maturity,
@@ -81,6 +87,7 @@ fn maturity() {
     let block_height = 1000;
 
     Transaction::script(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx,
         block_height,
@@ -94,6 +101,7 @@ fn maturity() {
     .expect("Failed to validate script");
 
     Transaction::create(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx,
         1000,
@@ -108,6 +116,7 @@ fn maturity() {
     .expect("Failed to validate tx create");
 
     let err = Transaction::script(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx,
         1001,
@@ -123,6 +132,7 @@ fn maturity() {
     assert_eq!(ValidationError::TransactionMaturity, err);
 
     let err = Transaction::create(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx,
         1001,
@@ -640,6 +650,7 @@ fn create() {
     assert_eq!(err, ValidationError::TransactionCreateBytecodeLen);
 
     let err = Transaction::create(
+        default_chain_id,
         rng.gen(),
         PARAMS.max_gas_per_tx,
         maturity,
@@ -656,6 +667,7 @@ fn create() {
     assert_eq!(err, ValidationError::TransactionCreateBytecodeWitnessIndex);
 
     TransactionBuilder::create(generate_bytes(rng).into(), rng.gen(), vec![])
+        .chain_id(default_chain_id)
         .gas_limit(PARAMS.max_gas_per_tx)
         .gas_price(rng.gen())
         .maturity(maturity)
@@ -765,6 +777,7 @@ fn tx_id_bytecode_len() {
     let w_c = vec![0xfbu8; 4].into();
 
     let tx_a = Transaction::create(
+        default_chain_id,
         gas_price,
         PARAMS.max_gas_per_tx,
         maturity,
@@ -777,6 +790,7 @@ fn tx_id_bytecode_len() {
     );
 
     let tx_b = Transaction::create(
+        default_chain_id,
         gas_price,
         PARAMS.max_gas_per_tx,
         maturity,
@@ -789,6 +803,7 @@ fn tx_id_bytecode_len() {
     );
 
     let tx_c = Transaction::create(
+        default_chain_id,
         gas_price,
         PARAMS.max_gas_per_tx,
         maturity,

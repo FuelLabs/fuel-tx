@@ -1,7 +1,6 @@
 use crate::{Input, Metadata, Output, Transaction};
 
 use fuel_crypto::Hasher;
-use fuel_types::bytes::SerializableVec;
 use fuel_types::Bytes32;
 
 use core::mem;
@@ -86,7 +85,7 @@ impl Transaction {
         let mut tx = self.clone();
         tx.prepare_sign();
 
-        Hasher::hash(tx.to_bytes().as_slice())
+        Hasher::hash(crate::io::Serialize::to_bytes(&tx).as_slice())
     }
 }
 
@@ -94,10 +93,10 @@ impl Transaction {
 mod tests {
     use crate::*;
 
+    use fuel_tx::io::{Deserialize, Serialize};
     use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
     use rand::rngs::StdRng;
     use rand::{Rng, RngCore, SeedableRng};
-    use std::io::{Read, Write};
     use std::mem;
     use std::ops::Not;
 
@@ -119,10 +118,9 @@ mod tests {
     }
 
     fn invert_storage_slot(storage_slot: &mut StorageSlot) {
-        let mut data = [0u8; 64];
-        let _ = storage_slot.read(&mut data).unwrap();
-        invert(&mut data);
-        let _ = storage_slot.write(&data).unwrap();
+        let mut buffer = storage_slot.to_bytes();
+        invert(&mut buffer);
+        *storage_slot = StorageSlot::decode(&mut buffer.as_slice()).unwrap();
     }
 
     fn inv_v(bytes: &mut Vec<u8>) {

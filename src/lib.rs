@@ -10,7 +10,11 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+// `fuel-tx-derive` requires `fuel_tx` import
+extern crate self as fuel_tx;
+
 pub mod consts;
+pub mod io;
 
 pub use fuel_asm::{InstructionResult, PanicReason};
 pub use fuel_types::{

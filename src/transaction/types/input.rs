@@ -1,26 +1,20 @@
+use crate::io::{Deserialize, Error, Output, Serialize};
 use crate::{TxPointer, UtxoId};
 
+use alloc::vec::Vec;
+use consts::*;
 use fuel_crypto::{Hasher, PublicKey};
 use fuel_types::bytes;
 use fuel_types::{Address, AssetId, Bytes32, ContractId, MessageId, Word};
 
 use core::mem;
 
-#[cfg(feature = "std")]
-use fuel_types::bytes::{Deserializable, SizedBytes, WORD_SIZE};
-
-use alloc::vec::Vec;
-
-#[cfg(feature = "std")]
-use std::io;
-
 mod consts;
 mod repr;
 
-use consts::*;
+pub use repr::{InputRepr, InputSpec};
 
-pub use repr::InputRepr;
-
+/// User-friendly interpretation of the [`InputSpec`](repr::InputSpec).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Input {
@@ -488,6 +482,7 @@ impl Input {
             .chain(recipient)
             .chain(nonce.to_be_bytes())
             .chain(amount.to_be_bytes())
+            // TODO: Seems it is a bug and we need to pad `data` with zeros
             .chain(data)
             .finalize();
 
@@ -538,16 +533,10 @@ impl Input {
     }
 }
 
-#[cfg(feature = "std")]
-impl io::Read for Input {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let n = self.serialized_size();
-        if buf.len() < n {
-            return Err(bytes::eof());
-        }
-
-        match self {
-            Self::CoinSigned {
+impl From<Input> for repr::InputSpec {
+    fn from(input: Input) -> Self {
+        match input {
+            Input::CoinSigned {
                 utxo_id,
                 owner,
                 amount,
@@ -555,30 +544,18 @@ impl io::Read for Input {
                 tx_pointer,
                 witness_index,
                 maturity,
-            } => {
-                let buf = bytes::store_number_unchecked(buf, InputRepr::Coin as Word);
-
-                let n = utxo_id.read(buf)?;
-                let buf = &mut buf[n..];
-
-                let buf = bytes::store_array_unchecked(buf, owner);
-                let buf = bytes::store_number_unchecked(buf, *amount);
-                let buf = bytes::store_array_unchecked(buf, asset_id);
-
-                let n = tx_pointer.read(buf)?;
-                let buf = &mut buf[n..];
-
-                let buf = bytes::store_number_unchecked(buf, *witness_index);
-                let buf = bytes::store_number_unchecked(buf, *maturity);
-
-                // Predicate len zeroed for signed coin
-                let buf = bytes::store_number_unchecked(buf, 0u64);
-
-                // Predicate data len zeroed for signed coin
-                bytes::store_number_unchecked(buf, 0u64);
-            }
-
-            Self::CoinPredicate {
+            } => repr::InputSpec::Coin {
+                utxo_id,
+                owner,
+                amount,
+                asset_id,
+                tx_pointer,
+                witness_index,
+                maturity,
+                predicate: vec![],
+                predicate_data: vec![],
+            },
+            Input::CoinPredicate {
                 utxo_id,
                 owner,
                 amount,
@@ -587,51 +564,31 @@ impl io::Read for Input {
                 maturity,
                 predicate,
                 predicate_data,
-            } => {
-                let buf = bytes::store_number_unchecked(buf, InputRepr::Coin as Word);
-
-                let n = utxo_id.read(buf)?;
-                let buf = &mut buf[n..];
-
-                let buf = bytes::store_array_unchecked(buf, owner);
-                let buf = bytes::store_number_unchecked(buf, *amount);
-                let buf = bytes::store_array_unchecked(buf, asset_id);
-
-                let n = tx_pointer.read(buf)?;
-                let buf = &mut buf[n..];
-
-                // Witness index zeroed for coin predicate
-                let buf = bytes::store_number_unchecked(buf, 0u64);
-                let buf = bytes::store_number_unchecked(buf, *maturity);
-
-                let buf = bytes::store_number_unchecked(buf, predicate.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, predicate_data.len() as Word);
-
-                let (_, buf) = bytes::store_raw_bytes(buf, predicate.as_slice())?;
-
-                bytes::store_raw_bytes(buf, predicate_data.as_slice())?;
-            }
-
-            Self::Contract {
+            } => repr::InputSpec::Coin {
+                utxo_id,
+                owner,
+                amount,
+                asset_id,
+                tx_pointer,
+                witness_index: 0,
+                maturity,
+                predicate,
+                predicate_data,
+            },
+            Input::Contract {
                 utxo_id,
                 balance_root,
                 state_root,
                 tx_pointer,
                 contract_id,
-            } => {
-                let buf = bytes::store_number_unchecked(buf, InputRepr::Contract as Word);
-                let buf = bytes::store_array_unchecked(buf, utxo_id.tx_id());
-                let buf = bytes::store_number_unchecked(buf, utxo_id.output_index() as Word);
-                let buf = bytes::store_array_unchecked(buf, balance_root);
-                let buf = bytes::store_array_unchecked(buf, state_root);
-
-                let n = tx_pointer.read(buf)?;
-                let buf = &mut buf[n..];
-
-                bytes::store_array_unchecked(buf, contract_id);
-            }
-
-            Self::MessageSigned {
+            } => repr::InputSpec::Contract {
+                utxo_id,
+                balance_root,
+                state_root,
+                tx_pointer,
+                contract_id,
+            },
+            Input::MessageSigned {
                 message_id,
                 sender,
                 recipient,
@@ -639,24 +596,18 @@ impl io::Read for Input {
                 nonce,
                 witness_index,
                 data,
-            } => {
-                let buf = bytes::store_number_unchecked(buf, InputRepr::Message as Word);
-                let buf = bytes::store_array_unchecked(buf, message_id);
-                let buf = bytes::store_array_unchecked(buf, sender);
-                let buf = bytes::store_array_unchecked(buf, recipient);
-                let buf = bytes::store_number_unchecked(buf, *amount);
-                let buf = bytes::store_number_unchecked(buf, *nonce);
-                let buf = bytes::store_number_unchecked(buf, *witness_index);
-                let buf = bytes::store_number_unchecked(buf, data.len() as Word);
-
-                // predicate + data are empty for signed message
-                let buf = bytes::store_number_unchecked(buf, 0 as Word);
-                let buf = bytes::store_number_unchecked(buf, 0 as Word);
-
-                bytes::store_raw_bytes(buf, data.as_slice())?;
-            }
-
-            Self::MessagePredicate {
+            } => repr::InputSpec::Message {
+                message_id,
+                sender,
+                recipient,
+                amount,
+                nonce,
+                witness_index,
+                data,
+                predicate: vec![],
+                predicate_data: vec![],
+            },
+            Input::MessagePredicate {
                 message_id,
                 sender,
                 recipient,
@@ -665,75 +616,36 @@ impl io::Read for Input {
                 data,
                 predicate,
                 predicate_data,
-            } => {
-                let witness_index = 0 as Word;
-
-                let buf = bytes::store_number_unchecked(buf, InputRepr::Message as Word);
-                let buf = bytes::store_array_unchecked(buf, message_id);
-                let buf = bytes::store_array_unchecked(buf, sender);
-                let buf = bytes::store_array_unchecked(buf, recipient);
-                let buf = bytes::store_number_unchecked(buf, *amount);
-                let buf = bytes::store_number_unchecked(buf, *nonce);
-                let buf = bytes::store_number_unchecked(buf, witness_index);
-                let buf = bytes::store_number_unchecked(buf, data.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, predicate.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, predicate_data.len() as Word);
-
-                let (_, buf) = bytes::store_raw_bytes(buf, data.as_slice())?;
-                let (_, buf) = bytes::store_raw_bytes(buf, predicate.as_slice())?;
-
-                bytes::store_raw_bytes(buf, predicate_data.as_slice())?;
-            }
+            } => repr::InputSpec::Message {
+                message_id,
+                sender,
+                recipient,
+                amount,
+                nonce,
+                witness_index: 0,
+                data,
+                predicate,
+                predicate_data,
+            },
         }
-
-        Ok(n)
     }
 }
 
-#[cfg(feature = "std")]
-impl io::Write for Input {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if buf.len() < WORD_SIZE {
-            return Err(bytes::eof());
-        }
-
-        // Safety: buf len is checked
-        let (identifier, buf): (Word, _) = unsafe { bytes::restore_number_unchecked(buf) };
-        let identifier = InputRepr::try_from(identifier)?;
-
-        match identifier {
-            InputRepr::Coin if buf.len() < INPUT_COIN_FIXED_SIZE - WORD_SIZE => Err(bytes::eof()),
-
-            InputRepr::Coin => {
-                let mut n = INPUT_COIN_FIXED_SIZE;
-
-                let utxo_id = UtxoId::from_bytes(buf)?;
-                let buf = &buf[utxo_id.serialized_size()..];
-
-                // Safety: buf len is checked
-                let (owner, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (amount, buf) = unsafe { bytes::restore_number_unchecked(buf) };
-                let (asset_id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-
-                let tx_pointer = TxPointer::from_bytes(buf)?;
-                let buf = &buf[tx_pointer.serialized_size()..];
-
-                let (witness_index, buf) = unsafe { bytes::restore_u8_unchecked(buf) };
-                let (maturity, buf) = unsafe { bytes::restore_number_unchecked(buf) };
-
-                let (predicate_len, buf) = unsafe { bytes::restore_usize_unchecked(buf) };
-                let (predicate_data_len, buf) = unsafe { bytes::restore_usize_unchecked(buf) };
-
-                let (size, predicate, buf) = bytes::restore_raw_bytes(buf, predicate_len)?;
-                n += size;
-
-                let (size, predicate_data, _) = bytes::restore_raw_bytes(buf, predicate_data_len)?;
-                n += size;
-
-                let owner = owner.into();
-                let asset_id = asset_id.into();
-
-                *self = if predicate.is_empty() {
+impl From<repr::InputSpec> for Input {
+    fn from(input: repr::InputSpec) -> Self {
+        match input {
+            repr::InputSpec::Coin {
+                utxo_id,
+                owner,
+                amount,
+                asset_id,
+                tx_pointer,
+                witness_index,
+                maturity,
+                predicate,
+                predicate_data,
+            } => {
+                if predicate.is_empty() {
                     Self::CoinSigned {
                         utxo_id,
                         owner,
@@ -754,75 +666,34 @@ impl io::Write for Input {
                         predicate,
                         predicate_data,
                     }
-                };
-
-                Ok(n)
+                }
             }
-
-            InputRepr::Contract if buf.len() < INPUT_CONTRACT_SIZE - WORD_SIZE => Err(bytes::eof()),
-
-            InputRepr::Contract => {
-                let utxo_id = UtxoId::from_bytes(buf)?;
-                let buf = &buf[utxo_id.serialized_size()..];
-
-                // Safety: checked buffer len
-                let (balance_root, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (state_root, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-
-                let tx_pointer = TxPointer::from_bytes(buf)?;
-                let buf = &buf[tx_pointer.serialized_size()..];
-
-                let (contract_id, _) = unsafe { bytes::restore_array_unchecked(buf) };
-
-                let balance_root = balance_root.into();
-                let state_root = state_root.into();
-                let contract_id = contract_id.into();
-
-                *self = Self::Contract {
-                    utxo_id,
-                    balance_root,
-                    state_root,
-                    tx_pointer,
-                    contract_id,
-                };
-
-                Ok(INPUT_CONTRACT_SIZE)
-            }
-
-            InputRepr::Message if buf.len() < INPUT_MESSAGE_FIXED_SIZE - WORD_SIZE => {
-                Err(bytes::eof())
-            }
-
-            InputRepr::Message => {
-                let mut n = INPUT_MESSAGE_FIXED_SIZE;
-
-                // Safety: buf len is checked
-                let (message_id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (sender, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (recipient, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (amount, buf) = unsafe { bytes::restore_number_unchecked(buf) };
-                let (nonce, buf) = unsafe { bytes::restore_number_unchecked(buf) };
-                let (witness_index, buf) = unsafe { bytes::restore_u8_unchecked(buf) };
-
-                let (data_len, buf) = unsafe { bytes::restore_usize_unchecked(buf) };
-                let (predicate_len, buf) = unsafe { bytes::restore_usize_unchecked(buf) };
-                let (predicate_data_len, buf) = unsafe { bytes::restore_usize_unchecked(buf) };
-
-                let (size, data, buf) = bytes::restore_raw_bytes(buf, data_len)?;
-                n += size;
-
-                let (size, predicate, buf) = bytes::restore_raw_bytes(buf, predicate_len)?;
-                n += size;
-
-                let (size, predicate_data, _) = bytes::restore_raw_bytes(buf, predicate_data_len)?;
-                n += size;
-
-                let message_id = message_id.into();
-                let sender = sender.into();
-                let recipient = recipient.into();
-
-                *self = if predicate.is_empty() {
-                    Self::message_signed(
+            repr::InputSpec::Contract {
+                utxo_id,
+                balance_root,
+                state_root,
+                tx_pointer,
+                contract_id,
+            } => Self::Contract {
+                utxo_id,
+                balance_root,
+                state_root,
+                tx_pointer,
+                contract_id,
+            },
+            repr::InputSpec::Message {
+                message_id,
+                sender,
+                recipient,
+                amount,
+                nonce,
+                witness_index,
+                data,
+                predicate,
+                predicate_data,
+            } => {
+                if predicate.is_empty() {
+                    Self::MessageSigned {
                         message_id,
                         sender,
                         recipient,
@@ -830,9 +701,9 @@ impl io::Write for Input {
                         nonce,
                         witness_index,
                         data,
-                    )
+                    }
                 } else {
-                    Self::message_predicate(
+                    Self::MessagePredicate {
                         message_id,
                         sender,
                         recipient,
@@ -841,15 +712,23 @@ impl io::Write for Input {
                         data,
                         predicate,
                         predicate_data,
-                    )
-                };
-
-                Ok(n)
+                    }
+                }
             }
         }
     }
+}
 
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
+impl Serialize for Input {
+    fn encode<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
+        let input_spec: repr::InputSpec = self.clone().into();
+        input_spec.encode(buffer)
+    }
+}
+
+impl Deserialize for Input {
+    fn decode<I: crate::io::Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
+        let input_spec = repr::InputSpec::decode(buffer)?;
+        Ok(input_spec.into())
     }
 }

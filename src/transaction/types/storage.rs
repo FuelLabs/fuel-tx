@@ -8,11 +8,9 @@ use rand::{
 
 use core::cmp::Ordering;
 
-#[cfg(feature = "std")]
-use std::io;
-
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(crate::io::Serialize, crate::io::Deserialize)]
 pub struct StorageSlot {
     key: Bytes32,
     value: Bytes32,
@@ -61,42 +59,6 @@ impl Distribution<StorageSlot> for Standard {
             key: rng.gen(),
             value: rng.gen(),
         }
-    }
-}
-
-#[cfg(feature = "std")]
-impl io::Read for StorageSlot {
-    fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
-        if buf.len() < Self::SLOT_SIZE {
-            return Err(bytes::eof());
-        }
-
-        buf = bytes::store_array_unchecked(buf, &self.key);
-        bytes::store_array_unchecked(buf, &self.value);
-
-        Ok(Self::SLOT_SIZE)
-    }
-}
-
-#[cfg(feature = "std")]
-impl io::Write for StorageSlot {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if buf.len() < Self::SLOT_SIZE {
-            return Err(bytes::eof());
-        }
-
-        // Safety: buf len is checked
-        let (key, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-        let (value, _) = unsafe { bytes::restore_array_unchecked(buf) };
-
-        self.key = key.into();
-        self.value = value.into();
-
-        Ok(Self::SLOT_SIZE)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
     }
 }
 

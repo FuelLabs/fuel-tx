@@ -1,12 +1,7 @@
+use crate::io::{Deserialize, Serialize};
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
 
 use core::{fmt, str};
-
-#[cfg(feature = "std")]
-use fuel_types::bytes;
-
-#[cfg(feature = "std")]
-use std::io;
 
 #[cfg(feature = "random")]
 use rand::{
@@ -17,6 +12,7 @@ use rand::{
 /// Identification of unspend transaction output.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Serialize, Deserialize)]
 pub struct TxPointer {
     /// Block height
     block_height: u32,
@@ -85,45 +81,6 @@ impl SizedBytes for TxPointer {
     }
 }
 
-#[cfg(feature = "std")]
-impl io::Write for TxPointer {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if buf.len() < Self::LEN {
-            return Err(bytes::eof());
-        }
-
-        // Safety: buf len is checked
-        let (block_height, buf) = unsafe { bytes::restore_word_unchecked(buf) };
-        let (tx_index, _) = unsafe { bytes::restore_word_unchecked(buf) };
-
-        self.block_height =
-            u32::try_from(block_height).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-
-        self.tx_index =
-            u16::try_from(tx_index).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-
-        Ok(Self::LEN)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-
-#[cfg(feature = "std")]
-impl io::Read for TxPointer {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if buf.len() < Self::LEN {
-            return Err(bytes::eof());
-        }
-
-        let buf = bytes::store_number_unchecked(buf, self.block_height);
-        bytes::store_number_unchecked(buf, self.tx_index);
-
-        Ok(Self::LEN)
-    }
-}
-
 #[test]
 fn fmt_encode_decode() {
     use core::str::FromStr;
@@ -147,10 +104,9 @@ fn fmt_encode_decode() {
 
         #[cfg(feature = "std")]
         {
-            use fuel_types::bytes::{Deserializable, SerializableVec};
-
-            let bytes = tx_pointer.clone().to_bytes();
-            let tx_pointer_p = TxPointer::from_bytes(&bytes).expect("failed to deserialize");
+            let bytes = tx_pointer.to_bytes();
+            let tx_pointer_p =
+                TxPointer::decode(&mut bytes.as_slice()).expect("failed to deserialize");
 
             assert_eq!(tx_pointer, tx_pointer_p);
         }

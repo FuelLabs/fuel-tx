@@ -38,8 +38,8 @@ where
 #[cfg(feature = "std")]
 mod use_std {
     use fuel_crypto::SecretKey;
+    use fuel_tx::io::Deserialize;
     use fuel_tx::{Contract, Input, Output, Transaction, TransactionBuilder};
-    use fuel_types::bytes::Deserializable;
     use rand::distributions::{Distribution, Uniform};
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
@@ -70,7 +70,7 @@ mod use_std {
             // When and if a new variant is added, this implementation enforces it will be
             // listed here.
             debug_assert!({
-                Input::from_bytes(&[])
+                Input::decode(&mut &[][..])
                     .map(|i| match i {
                         Input::CoinSigned { .. } => (),
                         Input::CoinPredicate { .. } => (),
@@ -80,7 +80,7 @@ mod use_std {
                     })
                     .unwrap_or(());
 
-                Output::from_bytes(&[])
+                Output::decode(&mut &[][..])
                     .map(|o| match o {
                         Output::Coin { .. } => (),
                         Output::Contract { .. } => (),
@@ -91,7 +91,7 @@ mod use_std {
                     })
                     .unwrap_or(());
 
-                Transaction::from_bytes(&[])
+                Transaction::decode(&mut &[][..])
                     .map(|t| match t {
                         Transaction::Script { .. } => (),
                         Transaction::Create { .. } => (),

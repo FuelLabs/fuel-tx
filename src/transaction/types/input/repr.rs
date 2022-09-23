@@ -1,11 +1,51 @@
 use super::consts::*;
 use super::Input;
 
-#[cfg(feature = "std")]
-use fuel_types::Word;
+use crate::io::{Deserialize, Serialize};
+use crate::{TxPointer, UtxoId};
+use fuel_types::{Address, AssetId, Bytes32, ContractId, MessageId, Word};
 
 #[cfg(feature = "std")]
 use std::io;
+
+/// The definition of the `Input` as in the specification.
+/// https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#input
+///
+/// It is not optimal to use this type in business logic. For that better to use
+/// [`Input`](crate::transaction::types::input::Input). `InputSpec` describes the layout of the
+/// entity in the serialized format.
+#[derive(Deserialize, Serialize)]
+pub enum InputSpec {
+    Coin {
+        utxo_id: UtxoId,
+        owner: Address,
+        amount: Word,
+        asset_id: AssetId,
+        tx_pointer: TxPointer,
+        witness_index: u8,
+        maturity: Word,
+        predicate: Vec<u8>,
+        predicate_data: Vec<u8>,
+    },
+    Contract {
+        utxo_id: UtxoId,
+        balance_root: Bytes32,
+        state_root: Bytes32,
+        tx_pointer: TxPointer,
+        contract_id: ContractId,
+    },
+    Message {
+        message_id: MessageId,
+        sender: Address,
+        recipient: Address,
+        amount: Word,
+        nonce: Word,
+        witness_index: u8,
+        data: Vec<u8>,
+        predicate: Vec<u8>,
+        predicate_data: Vec<u8>,
+    },
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum InputRepr {

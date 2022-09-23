@@ -1,12 +1,12 @@
 use super::PARAMS;
 
 use fuel_crypto::SecretKey;
+use fuel_tx::io::Deserialize;
 use fuel_tx::*;
 use fuel_tx_test_helpers::generate_bytes;
 use rand::{rngs::StdRng, Rng, RngCore, SeedableRng};
 
 use std::cmp;
-use std::io::Write;
 
 #[test]
 fn gas_limit() {
@@ -673,13 +673,11 @@ fn create() {
         .expect("Failed to validate the transaction");
 
     let mut slot_data = [0u8; 64];
-    let mut slot = StorageSlot::default();
 
     let storage_slots = (0..PARAMS.max_storage_slots as u64)
         .map(|i| {
             slot_data[..8].copy_from_slice(&i.to_be_bytes());
-            let _ = slot.write(&slot_data).unwrap();
-            slot.clone()
+            StorageSlot::decode(&mut &slot_data[..]).unwrap()
         })
         .collect::<Vec<StorageSlot>>();
 

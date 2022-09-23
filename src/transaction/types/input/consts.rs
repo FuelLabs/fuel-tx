@@ -30,10 +30,10 @@ pub(super) const INPUT_MESSAGE_SENDER_OFFSET: usize = INPUT_MESSAGE_ID_OFFSET + 
 pub(super) const INPUT_MESSAGE_RECIPIENT_OFFSET: usize = INPUT_MESSAGE_SENDER_OFFSET + Address::LEN; // sender
 
 pub(super) const INPUT_MESSAGE_FIXED_SIZE: usize = INPUT_MESSAGE_RECIPIENT_OFFSET
-    + Address::LEN // recipient
-    + WORD_SIZE //amount
-    + WORD_SIZE // nonce
-    + WORD_SIZE // witness_index
+    + Address::LEN // Recipient
+    + WORD_SIZE // Amount
+    + WORD_SIZE // Nonce
+    + WORD_SIZE // Witness index
     + WORD_SIZE // Data size
     + WORD_SIZE // Predicate size
     + WORD_SIZE; // Predicate data size

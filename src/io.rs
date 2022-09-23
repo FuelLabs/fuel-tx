@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use fuel_asm::InstructionResult;
 pub use fuel_tx_derive::{Deserialize, Serialize};
 use fuel_types::{

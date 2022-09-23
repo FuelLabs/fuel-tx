@@ -1,7 +1,7 @@
 use crate::io::{Deserialize, Error, Output, Serialize};
 use crate::{TxPointer, UtxoId};
 
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 use consts::*;
 use fuel_crypto::{Hasher, PublicKey};
 use fuel_types::bytes;
@@ -14,7 +14,7 @@ mod repr;
 
 pub use repr::{InputRepr, InputSpec};
 
-/// User-friendly interpretation of the [`InputSpec`](repr::InputSpec).
+/// User-friendly interpretation of the [`InputSpec`](InputSpec).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Input {
@@ -533,7 +533,7 @@ impl Input {
     }
 }
 
-impl From<Input> for repr::InputSpec {
+impl From<Input> for InputSpec {
     fn from(input: Input) -> Self {
         match input {
             Input::CoinSigned {
@@ -544,7 +544,7 @@ impl From<Input> for repr::InputSpec {
                 tx_pointer,
                 witness_index,
                 maturity,
-            } => repr::InputSpec::Coin {
+            } => InputSpec::Coin {
                 utxo_id,
                 owner,
                 amount,
@@ -564,7 +564,7 @@ impl From<Input> for repr::InputSpec {
                 maturity,
                 predicate,
                 predicate_data,
-            } => repr::InputSpec::Coin {
+            } => InputSpec::Coin {
                 utxo_id,
                 owner,
                 amount,
@@ -581,7 +581,7 @@ impl From<Input> for repr::InputSpec {
                 state_root,
                 tx_pointer,
                 contract_id,
-            } => repr::InputSpec::Contract {
+            } => InputSpec::Contract {
                 utxo_id,
                 balance_root,
                 state_root,
@@ -596,7 +596,7 @@ impl From<Input> for repr::InputSpec {
                 nonce,
                 witness_index,
                 data,
-            } => repr::InputSpec::Message {
+            } => InputSpec::Message {
                 message_id,
                 sender,
                 recipient,
@@ -616,7 +616,7 @@ impl From<Input> for repr::InputSpec {
                 data,
                 predicate,
                 predicate_data,
-            } => repr::InputSpec::Message {
+            } => InputSpec::Message {
                 message_id,
                 sender,
                 recipient,
@@ -631,10 +631,10 @@ impl From<Input> for repr::InputSpec {
     }
 }
 
-impl From<repr::InputSpec> for Input {
-    fn from(input: repr::InputSpec) -> Self {
+impl From<InputSpec> for Input {
+    fn from(input: InputSpec) -> Self {
         match input {
-            repr::InputSpec::Coin {
+            InputSpec::Coin {
                 utxo_id,
                 owner,
                 amount,
@@ -668,7 +668,7 @@ impl From<repr::InputSpec> for Input {
                     }
                 }
             }
-            repr::InputSpec::Contract {
+            InputSpec::Contract {
                 utxo_id,
                 balance_root,
                 state_root,
@@ -681,7 +681,7 @@ impl From<repr::InputSpec> for Input {
                 tx_pointer,
                 contract_id,
             },
-            repr::InputSpec::Message {
+            InputSpec::Message {
                 message_id,
                 sender,
                 recipient,
@@ -721,14 +721,14 @@ impl From<repr::InputSpec> for Input {
 
 impl Serialize for Input {
     fn encode<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
-        let input_spec: repr::InputSpec = self.clone().into();
+        let input_spec: InputSpec = self.clone().into();
         input_spec.encode(buffer)
     }
 }
 
 impl Deserialize for Input {
     fn decode<I: crate::io::Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
-        let input_spec = repr::InputSpec::decode(buffer)?;
+        let input_spec = InputSpec::decode(buffer)?;
         Ok(input_spec.into())
     }
 }

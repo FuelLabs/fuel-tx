@@ -14,7 +14,6 @@ extern crate alloc;
 extern crate self as fuel_tx;
 
 pub mod consts;
-pub mod io;
 
 pub use fuel_asm::{InstructionResult, PanicReason};
 pub use fuel_types::{
@@ -47,6 +46,9 @@ pub use transaction::{
     ConsensusParameters, Input, InputRepr, Metadata, Output, OutputRepr, StorageSlot, Transaction,
     TransactionFee, TransactionRepr, TxId, TxPointer, UtxoId, ValidationError, Witness,
 };
+
+#[cfg(feature = "alloc")]
+pub mod io;
 
 #[cfg(feature = "alloc")]
 #[allow(deprecated)]

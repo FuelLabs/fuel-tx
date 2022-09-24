@@ -68,7 +68,7 @@ fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
         })
         .enumerate()
         .fold(quote! {}, |acc, (i, v)| {
-            let index = i as u8;
+            let index = i as u64;
             quote! {
                 #acc
                 #index => #v,
@@ -78,7 +78,7 @@ fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
     s.gen_impl(quote! {
         gen impl fuel_tx::io::Deserialize for @Self {
             fn decode<I: fuel_tx::io::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::io::Error> {
-                match <::core::primitive::u8 as fuel_tx::io::Deserialize>::decode(buffer)? {
+                match <::core::primitive::u64 as fuel_tx::io::Deserialize>::decode(buffer)? {
                     #decode
                     _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
                 }

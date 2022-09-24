@@ -242,8 +242,11 @@ impl<T: Serialize> Serialize for Vec<T> {
 
     fn encode_extra<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
         for e in self.iter() {
+            // Bytes - Vec<u8> it a separate case without padding for each element.
+            // It should padded at the end if is not % ALIGN
             match T::TYPE {
                 Type::U8 => {
+                    // Safety: `Type::U8` implemented only for `u8`.
                     let byte = unsafe { ::core::mem::transmute::<&T, &u8>(e) };
                     buffer.push_byte(*byte)?;
                 }
@@ -275,9 +278,12 @@ impl<T: Deserialize> Deserialize for Vec<T> {
 
     fn decode_extra<I: Input + ?Sized>(&mut self, buffer: &mut I) -> Result<(), Error> {
         for _ in 0..self.capacity() {
+            // Bytes - Vec<u8> it a separate case without unpadding for each element.
+            // It should unpadded at the end if is not % ALIGN
             match T::TYPE {
                 Type::U8 => {
                     let byte = buffer.read_byte()?;
+                    // Safety: `Type::U8` implemented only for `u8`, so it is `Vec<u8>`.
                     let _self =
                         unsafe { ::core::mem::transmute::<&mut Vec<T>, &mut Vec<u8>>(self) };
                     _self.push(byte);
@@ -312,11 +318,12 @@ impl<'a> Output for &'a mut [u8] {
         }
         let len = from.len();
         self[..len].copy_from_slice(from);
-        let new = &mut self[len..];
+        // We need to reduce the inner slice by `len`, because we already filled them.
+        let reduced = &mut self[len..];
 
         // Compiler is not clever enough to allow it.
         // https://stackoverflow.com/questions/25730586/how-can-i-create-my-own-data-structure-with-an-iterator-that-returns-mutable-ref
-        *self = unsafe { &mut *(new as *mut [u8]) };
+        *self = unsafe { &mut *(reduced as *mut [u8]) };
         Ok(())
     }
 }
@@ -379,3 +386,5 @@ impl Deserialize for InstructionResult {
         Ok(word.into())
     }
 }
+
+// TODO: Add tests for primitives, vectors, structs, enums

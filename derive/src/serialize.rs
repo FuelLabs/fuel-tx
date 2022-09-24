@@ -40,7 +40,7 @@ fn serialize_enum(s: &synstructure::Structure) -> TokenStream2 {
     assert!(!s.variants().is_empty(), "got invalid empty enum");
     let encode_body = s.variants().iter().enumerate().map(|(i, v)| {
         let pat = v.pat();
-        let index = i as u8;
+        let index = i as u64;
         let encode_iter = v.bindings().iter().map(|binding| {
             quote! {
                 if fuel_tx::io::Serialize::size(#binding) % fuel_tx::io::ALIGN > 0 {
@@ -56,7 +56,7 @@ fn serialize_enum(s: &synstructure::Structure) -> TokenStream2 {
         });
         quote! {
             #pat => {
-                { <::core::primitive::u8 as fuel_tx::io::Serialize>::encode(&#index, buffer)?; }
+                { <::core::primitive::u64 as fuel_tx::io::Serialize>::encode(&#index, buffer)?; }
                 #(
                     { #encode_iter }
                 )*

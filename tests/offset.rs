@@ -388,8 +388,8 @@ fn iow_offset() {
                 let offset = tx.input_offset(x).unwrap();
                 let offset_p = tx_p.input_offset(x).unwrap();
 
-                let mut d = &bytes[offset..];
-                let input = Input::decode(&mut d).expect("Failed to deserialize input!");
+                let input =
+                    Input::decode(&mut &bytes[offset..]).expect("Failed to deserialize input!");
 
                 assert_eq!(i, &input);
                 assert_eq!(offset, offset_p);

@@ -90,7 +90,7 @@ fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
                     )*
                     _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
                 };
-                
+
                 ::core::result::Result::Ok(())
             }
         }

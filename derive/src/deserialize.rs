@@ -8,26 +8,27 @@ fn deserialize_struct(s: &synstructure::Structure) -> TokenStream2 {
     let decode_main = variant.construct(|field, _| {
         let ty = &field.ty;
         quote! {
-            <#ty as fuel_tx::io::Deserialize>::decode(buffer)?
+            <#ty as fuel_tx::io::Deserialize>::decode_static(buffer)?
         }
     });
 
-    let decode_extra = variant.each(|binding| {
+    let decode_dynamic = variant.each(|binding| {
         quote! {
-            fuel_tx::io::Deserialize::decode_extra(#binding, buffer)?;
+            fuel_tx::io::Deserialize::decode_dynamic(#binding, buffer)?;
         }
     });
 
     s.gen_impl(quote! {
         gen impl fuel_tx::io::Deserialize for @Self {
-            fn decode<I: fuel_tx::io::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::io::Error> {
-                let mut object = #decode_main;
+            fn decode_static<I: fuel_tx::io::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::io::Error> {
+                ::core::result::Result::Ok(#decode_main)
+            }
 
-                match object {
-                    #decode_extra,
+            fn decode_dynamic<I: fuel_tx::io::Input + ?Sized>(&mut self, buffer: &mut I) -> ::core::result::Result<(), fuel_tx::io::Error> {
+                match self {
+                    #decode_dynamic,
                 };
-
-                ::core::result::Result::Ok(object)
+                ::core::result::Result::Ok(())
             }
         }
     })
@@ -35,34 +36,20 @@ fn deserialize_struct(s: &synstructure::Structure) -> TokenStream2 {
 
 fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
     assert!(!s.variants().is_empty(), "got invalid empty enum");
-    let decode = s
+    let decode_static = s
         .variants()
         .iter()
         .map(|variant| {
             let decode_main = variant.construct(|field, _| {
                 let ty = &field.ty;
                 quote! {
-                    <#ty as fuel_tx::io::Deserialize>::decode(buffer)?
-                }
-            });
-
-            let decode_extra = variant.each(|binding| {
-                quote! {
-                    fuel_tx::io::Deserialize::decode_extra(#binding, buffer)?;
+                    <#ty as fuel_tx::io::Deserialize>::decode_static(buffer)?
                 }
             });
 
             quote! {
                 {
-                    let mut object = #decode_main;
-
-                    match object {
-                        #decode_extra,
-                        // It is not possible, because we created `object` on previous iteration.
-                        _ => panic!("unexpected variant of the enum"),
-                    };
-
-                    ::core::result::Result::Ok(object)
+                    ::core::result::Result::Ok(#decode_main)
                 }
             }
         })
@@ -75,13 +62,36 @@ fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
             }
         });
 
+    let decode_dynamic = s.variants().iter().map(|variant| {
+        let decode_dynamic = variant.each(|binding| {
+            quote! {
+                fuel_tx::io::Deserialize::decode_dynamic(#binding, buffer)?;
+            }
+        });
+
+        quote! {
+            #decode_dynamic
+        }
+    });
+
     s.gen_impl(quote! {
         gen impl fuel_tx::io::Deserialize for @Self {
-            fn decode<I: fuel_tx::io::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::io::Error> {
+            fn decode_static<I: fuel_tx::io::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::io::Error> {
                 match <::core::primitive::u64 as fuel_tx::io::Deserialize>::decode(buffer)? {
-                    #decode
+                    #decode_static
                     _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
                 }
+            }
+
+            fn decode_dynamic<I: fuel_tx::io::Input + ?Sized>(&mut self, buffer: &mut I) -> ::core::result::Result<(), fuel_tx::io::Error> {
+                match self {
+                    #(
+                        #decode_dynamic
+                    )*
+                    _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
+                };
+                
+                ::core::result::Result::Ok(())
             }
         }
     })

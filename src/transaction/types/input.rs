@@ -720,14 +720,14 @@ impl From<InputSpec> for Input {
 }
 
 impl Serialize for Input {
-    fn encode<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
+    fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
         let input_spec: InputSpec = self.clone().into();
         input_spec.encode(buffer)
     }
 }
 
 impl Deserialize for Input {
-    fn decode<I: crate::io::Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
+    fn decode_static<I: crate::io::Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
         let input_spec = InputSpec::decode(buffer)?;
         Ok(input_spec.into())
     }

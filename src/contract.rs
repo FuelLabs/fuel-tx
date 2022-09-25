@@ -10,6 +10,7 @@ use core::iter;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(fuel_tx::io::Deserialize, fuel_tx::io::Serialize)]
 /// Deployable representation of a contract code.
 pub struct Contract(Vec<u8>);
 

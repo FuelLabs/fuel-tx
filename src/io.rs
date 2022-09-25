@@ -350,14 +350,11 @@ impl<const N: usize, T: Serialize> Serialize for [T; N] {
 
     fn encode_dynamic<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
         // All primitives have only static part, so skip dynamic encoding for them.
-        match T::TYPE {
-            Type::Unknown => {
-                for e in self.iter() {
-                    e.encode_dynamic(buffer)?;
-                }
+        if let Type::Unknown = T::TYPE {
+            for e in self.iter() {
+                e.encode_dynamic(buffer)?;
             }
-            _ => {}
-        };
+        }
 
         Ok(())
     }
@@ -372,7 +369,6 @@ impl<const N: usize, T: Deserialize> Deserialize for [T; N] {
                 buffer.skip(fill_bytes(N))?;
                 let ref_typed: &[T; N] = unsafe { core::mem::transmute(&bytes) };
                 let typed: [T; N] = unsafe { core::ptr::read(ref_typed) };
-                core::mem::forget(bytes);
                 Ok(typed)
             }
             // Spec doesn't say how to deserialize arrays with unaligned
@@ -402,14 +398,11 @@ impl<const N: usize, T: Deserialize> Deserialize for [T; N] {
 
     fn decode_dynamic<I: Input + ?Sized>(&mut self, buffer: &mut I) -> Result<(), Error> {
         // All primitives have only static part, so skip dynamic decoding for them.
-        match T::TYPE {
-            Type::Unknown => {
-                for e in self.iter_mut() {
-                    e.decode_dynamic(buffer)?;
-                }
+        if let Type::Unknown = T::TYPE {
+            for e in self.iter_mut() {
+                e.decode_dynamic(buffer)?;
             }
-            _ => {}
-        };
+        }
 
         Ok(())
     }

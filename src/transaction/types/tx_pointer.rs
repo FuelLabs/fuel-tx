@@ -1,4 +1,4 @@
-use crate::io::{Deserialize, Serialize};
+use crate::canonical::{Deserialize, Serialize};
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
 
 use core::{fmt, str};

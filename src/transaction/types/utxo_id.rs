@@ -14,7 +14,7 @@ use rand::{
 /// Identification of unspend transaction output.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(crate::io::Serialize, crate::io::Deserialize)]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub struct UtxoId {
     /// transaction id
     tx_id: TxId,

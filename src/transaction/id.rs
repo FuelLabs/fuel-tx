@@ -85,7 +85,7 @@ impl Transaction {
         let mut tx = self.clone();
         tx.prepare_sign();
 
-        Hasher::hash(crate::io::Serialize::to_bytes(&tx).as_slice())
+        Hasher::hash(crate::canonical::Serialize::to_bytes(&tx).as_slice())
     }
 }
 
@@ -93,7 +93,7 @@ impl Transaction {
 mod tests {
     use crate::*;
 
-    use fuel_tx::io::{Deserialize, Serialize};
+    use fuel_tx::canonical::{Deserialize, Serialize};
     use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
     use rand::rngs::StdRng;
     use rand::{Rng, RngCore, SeedableRng};

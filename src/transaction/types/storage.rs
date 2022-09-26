@@ -10,7 +10,7 @@ use core::cmp::Ordering;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(crate::io::Serialize, crate::io::Deserialize)]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub struct StorageSlot {
     key: Bytes32,
     value: Bytes32,

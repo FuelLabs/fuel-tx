@@ -1,7 +1,7 @@
 use super::PARAMS;
 
 use fuel_crypto::SecretKey;
-use fuel_tx::io::Deserialize;
+use fuel_tx::canonical::Deserialize;
 use fuel_tx::*;
 use fuel_tx_test_helpers::generate_bytes;
 use rand::{rngs::StdRng, Rng, RngCore, SeedableRng};

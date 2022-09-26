@@ -1,4 +1,4 @@
-use fuel_tx::io::{Deserialize, Serialize};
+use fuel_tx::canonical::{Deserialize, Serialize};
 use fuel_tx::*;
 use fuel_tx_test_helpers::TransactionFactory;
 use rand::rngs::StdRng;

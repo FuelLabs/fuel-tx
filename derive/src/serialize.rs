@@ -7,22 +7,22 @@ fn serialize_struct(s: &synstructure::Structure) -> TokenStream2 {
     let variant: &synstructure::VariantInfo = &s.variants()[0];
     let encode_static = variant.each(|binding| {
         quote! {
-            if fuel_tx::io::Serialize::size(#binding) % fuel_tx::io::ALIGN > 0 {
-                return ::core::result::Result::Err(fuel_tx::io::Error::WrongAlign)
+            if fuel_tx::canonical::Serialize::size(#binding) % fuel_tx::canonical::ALIGN > 0 {
+                return ::core::result::Result::Err(fuel_tx::canonical::Error::WrongAlign)
             }
-            fuel_tx::io::Serialize::encode_static(#binding, buffer)?;
+            fuel_tx::canonical::Serialize::encode_static(#binding, buffer)?;
         }
     });
 
     let encode_dynamic = variant.each(|binding| {
         quote! {
-            fuel_tx::io::Serialize::encode_dynamic(#binding, buffer)?;
+            fuel_tx::canonical::Serialize::encode_dynamic(#binding, buffer)?;
         }
     });
 
     s.gen_impl(quote! {
-        gen impl fuel_tx::io::Serialize for @Self {
-            fn encode_static<O: fuel_tx::io::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::io::Error> {
+        gen impl fuel_tx::canonical::Serialize for @Self {
+            fn encode_static<O: fuel_tx::canonical::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #encode_static
                 };
@@ -30,7 +30,7 @@ fn serialize_struct(s: &synstructure::Structure) -> TokenStream2 {
                 ::core::result::Result::Ok(())
             }
 
-            fn encode_dynamic<O: fuel_tx::io::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::io::Error> {
+            fn encode_dynamic<O: fuel_tx::canonical::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #encode_dynamic
                 };
@@ -48,15 +48,15 @@ fn serialize_enum(s: &synstructure::Structure) -> TokenStream2 {
         let index = i as u64;
         let encode_static_iter = v.bindings().iter().map(|binding| {
             quote! {
-                if fuel_tx::io::Serialize::size(#binding) % fuel_tx::io::ALIGN > 0 {
-                    return ::core::result::Result::Err(fuel_tx::io::Error::WrongAlign)
+                if fuel_tx::canonical::Serialize::size(#binding) % fuel_tx::canonical::ALIGN > 0 {
+                    return ::core::result::Result::Err(fuel_tx::canonical::Error::WrongAlign)
                 }
-                fuel_tx::io::Serialize::encode_static(#binding, buffer)?;
+                fuel_tx::canonical::Serialize::encode_static(#binding, buffer)?;
             }
         });
         quote! {
             #pat => {
-                { <::core::primitive::u64 as fuel_tx::io::Serialize>::encode(&#index, buffer)?; }
+                { <::core::primitive::u64 as fuel_tx::canonical::Serialize>::encode(&#index, buffer)?; }
                 #(
                     { #encode_static_iter }
                 )*
@@ -66,7 +66,7 @@ fn serialize_enum(s: &synstructure::Structure) -> TokenStream2 {
     let encode_dynamic = s.variants().iter().map(|v| {
         let encode_dynamic_iter = v.each(|binding| {
             quote! {
-                fuel_tx::io::Serialize::encode_dynamic(#binding, buffer)?;
+                fuel_tx::canonical::Serialize::encode_dynamic(#binding, buffer)?;
             }
         });
         quote! {
@@ -74,24 +74,24 @@ fn serialize_enum(s: &synstructure::Structure) -> TokenStream2 {
         }
     });
     s.gen_impl(quote! {
-        gen impl fuel_tx::io::Serialize for @Self {
-            fn encode_static<O: fuel_tx::io::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::io::Error> {
+        gen impl fuel_tx::canonical::Serialize for @Self {
+            fn encode_static<O: fuel_tx::canonical::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #(
                         #encode_static
                     )*,
-                    _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
+                    _ => return ::core::result::Result::Err(fuel_tx::canonical::Error::UnknownDiscriminant),
                 };
 
                 ::core::result::Result::Ok(())
             }
 
-            fn encode_dynamic<O: fuel_tx::io::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::io::Error> {
+            fn encode_dynamic<O: fuel_tx::canonical::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #(
                         #encode_dynamic
                     )*,
-                    _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
+                    _ => return ::core::result::Result::Err(fuel_tx::canonical::Error::UnknownDiscriminant),
                 };
 
                 ::core::result::Result::Ok(())

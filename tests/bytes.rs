@@ -1,5 +1,5 @@
 use fuel_asm::Opcode;
-use fuel_tx::io::{Deserialize, Error, Serialize};
+use fuel_tx::canonical::{Deserialize, Error, Serialize};
 use fuel_tx::*;
 use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
 use fuel_types::{bytes, Immediate24};

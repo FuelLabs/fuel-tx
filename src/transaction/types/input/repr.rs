@@ -1,7 +1,7 @@
 use super::consts::*;
 use super::Input;
 
-use crate::io::{Deserialize, Serialize};
+use crate::canonical::{Deserialize, Serialize};
 use crate::{TxPointer, UtxoId};
 use alloc::vec::Vec;
 use fuel_types::{Address, AssetId, Bytes32, ContractId, MessageId, Word};

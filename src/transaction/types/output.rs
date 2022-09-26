@@ -16,7 +16,7 @@ pub use repr::OutputRepr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(crate::io::Serialize, crate::io::Deserialize)]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub enum Output {
     Coin {
         to: Address,

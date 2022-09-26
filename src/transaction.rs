@@ -39,7 +39,7 @@ pub type TxId = Bytes32;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(crate::io::Serialize, crate::io::Deserialize)]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub enum Transaction {
     Script {
         gas_price: Word,

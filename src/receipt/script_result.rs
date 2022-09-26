@@ -2,7 +2,7 @@ use fuel_types::Word;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(crate::io::Deserialize, crate::io::Serialize)]
+#[derive(crate::canonical::Deserialize, crate::canonical::Serialize)]
 pub enum ScriptExecutionResult {
     Success,
     Revert,

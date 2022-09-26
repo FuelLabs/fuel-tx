@@ -38,7 +38,7 @@ where
 #[cfg(feature = "std")]
 mod use_std {
     use fuel_crypto::SecretKey;
-    use fuel_tx::io::Deserialize;
+    use fuel_tx::canonical::Deserialize;
     use fuel_tx::{Contract, Input, Output, Transaction, TransactionBuilder};
     use rand::distributions::{Distribution, Uniform};
     use rand::rngs::StdRng;

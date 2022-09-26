@@ -8,23 +8,23 @@ fn deserialize_struct(s: &synstructure::Structure) -> TokenStream2 {
     let decode_main = variant.construct(|field, _| {
         let ty = &field.ty;
         quote! {
-            <#ty as fuel_tx::io::Deserialize>::decode_static(buffer)?
+            <#ty as fuel_tx::canonical::Deserialize>::decode_static(buffer)?
         }
     });
 
     let decode_dynamic = variant.each(|binding| {
         quote! {
-            fuel_tx::io::Deserialize::decode_dynamic(#binding, buffer)?;
+            fuel_tx::canonical::Deserialize::decode_dynamic(#binding, buffer)?;
         }
     });
 
     s.gen_impl(quote! {
-        gen impl fuel_tx::io::Deserialize for @Self {
-            fn decode_static<I: fuel_tx::io::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::io::Error> {
+        gen impl fuel_tx::canonical::Deserialize for @Self {
+            fn decode_static<I: fuel_tx::canonical::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::canonical::Error> {
                 ::core::result::Result::Ok(#decode_main)
             }
 
-            fn decode_dynamic<I: fuel_tx::io::Input + ?Sized>(&mut self, buffer: &mut I) -> ::core::result::Result<(), fuel_tx::io::Error> {
+            fn decode_dynamic<I: fuel_tx::canonical::Input + ?Sized>(&mut self, buffer: &mut I) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #decode_dynamic,
                 };
@@ -43,7 +43,7 @@ fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
             let decode_main = variant.construct(|field, _| {
                 let ty = &field.ty;
                 quote! {
-                    <#ty as fuel_tx::io::Deserialize>::decode_static(buffer)?
+                    <#ty as fuel_tx::canonical::Deserialize>::decode_static(buffer)?
                 }
             });
 
@@ -65,7 +65,7 @@ fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
     let decode_dynamic = s.variants().iter().map(|variant| {
         let decode_dynamic = variant.each(|binding| {
             quote! {
-                fuel_tx::io::Deserialize::decode_dynamic(#binding, buffer)?;
+                fuel_tx::canonical::Deserialize::decode_dynamic(#binding, buffer)?;
             }
         });
 
@@ -75,20 +75,20 @@ fn deserialize_enum(s: &synstructure::Structure) -> TokenStream2 {
     });
 
     s.gen_impl(quote! {
-        gen impl fuel_tx::io::Deserialize for @Self {
-            fn decode_static<I: fuel_tx::io::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::io::Error> {
-                match <::core::primitive::u64 as fuel_tx::io::Deserialize>::decode(buffer)? {
+        gen impl fuel_tx::canonical::Deserialize for @Self {
+            fn decode_static<I: fuel_tx::canonical::Input + ?Sized>(buffer: &mut I) -> ::core::result::Result<Self, fuel_tx::canonical::Error> {
+                match <::core::primitive::u64 as fuel_tx::canonical::Deserialize>::decode(buffer)? {
                     #decode_static
-                    _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
+                    _ => return ::core::result::Result::Err(fuel_tx::canonical::Error::UnknownDiscriminant),
                 }
             }
 
-            fn decode_dynamic<I: fuel_tx::io::Input + ?Sized>(&mut self, buffer: &mut I) -> ::core::result::Result<(), fuel_tx::io::Error> {
+            fn decode_dynamic<I: fuel_tx::canonical::Input + ?Sized>(&mut self, buffer: &mut I) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #(
                         #decode_dynamic
                     )*
-                    _ => return ::core::result::Result::Err(fuel_tx::io::Error::UnknownDiscriminant),
+                    _ => return ::core::result::Result::Err(fuel_tx::canonical::Error::UnknownDiscriminant),
                 };
 
                 ::core::result::Result::Ok(())

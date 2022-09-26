@@ -4,7 +4,7 @@
 //! This allows the VM to accept transactions that have been already verified upstream,
 //! and consolidates logic around fee calculations and free balances.
 
-use crate::io::{Error, Serialize};
+use crate::canonical::{Error, Serialize};
 use crate::{
     ConsensusParameters, Input, Metadata, Output, Transaction, TransactionFee, ValidationError,
 };

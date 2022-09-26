@@ -48,7 +48,7 @@ pub use transaction::{
 };
 
 #[cfg(feature = "alloc")]
-pub mod io;
+pub mod canonical;
 
 #[cfg(feature = "alloc")]
 #[allow(deprecated)]

@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(crate::io::Serialize, crate::io::Deserialize)]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub struct Witness {
     data: Vec<u8>,
 }

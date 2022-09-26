@@ -18,7 +18,7 @@ use crate::Output;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(crate::io::Deserialize, crate::io::Serialize)]
+#[derive(crate::canonical::Deserialize, crate::canonical::Serialize)]
 pub enum Receipt {
     Call {
         id: ContractId,

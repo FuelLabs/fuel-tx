@@ -1,4 +1,4 @@
-use crate::io::{Deserialize, Error, Output, Serialize};
+use crate::canonical::{Deserialize, Error, Output, Serialize};
 use crate::{TxPointer, UtxoId};
 
 use alloc::{vec, vec::Vec};
@@ -727,7 +727,7 @@ impl Serialize for Input {
 }
 
 impl Deserialize for Input {
-    fn decode_static<I: crate::io::Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
+    fn decode_static<I: crate::canonical::Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
         let input_spec = InputSpec::decode(buffer)?;
         Ok(input_spec.into())
     }

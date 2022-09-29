@@ -813,6 +813,7 @@ mod test {
                     bytes.push(byte);
                     expected_bytes.push(byte);
                 }
+                #[allow(clippy::reversed_empty_ranges)]
                 for _ in 0..PADDING {
                     bytes.push(0);
                 }

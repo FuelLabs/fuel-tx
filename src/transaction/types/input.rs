@@ -252,9 +252,8 @@ impl Input {
             Input::CoinSigned { asset_id, .. } | Input::CoinPredicate { asset_id, .. } => {
                 Some(asset_id)
             }
-            Input::Contract { .. }
-            | Input::MessageSigned { .. }
-            | Input::MessagePredicate { .. } => None,
+            Input::MessageSigned { .. } | Input::MessagePredicate { .. } => Some(&AssetId::BASE),
+            Input::Contract { .. } => None,
         }
     }
 
@@ -380,10 +379,15 @@ impl Input {
     }
 
     /// Return a tuple containing the predicate and its data if the input is of
-    /// type `CoinPredicate`
+    /// type `CoinPredicate` or `MessagePredicate`
     pub fn predicate(&self) -> Option<(&[u8], &[u8])> {
         match self {
             Input::CoinPredicate {
+                predicate,
+                predicate_data,
+                ..
+            }
+            | Input::MessagePredicate {
                 predicate,
                 predicate_data,
                 ..

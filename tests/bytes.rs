@@ -53,12 +53,12 @@ where
 
             let err =
                 T::decode(&mut buffer_e.as_slice()).expect_err("Insufficient buffer should fail!");
-            assert_eq!(Error::BufferItTooShort, err);
+            assert_eq!(Error::BufferIsTooShort, err);
 
             let err = d_p
                 .encode(&mut buffer_e.as_mut())
                 .expect_err("Insufficient buffer should fail!");
-            assert_eq!(Error::BufferItTooShort, err);
+            assert_eq!(Error::BufferIsTooShort, err);
 
             if buffer_e.is_empty() {
                 break;

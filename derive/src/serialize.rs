@@ -22,6 +22,7 @@ fn serialize_struct(s: &synstructure::Structure) -> TokenStream2 {
 
     s.gen_impl(quote! {
         gen impl fuel_tx::canonical::Serialize for @Self {
+            #[inline(always)]
             fn encode_static<O: fuel_tx::canonical::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #encode_static
@@ -75,6 +76,7 @@ fn serialize_enum(s: &synstructure::Structure) -> TokenStream2 {
     });
     s.gen_impl(quote! {
         gen impl fuel_tx::canonical::Serialize for @Self {
+            #[inline(always)]
             fn encode_static<O: fuel_tx::canonical::Output + ?Sized>(&self, buffer: &mut O) -> ::core::result::Result<(), fuel_tx::canonical::Error> {
                 match self {
                     #(

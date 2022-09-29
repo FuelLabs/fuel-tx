@@ -11,7 +11,7 @@ pub enum Error {
     /// The data of each field should be 64 bits aligned.
     IsNotAligned,
     /// The buffer is to short for writing or reading.
-    BufferItTooShort,
+    BufferIsTooShort,
     /// Got unknown enum's discriminant.
     UnknownDiscriminant,
     /// Wrong align.
@@ -33,6 +33,7 @@ pub trait Output {
 
 /// !INTERNAL USAGE ONLY!
 /// This enum provides type information required for specialization and deserialization.
+#[derive(Debug, PartialEq, Eq)]
 pub enum Type {
     U8,
     U16,
@@ -44,19 +45,34 @@ pub enum Type {
 }
 
 /// Allows serialize the type into the `Output`.
+/// https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#transaction
 pub trait Serialize {
     // !INTERNAL USAGE ONLY!
     #[doc(hidden)]
     const TYPE: Type = Type::Unknown;
 
-    /// Returns the size required for serialization inner data.
+    /// Returns the size required for serialization of static data.
     ///
-    /// The default implementation emulates serialization and counts the number of written bytes.
-    fn size(&self) -> usize {
+    /// # Note: This function has the performance of constants because,
+    /// during compilation, the compiler knows all static sizes.
+    fn size_static(&self) -> usize {
         let mut calculator = SizeCalculator(0);
-        self.encode(&mut calculator)
-            .expect("Can't encode to get a size");
+        self.encode_static(&mut calculator)
+            .expect("Can't encode to get a static size");
         calculator.size()
+    }
+
+    /// Returns the size required for serialization of dynamic data.
+    fn size_dynamic(&self) -> usize {
+        let mut calculator = SizeCalculator(0);
+        self.encode_dynamic(&mut calculator)
+            .expect("Can't encode to get a dynamic size");
+        calculator.size()
+    }
+
+    /// Returns the size required for serialization of `Self`.
+    fn size(&self) -> usize {
+        self.size_static() + self.size_dynamic()
     }
 
     /// Encodes `Self` into bytes vector.
@@ -107,6 +123,7 @@ pub trait Input {
 }
 
 /// Allows deserialize the type from the `Input`.
+/// https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#transaction
 pub trait Deserialize: Sized {
     // !INTERNAL USAGE ONLY!
     #[doc(hidden)]
@@ -141,81 +158,72 @@ const fn fill_bytes(len: usize) -> usize {
     (ALIGN - (len % ALIGN)) % ALIGN
 }
 
-/// Returns the number of bytes to fill aligned
-macro_rules! fill_bytes {
-    ($t:ident) => {{
-        fill_bytes(::core::mem::size_of::<$t>())
-    }};
-}
-
-macro_rules! impl_for_type_aligned {
-    ($t:ident) => {
-        impl Serialize for $t {
-            fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
-                // It will be removed by the compiler because it is a const expression.
-                // It is a check for future potential changes.
-                if ::core::mem::size_of::<$t>() % ALIGN > 0 {
-                    return Err(Error::IsNotAligned);
-                }
-                buffer.write(self.as_ref())
-            }
-        }
-
-        impl Deserialize for $t {
-            fn decode_static<I: Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
-                let mut asset = $t::default();
-                buffer.read(asset.as_mut())?;
-                Ok(asset)
-            }
+/// Writes zero bytes to fill alignment into the `buffer`.
+macro_rules! align_during_encode {
+    ($t:ident, $buffer:ident) => {
+        const FILL_SIZE: usize = fill_bytes(::core::mem::size_of::<$t>());
+        // It will be removed by the compiler if `FILL_SIZE` is zero.
+        if FILL_SIZE > 0 {
+            let zeroed: [u8; FILL_SIZE] = [0; FILL_SIZE];
+            $buffer.write(zeroed.as_ref())?;
         }
     };
 }
 
-impl_for_type_aligned!(Address);
-impl_for_type_aligned!(AssetId);
-impl_for_type_aligned!(ContractId);
-impl_for_type_aligned!(Bytes8);
-impl_for_type_aligned!(Bytes32);
-impl_for_type_aligned!(MessageId);
-impl_for_type_aligned!(Salt);
+/// Skips zero bytes added for alignment from the `buffer`.
+macro_rules! align_during_decode {
+    ($t:ident, $buffer:ident) => {
+        const FILL_SIZE: usize = fill_bytes(::core::mem::size_of::<$t>());
+        // It will be removed by the compiler if `FILL_SIZE` is zero.
+        if FILL_SIZE > 0 {
+            $buffer.skip(FILL_SIZE)?;
+        }
+    };
+}
 
-macro_rules! impl_for_type_not_aligned {
+macro_rules! impl_for_fuel_types {
     ($t:ident) => {
         impl Serialize for $t {
+            #[inline(always)]
             fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
-                const FILL_SIZE: usize = fill_bytes!($t);
-                let zeroed: [u8; FILL_SIZE] = [0; FILL_SIZE];
                 buffer.write(self.as_ref())?;
-                buffer.write(zeroed.as_ref())
+                align_during_encode!($t, buffer);
+                Ok(())
             }
         }
 
         impl Deserialize for $t {
             fn decode_static<I: Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
-                let mut asset = $t::default();
+                let mut asset = $t::zeroed();
                 buffer.read(asset.as_mut())?;
-                buffer.skip(fill_bytes!($t))?;
+                align_during_decode!($t, buffer);
                 Ok(asset)
             }
         }
     };
 }
 
-impl_for_type_not_aligned!(Bytes4);
-impl_for_type_not_aligned!(Bytes20);
+impl_for_fuel_types!(Address);
+impl_for_fuel_types!(AssetId);
+impl_for_fuel_types!(ContractId);
+impl_for_fuel_types!(Bytes4);
+impl_for_fuel_types!(Bytes8);
+impl_for_fuel_types!(Bytes20);
+impl_for_fuel_types!(Bytes32);
+impl_for_fuel_types!(MessageId);
+impl_for_fuel_types!(Salt);
 
 macro_rules! impl_for_primitives {
     ($t:ident, $ty:path) => {
         impl Serialize for $t {
             const TYPE: Type = $ty;
 
+            #[inline(always)]
             fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
-                const FILL_SIZE: usize = fill_bytes!($t);
-                let zeroed: [u8; FILL_SIZE] = [0; FILL_SIZE];
-
                 let bytes = <$t>::to_be_bytes(*self);
                 buffer.write(bytes.as_ref())?;
-                buffer.write(zeroed.as_ref())
+                align_during_encode!($t, buffer);
+                Ok(())
             }
         }
 
@@ -225,7 +233,7 @@ macro_rules! impl_for_primitives {
             fn decode_static<I: Input + ?Sized>(buffer: &mut I) -> Result<Self, Error> {
                 let mut asset = [0u8; ::core::mem::size_of::<$t>()];
                 buffer.read(asset.as_mut())?;
-                buffer.skip(fill_bytes!($t))?;
+                align_during_decode!($t, buffer);
                 Ok(<$t>::from_be_bytes(asset))
             }
         }
@@ -241,10 +249,22 @@ impl_for_primitives!(u128, Type::U128);
 
 // `Option` is not supported by the specification. So ignore them.
 impl<T> Serialize for Option<T> {
+    #[inline(always)]
+    fn size_static(&self) -> usize {
+        0
+    }
+
+    #[inline(always)]
+    fn size_dynamic(&self) -> usize {
+        0
+    }
+
+    #[inline(always)]
     fn size(&self) -> usize {
         0
     }
 
+    #[inline(always)]
     fn encode_static<O: Output + ?Sized>(&self, _buffer: &mut O) -> Result<(), Error> {
         Ok(())
     }
@@ -258,6 +278,7 @@ impl<T> Deserialize for Option<T> {
 }
 
 impl<T: Serialize> Serialize for Vec<T> {
+    #[inline(always)]
     // Encode only the size of the vector. Elements will be encoded in the `encode_dynamic` method.
     fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
         self.len().encode(buffer)
@@ -326,6 +347,7 @@ impl<T: Deserialize> Deserialize for Vec<T> {
 }
 
 impl<const N: usize, T: Serialize> Serialize for [T; N] {
+    #[inline(always)]
     fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
         // Bytes - [u8; N] it a separate case without padding for each element.
         // It should padded at the end if is not % ALIGN
@@ -418,7 +440,7 @@ impl Output for Vec<u8> {
 impl<'a> Output for &'a mut [u8] {
     fn write(&mut self, from: &[u8]) -> Result<(), Error> {
         if from.len() > self.len() {
-            return Err(Error::BufferItTooShort);
+            return Err(Error::BufferIsTooShort);
         }
         let len = from.len();
         self[..len].copy_from_slice(from);
@@ -446,7 +468,7 @@ impl Output for SizeCalculator {
         self.0 = self
             .0
             .checked_add(bytes.len())
-            .ok_or(Error::BufferItTooShort)?;
+            .ok_or(Error::BufferIsTooShort)?;
         Ok(())
     }
 }
@@ -458,7 +480,7 @@ impl<'a> Input for &'a [u8] {
 
     fn read(&mut self, into: &mut [u8]) -> Result<(), Error> {
         if into.len() > self.len() {
-            return Err(Error::BufferItTooShort);
+            return Err(Error::BufferIsTooShort);
         }
 
         let len = into.len();
@@ -469,7 +491,7 @@ impl<'a> Input for &'a [u8] {
 
     fn skip(&mut self, n: usize) -> Result<(), Error> {
         if n > self.len() {
-            return Err(Error::BufferItTooShort);
+            return Err(Error::BufferIsTooShort);
         }
 
         *self = &self[n..];
@@ -479,6 +501,7 @@ impl<'a> Input for &'a [u8] {
 
 // TODO: Move trait definition to `fuel-types` and derive this implementation for `fuel-asm`.
 impl Serialize for InstructionResult {
+    #[inline(always)]
     fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
         let word: Word = (*self).into();
         word.encode(buffer)
@@ -492,4 +515,444 @@ impl Deserialize for InstructionResult {
     }
 }
 
-// TODO: Add tests for primitives, vectors, structs, enums
+#[cfg(test)]
+mod test {
+    use super::*;
+    use itertools::Itertools;
+    use rand::rngs::StdRng;
+    use rand::{Rng, SeedableRng};
+
+    #[test]
+    fn fuel_types_encode() {
+        macro_rules! encode_with_empty_bytes {
+            ($ty:path, $empty_bytes:expr, $t:expr, $s:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                const NUMBER_OF_EMPTY_BYTES: usize = $empty_bytes;
+                assert_eq!(<$ty as Serialize>::TYPE, $t);
+
+                for _ in 0..1000 {
+                    let fuel_type: $ty = rng.gen();
+                    // Spec says: as-is, with padding zeroes aligned to 8 bytes.
+                    // https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#transaction
+                    let expected_bytes: Vec<u8> =
+                        [fuel_type.as_ref(), [0u8; NUMBER_OF_EMPTY_BYTES].as_slice()].concat();
+
+                    let actual_bytes = fuel_type.to_bytes();
+                    assert_eq!(actual_bytes.len(), expected_bytes.len());
+                    assert_eq!(actual_bytes.len(), <$ty>::LEN + NUMBER_OF_EMPTY_BYTES);
+                    assert_eq!(actual_bytes.as_slice(), expected_bytes.as_slice());
+                    assert_eq!(Serialize::size(&fuel_type), $s);
+                    assert_eq!(Serialize::size_static(&fuel_type), $s);
+                    assert_eq!(Serialize::size_dynamic(&fuel_type), 0);
+                }
+            }};
+        }
+
+        // Types are aligned by default.
+        encode_with_empty_bytes!(Address, 0, Type::Unknown, 32);
+        encode_with_empty_bytes!(AssetId, 0, Type::Unknown, 32);
+        encode_with_empty_bytes!(ContractId, 0, Type::Unknown, 32);
+        encode_with_empty_bytes!(Bytes8, 0, Type::Unknown, 8);
+        encode_with_empty_bytes!(Bytes32, 0, Type::Unknown, 32);
+        encode_with_empty_bytes!(MessageId, 0, Type::Unknown, 32);
+        encode_with_empty_bytes!(Salt, 0, Type::Unknown, 32);
+
+        // Types are not aligned by default.
+        encode_with_empty_bytes!(Bytes4, 4, Type::Unknown, 8);
+        encode_with_empty_bytes!(Bytes20, 4, Type::Unknown, 24);
+
+        assert_eq!(
+            hex::encode(<Bytes4 as Serialize>::to_bytes(&[0xFF; 4].into())),
+            "ffffffff00000000"
+        );
+        assert_eq!(
+            hex::encode(<Bytes20 as Serialize>::to_bytes(&[0xFF; 20].into())),
+            "ffffffffffffffffffffffffffffffffffffffff00000000"
+        );
+    }
+
+    #[test]
+    fn fuel_types_decode() {
+        macro_rules! decode_with_empty_bytes {
+            ($ty:path, $empty_bytes:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                const NUMBER_OF_EMPTY_BYTES: usize = $empty_bytes;
+
+                for _ in 0..1000 {
+                    let expected_bytes: [u8; <$ty>::LEN] = rng.gen();
+                    let mut actual_bytes: Vec<u8> = [
+                        expected_bytes.as_slice(),
+                        [0u8; NUMBER_OF_EMPTY_BYTES].as_slice(),
+                    ]
+                    .concat();
+
+                    assert_eq!(actual_bytes.len(), <$ty>::LEN + NUMBER_OF_EMPTY_BYTES);
+
+                    let fuel_type: $ty =
+                        <$ty>::decode(&mut actual_bytes.as_slice()).expect("Unable to decode");
+                    assert_eq!(fuel_type.as_ref(), expected_bytes.as_ref());
+
+                    // Remove last byte to force error during decoding
+                    actual_bytes.pop();
+                    assert_eq!(actual_bytes.len(), <$ty>::LEN + NUMBER_OF_EMPTY_BYTES - 1);
+                    assert_eq!(
+                        <$ty>::decode(&mut actual_bytes.as_slice()),
+                        Err(Error::BufferIsTooShort)
+                    );
+                }
+            }};
+        }
+
+        // Types are aligned by default.
+        decode_with_empty_bytes!(Address, 0);
+        decode_with_empty_bytes!(AssetId, 0);
+        decode_with_empty_bytes!(ContractId, 0);
+        decode_with_empty_bytes!(Bytes8, 0);
+        decode_with_empty_bytes!(Bytes32, 0);
+        decode_with_empty_bytes!(MessageId, 0);
+        decode_with_empty_bytes!(Salt, 0);
+
+        // Types are not aligned by default.
+        decode_with_empty_bytes!(Bytes4, 4);
+        decode_with_empty_bytes!(Bytes20, 4);
+    }
+
+    #[test]
+    fn primitives_encode() {
+        macro_rules! encode_with_empty_bytes {
+            ($ty:path, $empty_bytes:expr, $t:expr, $s:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                const NUMBER_OF_EMPTY_BYTES: usize = $empty_bytes;
+                assert_eq!(<$ty as Serialize>::TYPE, $t);
+
+                for _ in 0..1000 {
+                    let primitive: $ty = rng.gen();
+                    // Spec says: big-endian right-aligned to 8 bytes
+                    // https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#transaction
+                    let expected_bytes: Vec<u8> = [
+                        primitive.to_be_bytes().as_ref(),
+                        [0u8; NUMBER_OF_EMPTY_BYTES].as_slice(),
+                    ]
+                    .concat();
+
+                    let actual_bytes = primitive.to_bytes();
+                    assert_eq!(actual_bytes.len(), expected_bytes.len());
+                    assert_eq!(
+                        actual_bytes.len(),
+                        ::core::mem::size_of::<$ty>() + NUMBER_OF_EMPTY_BYTES
+                    );
+                    assert_eq!(actual_bytes.as_slice(), expected_bytes.as_slice());
+                    assert_eq!(Serialize::size(&primitive), $s);
+                    assert_eq!(Serialize::size_static(&primitive), $s);
+                    assert_eq!(Serialize::size_dynamic(&primitive), 0);
+                }
+            }};
+        }
+
+        // Types are aligned by default.
+        encode_with_empty_bytes!(u64, 0, Type::U64, 8);
+        encode_with_empty_bytes!(u128, 0, Type::U128, 16);
+        encode_with_empty_bytes!(usize, 0, Type::USIZE, 8);
+
+        // Types are not aligned by default.
+        encode_with_empty_bytes!(u8, 7, Type::U8, 8);
+        encode_with_empty_bytes!(u16, 6, Type::U16, 8);
+        encode_with_empty_bytes!(u32, 4, Type::U32, 8);
+
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&0xFFu8)),
+            "ff00000000000000"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&0xFFu16)),
+            "00ff000000000000"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&0xFFu32)),
+            "000000ff00000000"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&0xFFu64)),
+            "00000000000000ff"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&0xFFusize)),
+            "00000000000000ff"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&0xFFu128)),
+            "000000000000000000000000000000ff"
+        );
+    }
+
+    #[test]
+    fn primitives_decode() {
+        macro_rules! decode_with_empty_bytes {
+            ($ty:path, $empty_bytes:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                const NUMBER_OF_EMPTY_BYTES: usize = $empty_bytes;
+
+                for _ in 0..1000 {
+                    let expected_bytes: [u8; ::core::mem::size_of::<$ty>()] = rng.gen();
+                    let mut actual_bytes: Vec<u8> = [
+                        expected_bytes.as_slice(),
+                        [0u8; NUMBER_OF_EMPTY_BYTES].as_slice(),
+                    ]
+                    .concat();
+
+                    assert_eq!(
+                        actual_bytes.len(),
+                        ::core::mem::size_of::<$ty>() + NUMBER_OF_EMPTY_BYTES
+                    );
+
+                    let primitive: $ty =
+                        <$ty>::decode(&mut actual_bytes.as_slice()).expect("Unable to decode");
+                    assert_eq!(primitive.to_be_bytes().as_ref(), expected_bytes.as_ref());
+
+                    // Remove last byte to force error during decoding
+                    actual_bytes.pop();
+                    assert_eq!(
+                        actual_bytes.len(),
+                        ::core::mem::size_of::<$ty>() + NUMBER_OF_EMPTY_BYTES - 1
+                    );
+                    assert_eq!(
+                        <$ty>::decode(&mut actual_bytes.as_slice()),
+                        Err(Error::BufferIsTooShort)
+                    );
+                }
+            }};
+        }
+
+        // Types are aligned by default.
+        decode_with_empty_bytes!(u64, 0);
+        decode_with_empty_bytes!(u128, 0);
+        decode_with_empty_bytes!(usize, 0);
+
+        // Types are not aligned by default.
+        decode_with_empty_bytes!(u8, 7);
+        decode_with_empty_bytes!(u16, 6);
+        decode_with_empty_bytes!(u32, 4);
+    }
+
+    #[test]
+    fn vector_encode_bytes() {
+        macro_rules! encode_bytes {
+            ($num:expr, $padding:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                let mut bytes = Vec::with_capacity(100013);
+                const NUM: usize = $num;
+                const PADDING: usize = $padding;
+                const PADDED_NUM: usize = NUM /* bytes */ + PADDING;
+                for _ in 0..NUM {
+                    bytes.push(rng.gen::<u8>())
+                }
+                assert_eq!(bytes.len(), NUM);
+
+                // Correct sizes for each part
+                assert_eq!(bytes.size_static(), 8);
+                assert_eq!(bytes.size_dynamic(), PADDED_NUM);
+                assert_eq!(bytes.size(), 8 /* static part */ + PADDED_NUM);
+
+                // Correct encoding of static part
+                let mut static_part = [0u8; 8];
+                bytes
+                    .encode_static(&mut static_part.as_mut())
+                    .expect("Can't encode static part of bytes vector");
+                assert_eq!(static_part.as_slice(), NUM.to_bytes().as_slice());
+
+                // Correct encoding of dynamic part
+                let mut dynamic_part = [0u8; PADDED_NUM];
+                bytes
+                    .encode_dynamic(&mut dynamic_part.as_mut())
+                    .expect("Can't encode dynamic part of bytes vector");
+                let expected_bytes = [bytes.as_slice(), [0u8; PADDING].as_slice()].concat();
+                assert_eq!(dynamic_part.as_slice(), expected_bytes.as_slice());
+
+                // Correct encoding
+                let actual_bytes = bytes.to_bytes();
+                let expected_bytes = [
+                    NUM.to_bytes().as_slice(),
+                    bytes.as_slice(),
+                    [0u8; PADDING].as_slice(),
+                ]
+                .concat();
+                assert_eq!(actual_bytes.len(), expected_bytes.len());
+                assert_eq!(actual_bytes.as_slice(), expected_bytes.as_slice());
+            }};
+        }
+
+        encode_bytes!(96, 0);
+        encode_bytes!(97, 7);
+        encode_bytes!(98, 6);
+        encode_bytes!(99, 5);
+        encode_bytes!(100, 4);
+        encode_bytes!(101, 3);
+        encode_bytes!(102, 2);
+        encode_bytes!(103, 1);
+        encode_bytes!(104, 0);
+
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&vec![0xFFu8, 0x0u8, 0xFAu8])),
+            "0000000000000003ff00fa0000000000"
+        );
+    }
+
+    #[test]
+    fn vector_decode_bytes() {
+        macro_rules! decode_bytes {
+            ($num:expr, $padding:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                let mut bytes = Vec::with_capacity(100013);
+                const NUM: usize = $num;
+                const PADDING: usize = $padding;
+                const PADDED_NUM: usize = NUM /* bytes */ + PADDING;
+                NUM.encode(&mut bytes).expect("Should encode the size of the vector");
+                let mut expected_bytes = vec![];
+                for _ in 0..NUM {
+                    let byte = rng.gen::<u8>();
+                    bytes.push(byte);
+                    expected_bytes.push(byte);
+                }
+                for _ in 0..PADDING {
+                    bytes.push(0);
+                }
+                assert_eq!(bytes.len(), 8 + PADDED_NUM);
+                assert_eq!(expected_bytes.len(), NUM);
+
+                // Correct decoding of static part
+                let mut decoded = Vec::<u8>::decode_static(&mut bytes.as_slice())
+                    .expect("Can't decode static part of bytes vector");
+                assert_eq!(decoded.capacity(), NUM);
+                assert_eq!(decoded.len(), 0);
+
+                // Correct decoding of dynamic part
+                decoded.decode_dynamic(&mut bytes[8..].as_ref())
+                    .expect("Can't decode dynamic part of bytes vector");
+                assert_eq!(decoded.len(), NUM);
+                assert_eq!(decoded.as_slice(), expected_bytes.as_slice());
+
+                // Correct decoding
+                let decoded = Vec::<u8>::decode(&mut bytes.as_slice())
+                    .expect("Can't decode of bytes vector");
+                assert_eq!(decoded.len(), NUM);
+                assert_eq!(decoded.as_slice(), expected_bytes.as_slice());
+
+                // Pop last byte to cause an error during decoding
+                bytes.pop();
+                assert_eq!(bytes.len(), 8 + PADDED_NUM - 1);
+                assert_eq!(Vec::<u8>::decode(&mut bytes.as_slice()), Err(Error::BufferIsTooShort));
+            }};
+        }
+
+        decode_bytes!(96, 0);
+        decode_bytes!(97, 7);
+        decode_bytes!(98, 6);
+        decode_bytes!(99, 5);
+        decode_bytes!(100, 4);
+        decode_bytes!(101, 3);
+        decode_bytes!(102, 2);
+        decode_bytes!(103, 1);
+        decode_bytes!(104, 0);
+    }
+
+    #[test]
+    fn vector_encode_decode_not_bytes() {
+        macro_rules! encode_decode_not_bytes {
+            ($ty:ty, $num:expr, $padding:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                let mut vector = Vec::with_capacity(100013);
+                // Total number of elements
+                const NUM: usize = $num;
+                // Padding per element in the vector
+                const PADDING: usize = $padding;
+                // Total encoded size with padding
+                const PADDED_SIZE: usize = ::core::mem::size_of::<$ty>() * NUM + PADDING * NUM;
+                for _ in 0..NUM {
+                    vector.push(rng.gen::<$ty>())
+                }
+                assert_eq!(vector.len(), NUM);
+
+                // Correct sizes for each part
+                assert_eq!(vector.size_static(), 8);
+                assert_eq!(vector.size_dynamic(), PADDED_SIZE);
+                assert_eq!(vector.size(), 8 /* static part */ + PADDED_SIZE);
+
+                // Correct encoding and decoding of static part
+                let mut static_part = [0u8; 8];
+                vector
+                    .encode_static(&mut static_part.as_mut())
+                    .expect("Can't encode static part of vector");
+                assert_eq!(static_part.as_slice(), NUM.to_bytes().as_slice());
+                let mut decoded = Vec::<$ty>::decode_static(&mut static_part.as_ref())
+                    .expect("Can't decode static part of the vector");
+                assert_eq!(decoded.capacity(), NUM);
+                assert_eq!(decoded.len(), 0);
+
+                // Correct encoding and decoding of dynamic part
+                let mut dynamic_part = [0u8; PADDED_SIZE];
+                vector
+                    .encode_dynamic(&mut dynamic_part.as_mut())
+                    .expect("Can't encode dynamic part of vector");
+                let expected_bytes = vector.clone().into_iter()
+                    .flat_map(|e| e.to_bytes().into_iter()).collect_vec();
+                assert_eq!(dynamic_part.as_slice(), expected_bytes.as_slice());
+                decoded.decode_dynamic(&mut dynamic_part.as_ref())
+                    .expect("Can't decode dynamic part of the vector");
+                assert_eq!(decoded.len(), NUM);
+                assert_eq!(decoded.as_slice(), vector.as_slice());
+
+                // Correct encoding and decoding
+                let mut actual_bytes = vector.to_bytes();
+                let expected_bytes = [
+                    NUM.to_bytes().as_slice(),
+                    vector.clone().into_iter()
+                        .flat_map(|e| e.to_bytes().into_iter()).collect_vec().as_slice(),
+                ]
+                .concat();
+                assert_eq!(actual_bytes.len(), expected_bytes.len());
+                assert_eq!(actual_bytes.as_slice(), expected_bytes.as_slice());
+                let decoded = Vec::<$ty>::decode(&mut actual_bytes.as_slice())
+                    .expect("Can't decode the vector");
+                assert_eq!(decoded.len(), vector.len());
+                assert_eq!(decoded.as_slice(), vector.as_slice());
+
+                // Pop last byte to cause an error during decoding
+                actual_bytes.pop();
+                assert_eq!(Vec::<$ty>::decode(&mut actual_bytes.as_slice()), Err(Error::BufferIsTooShort));
+            }};
+        }
+
+        encode_decode_not_bytes!(Address, 100, 0);
+        encode_decode_not_bytes!(AssetId, 100, 0);
+        encode_decode_not_bytes!(ContractId, 100, 0);
+        encode_decode_not_bytes!(Bytes4, 100, 4);
+        encode_decode_not_bytes!(Bytes8, 100, 0);
+        encode_decode_not_bytes!(Bytes20, 100, 4);
+        encode_decode_not_bytes!(Bytes32, 100, 0);
+        encode_decode_not_bytes!(MessageId, 100, 0);
+        encode_decode_not_bytes!(Salt, 100, 0);
+
+        encode_decode_not_bytes!(u16, 100, 6);
+        encode_decode_not_bytes!(u32, 100, 4);
+        encode_decode_not_bytes!(u64, 100, 0);
+        encode_decode_not_bytes!(usize, 100, 0);
+        encode_decode_not_bytes!(u128, 100, 0);
+
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&vec![
+                Bytes4::new([0xFA, 0xFB, 0xFC, 0xFD]),
+                Bytes4::zeroed(),
+                Bytes4::new([0xAA, 0xBB, 0xCC, 0xDD])
+            ])),
+            "0000000000000003fafbfcfd000000000000000000000000aabbccdd00000000"
+        );
+
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&vec![
+                0xAAu16, 0xBBu16, 0xCCu16, 0xDDu16,
+            ])),
+            "000000000000000400aa00000000000000bb00000000000000cc00000000000000dd000000000000"
+        );
+    }
+}
+// TODO: Add tests for arrays, structs, enums

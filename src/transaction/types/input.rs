@@ -720,6 +720,7 @@ impl From<InputSpec> for Input {
 }
 
 impl Serialize for Input {
+    #[inline(always)]
     fn encode_static<O: Output + ?Sized>(&self, buffer: &mut O) -> Result<(), Error> {
         let input_spec: InputSpec = self.clone().into();
         input_spec.encode(buffer)

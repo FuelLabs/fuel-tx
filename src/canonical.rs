@@ -160,7 +160,7 @@ const fn fill_bytes(len: usize) -> usize {
 
 /// Writes zero bytes to fill alignment into the `buffer`.
 macro_rules! align_during_encode {
-    ($t:ident, $buffer:ident) => {
+    ($t:ty, $buffer:ident) => {
         const FILL_SIZE: usize = fill_bytes(::core::mem::size_of::<$t>());
         // It will be removed by the compiler if `FILL_SIZE` is zero.
         if FILL_SIZE > 0 {
@@ -739,7 +739,7 @@ mod test {
         macro_rules! encode_bytes {
             ($num:expr, $padding:expr) => {{
                 let rng = &mut StdRng::seed_from_u64(8586);
-                let mut bytes = Vec::with_capacity(100013);
+                let mut bytes = Vec::with_capacity(1013);
                 const NUM: usize = $num;
                 const PADDING: usize = $padding;
                 const PADDED_NUM: usize = NUM /* bytes */ + PADDING;
@@ -792,8 +792,20 @@ mod test {
         encode_bytes!(104, 0);
 
         assert_eq!(
-            hex::encode(Serialize::to_bytes(&vec![0xFFu8, 0x0u8, 0xFAu8])),
-            "0000000000000003ff00fa0000000000"
+            hex::encode(Serialize::to_bytes(&vec![0x11u8, 0x22u8, 0x33u8,])),
+            "00000000000000031122330000000000"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&vec![
+                0x11u8, 0x22u8, 0x33u8, 0x44u8, 0x55u8, 0x66u8,
+            ])),
+            "00000000000000061122334455660000"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&vec![
+                0x11u8, 0x22u8, 0x33u8, 0x44u8, 0x55u8, 0x66u8, 0x77, 0x88,
+            ])),
+            "00000000000000081122334455667788"
         );
     }
 
@@ -802,7 +814,7 @@ mod test {
         macro_rules! decode_bytes {
             ($num:expr, $padding:expr) => {{
                 let rng = &mut StdRng::seed_from_u64(8586);
-                let mut bytes = Vec::with_capacity(100013);
+                let mut bytes = Vec::with_capacity(1013);
                 const NUM: usize = $num;
                 const PADDING: usize = $padding;
                 const PADDED_NUM: usize = NUM /* bytes */ + PADDING;
@@ -861,7 +873,7 @@ mod test {
         macro_rules! encode_decode_not_bytes {
             ($ty:ty, $num:expr, $padding:expr) => {{
                 let rng = &mut StdRng::seed_from_u64(8586);
-                let mut vector = Vec::with_capacity(100013);
+                let mut vector = Vec::with_capacity(1013);
                 // Total number of elements
                 const NUM: usize = $num;
                 // Padding per element in the vector
@@ -941,11 +953,11 @@ mod test {
 
         assert_eq!(
             hex::encode(Serialize::to_bytes(&vec![
-                Bytes4::new([0xFA, 0xFB, 0xFC, 0xFD]),
+                Bytes4::new([0x11u8, 0x22u8, 0x33u8, 0x44u8]),
                 Bytes4::zeroed(),
-                Bytes4::new([0xAA, 0xBB, 0xCC, 0xDD])
+                Bytes4::new([0x11u8, 0x22u8, 0x33u8, 0x44u8])
             ])),
-            "0000000000000003fafbfcfd000000000000000000000000aabbccdd00000000"
+            "0000000000000003112233440000000000000000000000001122334400000000"
         );
 
         assert_eq!(
@@ -955,5 +967,320 @@ mod test {
             "000000000000000400aa00000000000000bb00000000000000cc00000000000000dd000000000000"
         );
     }
+
+    #[test]
+    fn vector_encode_decode_recursion() {
+        macro_rules! encode_decode_recursion {
+            ($ty:ty, $num:expr, $padding:expr) => {{
+                let rng = &mut StdRng::seed_from_u64(8586);
+                let mut vector: Vec<Vec<Vec<$ty>>> = Vec::with_capacity(1013);
+                // Total number of elements in each vector
+                const NUM: usize = $num;
+                // Padding per element in the final vector
+                const PADDING: usize = $padding;
+                // Total encoded size with padding
+                const PADDED_SIZE: usize = ::core::mem::size_of::<$ty>() * NUM + PADDING * NUM;
+                const DYNAMIC_SIZE: usize = (NUM + NUM * NUM) * 8 + NUM * NUM * PADDED_SIZE;
+                for _ in 0..NUM {
+                    let mut first = Vec::with_capacity(1013);
+                    for _ in 0..NUM {
+                        let mut second = Vec::with_capacity(1013);
+                        for _ in 0..NUM {
+                            second.push(rng.gen::<$ty>())
+                        }
+                        first.push(second);
+                    }
+                    vector.push(first);
+                }
+                assert_eq!(vector.len(), NUM);
+
+                // Correct sizes for each part
+                assert_eq!(vector.size_static(), 8);
+                assert_eq!(vector.size_dynamic(), DYNAMIC_SIZE);
+                assert_eq!(vector.size(), 8 + DYNAMIC_SIZE);
+
+                // Correct encoding and decoding of static part
+                let mut static_part = [0u8; 8];
+                vector
+                    .encode_static(&mut static_part.as_mut())
+                    .expect("Can't encode static part of vector");
+                assert_eq!(static_part.as_slice(), NUM.to_bytes().as_slice());
+                let mut decoded = Vec::<Vec<Vec<$ty>>>::decode_static(&mut static_part.as_ref())
+                    .expect("Can't decode static part of the vector");
+                assert_eq!(decoded.capacity(), NUM);
+                assert_eq!(decoded.len(), 0);
+
+                // Correct encoding and decoding of dynamic part
+                let mut dynamic_part = [0u8; DYNAMIC_SIZE];
+                vector
+                    .encode_dynamic(&mut dynamic_part.as_mut())
+                    .expect("Can't encode dynamic part of vector");
+                let expected_bytes = vector
+                    .clone()
+                    .into_iter()
+                    .flat_map(|e| e.to_bytes().into_iter())
+                    .collect_vec();
+                assert_eq!(dynamic_part.as_slice(), expected_bytes.as_slice());
+                decoded
+                    .decode_dynamic(&mut dynamic_part.as_ref())
+                    .expect("Can't decode dynamic part of the vector");
+                assert_eq!(decoded.len(), NUM);
+                assert_eq!(decoded.as_slice(), vector.as_slice());
+
+                for i in 0..NUM {
+                    assert_eq!(decoded[i].len(), NUM);
+                    assert_eq!(decoded[i].as_slice(), vector[i].as_slice());
+                    for j in 0..NUM {
+                        assert_eq!(decoded[i][j].len(), NUM);
+                        assert_eq!(decoded[i][j].as_slice(), vector[i][j].as_slice());
+                        for n in 0..NUM {
+                            assert_eq!(decoded[i][j][n], vector[i][j][n]);
+                        }
+                    }
+                }
+
+                // Correct encoding and decoding
+                let mut actual_bytes = vector.to_bytes();
+                let expected_bytes = [
+                    NUM.to_bytes().as_slice(),
+                    vector
+                        .clone()
+                        .into_iter()
+                        .flat_map(|e| e.to_bytes().into_iter())
+                        .collect_vec()
+                        .as_slice(),
+                ]
+                .concat();
+                assert_eq!(actual_bytes.len(), expected_bytes.len());
+                assert_eq!(actual_bytes.as_slice(), expected_bytes.as_slice());
+                let decoded = Vec::<Vec<Vec<$ty>>>::decode(&mut actual_bytes.as_slice())
+                    .expect("Can't decode the vector");
+                assert_eq!(decoded.len(), vector.len());
+                assert_eq!(decoded.as_slice(), vector.as_slice());
+
+                // Pop last byte to cause an error during decoding
+                actual_bytes.pop();
+                assert_eq!(
+                    Vec::<Vec<Vec<$ty>>>::decode(&mut actual_bytes.as_slice()),
+                    Err(Error::BufferIsTooShort)
+                );
+            }};
+        }
+
+        encode_decode_recursion!(Address, 10, 0);
+        encode_decode_recursion!(AssetId, 10, 0);
+        encode_decode_recursion!(ContractId, 10, 0);
+        encode_decode_recursion!(Bytes4, 10, 4);
+        encode_decode_recursion!(Bytes8, 10, 0);
+        encode_decode_recursion!(Bytes20, 10, 4);
+        encode_decode_recursion!(Bytes32, 10, 0);
+        encode_decode_recursion!(MessageId, 10, 0);
+        encode_decode_recursion!(Salt, 10, 0);
+
+        encode_decode_recursion!(u16, 10, 6);
+        encode_decode_recursion!(u32, 10, 4);
+        encode_decode_recursion!(u64, 10, 0);
+        encode_decode_recursion!(usize, 10, 0);
+        encode_decode_recursion!(u128, 10, 0);
+
+        encode_decode_recursion!(u8, 8, 0);
+        encode_decode_recursion!(u8, 16, 0);
+    }
+
+    #[test]
+    fn array_encode_decode_bytes() {
+        macro_rules! encode_decode_bytes {
+            ($num:expr, $padding:expr) => {{
+                const NUM: usize = $num;
+                const PADDING: usize = $padding;
+                let rng = &mut StdRng::seed_from_u64(8586);
+                let mut bytes: [u8; NUM] = [0u8; NUM];
+                const PADDED_NUM: usize = NUM /* bytes */ + PADDING;
+                for i in 0..NUM {
+                    bytes[i] = rng.gen::<u8>();
+                }
+                assert_eq!(bytes.len(), NUM);
+
+                // Correct sizes for each part
+                assert_eq!(bytes.size_static(), PADDED_NUM);
+                assert_eq!(bytes.size_dynamic(), 0);
+                assert_eq!(bytes.size(), PADDED_NUM);
+
+                // Correct encoding of static part
+                let mut static_part = [0u8; PADDED_NUM];
+                bytes
+                    .encode_static(&mut static_part.as_mut())
+                    .expect("Can't encode static part of bytes array");
+                let expected_bytes = [bytes.as_slice(), [0u8; PADDING].as_slice()].concat();
+                assert_eq!(static_part.len(), expected_bytes.len());
+                assert_eq!(static_part.as_slice(), expected_bytes.as_slice());
+                let decoded = <[u8; NUM] as Deserialize>::decode_static(&mut static_part.as_slice())
+                    .expect("Can't decode static part of bytes array");
+                assert_eq!(decoded.len(), bytes.len());
+                assert_eq!(decoded.as_slice(), bytes.as_slice());
+
+                // Empty encoding of dynamic part
+                bytes
+                    .encode_dynamic(&mut [].as_mut())
+                    .expect("Can't encode dynamic part of bytes vector");
+
+                // Correct encoding
+                let mut actual_bytes = bytes.to_bytes();
+                let expected_bytes = [bytes.as_slice(), [0u8; PADDING].as_slice()].concat();
+                assert_eq!(actual_bytes.len(), expected_bytes.len());
+                assert_eq!(actual_bytes.as_slice(), expected_bytes.as_slice());
+                let decoded = <[u8; NUM] as Deserialize>::decode(&mut static_part.as_slice())
+                    .expect("Can't decode bytes array");
+                assert_eq!(decoded.len(), bytes.len());
+                assert_eq!(decoded.as_slice(), bytes.as_slice());
+
+                // Pop last byte to cause an error during decoding
+                actual_bytes.pop();
+                assert_eq!(
+                    <[u8; NUM] as Deserialize>::decode(&mut actual_bytes.as_slice()),
+                    Err(Error::BufferIsTooShort)
+                );
+            }};
+        }
+
+        encode_decode_bytes!(96, 0);
+        encode_decode_bytes!(97, 7);
+        encode_decode_bytes!(98, 6);
+        encode_decode_bytes!(99, 5);
+        encode_decode_bytes!(100, 4);
+        encode_decode_bytes!(101, 3);
+        encode_decode_bytes!(102, 2);
+        encode_decode_bytes!(103, 1);
+        encode_decode_bytes!(104, 0);
+
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&[0x11u8, 0x22u8, 0x33u8,])),
+            "1122330000000000"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&[
+                0x11u8, 0x22u8, 0x33u8, 0x44u8, 0x55u8, 0x66u8,
+            ])),
+            "1122334455660000"
+        );
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&[
+                0x11u8, 0x22u8, 0x33u8, 0x44u8, 0x55u8, 0x66u8, 0x77, 0x88,
+            ])),
+            "1122334455667788"
+        );
+    }
+
+    #[test]
+    fn array_encode_decode_not_bytes_with_recusrion() {
+        macro_rules! encode_decode_not_bytes {
+            ($ty:ty, $num:expr, $padding:expr) => {{
+                const NUM: usize = $num;
+                const PADDING: usize = $padding;
+                let rng = &mut StdRng::seed_from_u64(8586);
+                let mut array: [$ty; NUM] = [Default::default(); NUM];
+                const PADDED_NUM: usize = ::core::mem::size_of::<$ty>() * NUM + PADDING * NUM;
+                for i in 0..NUM {
+                    array[i] = rng.gen::<$ty>();
+                }
+                assert_eq!(array.len(), NUM);
+
+                // Correct sizes for each part
+                assert_eq!(array.size_static(), PADDED_NUM);
+                assert_eq!(array.size_dynamic(), 0);
+                assert_eq!(array.size(), PADDED_NUM);
+
+                // Correct encoding of static part
+                let mut static_part = [0u8; PADDED_NUM];
+                array
+                    .encode_static(&mut static_part.as_mut())
+                    .expect("Can't encode static part of array");
+                let expected_array = array
+                    .clone()
+                    .into_iter()
+                    .flat_map(|e| e.to_bytes().into_iter())
+                    .collect_vec();
+                assert_eq!(static_part.len(), expected_array.len());
+                assert_eq!(static_part.as_slice(), expected_array.as_slice());
+                let decoded =
+                    <[$ty; NUM] as Deserialize>::decode_static(&mut static_part.as_slice())
+                        .expect("Can't decode static part of array");
+                assert_eq!(decoded.len(), array.len());
+                assert_eq!(decoded.as_slice(), array.as_slice());
+
+                // Empty encoding of dynamic part
+                array
+                    .encode_dynamic(&mut [].as_mut())
+                    .expect("Can't encode dynamic part of array");
+
+                // Correct encoding
+                let mut actual_array = array.to_bytes();
+                let expected_array = array
+                    .clone()
+                    .into_iter()
+                    .flat_map(|e| e.to_bytes().into_iter())
+                    .collect_vec();
+                assert_eq!(actual_array.len(), expected_array.len());
+                assert_eq!(actual_array.as_slice(), expected_array.as_slice());
+                let decoded = <[$ty; NUM] as Deserialize>::decode(&mut static_part.as_slice())
+                    .expect("Can't decode array");
+                assert_eq!(decoded.len(), array.len());
+                assert_eq!(decoded.as_slice(), array.as_slice());
+
+                // Pop last byte to cause an error during decoding
+                actual_array.pop();
+                assert_eq!(
+                    <[$ty; NUM] as Deserialize>::decode(&mut actual_array.as_slice()),
+                    Err(Error::BufferIsTooShort)
+                );
+            }};
+        }
+
+        encode_decode_not_bytes!(Address, 10, 0);
+        encode_decode_not_bytes!(AssetId, 10, 0);
+        encode_decode_not_bytes!(ContractId, 10, 0);
+        encode_decode_not_bytes!(Bytes4, 10, 4);
+        encode_decode_not_bytes!(Bytes8, 10, 0);
+        encode_decode_not_bytes!(Bytes20, 10, 4);
+        encode_decode_not_bytes!(Bytes32, 10, 0);
+        encode_decode_not_bytes!(MessageId, 10, 0);
+        encode_decode_not_bytes!(Salt, 10, 0);
+
+        encode_decode_not_bytes!(u16, 10, 6);
+        encode_decode_not_bytes!(u32, 10, 4);
+        encode_decode_not_bytes!(u64, 10, 0);
+        encode_decode_not_bytes!(usize, 10, 0);
+        encode_decode_not_bytes!(u128, 10, 0);
+
+        // Recursion level 1
+        encode_decode_not_bytes!([u8; 8], 10, 0);
+        encode_decode_not_bytes!([u16; 10], 10, 60);
+        encode_decode_not_bytes!([u32; 10], 10, 40);
+        encode_decode_not_bytes!([u64; 10], 10, 0);
+        encode_decode_not_bytes!([u128; 10], 10, 0);
+        encode_decode_not_bytes!([AssetId; 10], 10, 0);
+
+        // Recursion level 2
+        encode_decode_not_bytes!([[u8; 8]; 8], 10, 0);
+        encode_decode_not_bytes!([[u16; 10]; 10], 10, 600);
+        encode_decode_not_bytes!([[u32; 10]; 10], 10, 400);
+        encode_decode_not_bytes!([[u64; 10]; 10], 10, 0);
+        encode_decode_not_bytes!([[u128; 10]; 10], 10, 0);
+        encode_decode_not_bytes!([[AssetId; 10]; 10], 10, 0);
+
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&[
+                Bytes4::new([0x11u8, 0x22u8, 0x33u8, 0x44u8]),
+                Bytes4::zeroed(),
+                Bytes4::new([0x11u8, 0x22u8, 0x33u8, 0x44u8])
+            ])),
+            "112233440000000000000000000000001122334400000000"
+        );
+
+        assert_eq!(
+            hex::encode(Serialize::to_bytes(&[0xAAu16, 0xBBu16, 0xCCu16, 0xDDu16,])),
+            "00aa00000000000000bb00000000000000cc00000000000000dd000000000000"
+        );
+    }
 }
-// TODO: Add tests for arrays, structs, enums
+// TODO: Add tests for structs, enums

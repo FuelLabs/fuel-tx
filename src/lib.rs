@@ -10,6 +10,9 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+// `fuel-tx-derive` requires `fuel_tx` import
+extern crate self as fuel_tx;
+
 pub mod consts;
 
 pub use fuel_asm::{InstructionResult, PanicReason};
@@ -43,6 +46,9 @@ pub use transaction::{
     ConsensusParameters, Input, InputRepr, Metadata, Output, OutputRepr, StorageSlot, Transaction,
     TransactionFee, TransactionRepr, TxId, TxPointer, UtxoId, ValidationError, Witness,
 };
+
+#[cfg(feature = "alloc")]
+pub mod canonical;
 
 #[cfg(feature = "alloc")]
 #[allow(deprecated)]

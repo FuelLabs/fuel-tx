@@ -5,9 +5,6 @@ use fuel_types::{Address, AssetId, Bytes32, ContractId, MessageId, Word};
 use core::mem;
 
 #[cfg(feature = "std")]
-use fuel_types::bytes::{SizedBytes, WORD_SIZE};
-
-#[cfg(feature = "std")]
 use std::io;
 
 mod consts;
@@ -19,6 +16,7 @@ pub use repr::OutputRepr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub enum Output {
     Coin {
         to: Address,
@@ -299,188 +297,5 @@ impl Output {
 
             _ => (),
         }
-    }
-}
-
-#[cfg(feature = "std")]
-impl io::Read for Output {
-    fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
-        let n = self.serialized_size();
-        if buf.len() < n {
-            return Err(bytes::eof());
-        }
-
-        let identifier: OutputRepr = self.into();
-        buf = bytes::store_number_unchecked(buf, identifier as Word);
-
-        match self {
-            Self::Coin {
-                to,
-                amount,
-                asset_id,
-            }
-            | Self::Change {
-                to,
-                amount,
-                asset_id,
-            }
-            | Self::Variable {
-                to,
-                amount,
-                asset_id,
-            } => {
-                buf = bytes::store_array_unchecked(buf, to);
-                buf = bytes::store_number_unchecked(buf, *amount);
-
-                bytes::store_array_unchecked(buf, asset_id);
-            }
-
-            Self::Message { recipient, amount } => {
-                buf = bytes::store_array_unchecked(buf, recipient);
-
-                bytes::store_number_unchecked(buf, *amount);
-            }
-
-            Self::Contract {
-                input_index,
-                balance_root,
-                state_root,
-            } => {
-                buf = bytes::store_number_unchecked(buf, *input_index);
-                buf = bytes::store_array_unchecked(buf, balance_root);
-
-                bytes::store_array_unchecked(buf, state_root);
-            }
-
-            Self::ContractCreated {
-                contract_id,
-                state_root,
-            } => {
-                buf = bytes::store_array_unchecked(buf, contract_id);
-
-                bytes::store_array_unchecked(buf, state_root);
-            }
-        }
-
-        Ok(n)
-    }
-}
-
-#[cfg(feature = "std")]
-impl io::Write for Output {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if buf.len() < WORD_SIZE {
-            return Err(bytes::eof());
-        }
-
-        // Bounds safely checked
-        let (identifier, buf): (Word, _) = unsafe { bytes::restore_number_unchecked(buf) };
-        let identifier = OutputRepr::try_from(identifier)?;
-
-        match identifier {
-            OutputRepr::Coin | OutputRepr::Change | OutputRepr::Variable
-                if buf.len() < OUTPUT_CCV_SIZE - WORD_SIZE =>
-            {
-                Err(bytes::eof())
-            }
-
-            OutputRepr::Message if buf.len() < OUTPUT_MESSAGE_SIZE - WORD_SIZE => Err(bytes::eof()),
-
-            OutputRepr::Contract if buf.len() < OUTPUT_CONTRACT_SIZE - WORD_SIZE => {
-                Err(bytes::eof())
-            }
-
-            OutputRepr::ContractCreated if buf.len() < OUTPUT_CONTRACT_CREATED_SIZE - WORD_SIZE => {
-                Err(bytes::eof())
-            }
-
-            OutputRepr::Coin | OutputRepr::Change | OutputRepr::Variable => {
-                // Safety: buf len is checked
-                let (to, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (amount, buf) = unsafe { bytes::restore_number_unchecked(buf) };
-                let (asset_id, _) = unsafe { bytes::restore_array_unchecked(buf) };
-
-                let to = to.into();
-                let asset_id = asset_id.into();
-
-                match identifier {
-                    OutputRepr::Coin => {
-                        *self = Self::Coin {
-                            to,
-                            amount,
-                            asset_id,
-                        }
-                    }
-                    OutputRepr::Change => {
-                        *self = Self::Change {
-                            to,
-                            amount,
-                            asset_id,
-                        }
-                    }
-                    OutputRepr::Variable => {
-                        *self = Self::Variable {
-                            to,
-                            amount,
-                            asset_id,
-                        }
-                    }
-
-                    _ => unreachable!(),
-                }
-
-                Ok(OUTPUT_CCV_SIZE)
-            }
-
-            OutputRepr::Message => {
-                // Safety: buf len is checked
-                let (recipient, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (amount, _) = unsafe { bytes::restore_number_unchecked(buf) };
-
-                let recipient = recipient.into();
-
-                *self = Self::Message { recipient, amount };
-
-                Ok(OUTPUT_MESSAGE_SIZE)
-            }
-
-            OutputRepr::Contract => {
-                // Safety: buf len is checked
-                let (input_index, buf) = unsafe { bytes::restore_u8_unchecked(buf) };
-                let (balance_root, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (state_root, _) = unsafe { bytes::restore_array_unchecked(buf) };
-
-                let balance_root = balance_root.into();
-                let state_root = state_root.into();
-
-                *self = Self::Contract {
-                    input_index,
-                    balance_root,
-                    state_root,
-                };
-
-                Ok(OUTPUT_CONTRACT_SIZE)
-            }
-
-            OutputRepr::ContractCreated => {
-                // Safety: buf len is checked
-                let (contract_id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-                let (state_root, _) = unsafe { bytes::restore_array_unchecked(buf) };
-
-                let contract_id = contract_id.into();
-                let state_root = state_root.into();
-
-                *self = Self::ContractCreated {
-                    contract_id,
-                    state_root,
-                };
-
-                Ok(OUTPUT_CONTRACT_CREATED_SIZE)
-            }
-        }
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
     }
 }

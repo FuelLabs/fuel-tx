@@ -25,9 +25,6 @@ mod validation;
 #[cfg(feature = "std")]
 mod id;
 
-#[cfg(feature = "std")]
-mod txio;
-
 pub mod consensus_parameters;
 
 pub use consensus_parameters::ConsensusParameters;
@@ -42,17 +39,18 @@ pub type TxId = Bytes32;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub enum Transaction {
     Script {
         gas_price: Word,
         gas_limit: Word,
         maturity: Word,
-        receipts_root: Bytes32,
         script: Vec<u8>,
         script_data: Vec<u8>,
         inputs: Vec<Input>,
         outputs: Vec<Output>,
         witnesses: Vec<Witness>,
+        receipts_root: Bytes32,
         metadata: Option<Metadata>,
     },
 
@@ -62,11 +60,11 @@ pub enum Transaction {
         maturity: Word,
         bytecode_length: Word,
         bytecode_witness_index: u8,
-        salt: Salt,
         storage_slots: Vec<StorageSlot>,
         inputs: Vec<Input>,
         outputs: Vec<Output>,
         witnesses: Vec<Witness>,
+        salt: Salt,
         metadata: Option<Metadata>,
     },
 }

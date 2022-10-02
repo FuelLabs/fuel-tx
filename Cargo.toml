@@ -15,6 +15,7 @@ fuel-asm = { version = "0.9", default-features = false }
 fuel-crypto = { version = "0.6", default-features = false }
 fuel-merkle = { version = "0.4", default-features = false }
 fuel-types = { version = "0.5", default-features = false }
+fuel-tx-derive = { path = "derive" }
 itertools = { version = "0.10", default-features = false }
 rand = { version = "0.8", default-features = false, features = ["std_rng"], optional = true }
 num-integer = { version = "0.1", default-features = false }
@@ -28,6 +29,7 @@ fuel-tx = { path = ".", features = ["builder", "random"] }
 fuel-tx-test-helpers = { path = "test-helpers" }
 fuel-types = { version = "0.5", default-features = false, features = ["random"] }
 insta = "1.0"
+hex = "0.4"
 quickcheck = "1.0"
 quickcheck_macros = "1.0"
 rand = { version = "0.8", default-features = false, features = ["std_rng"] }

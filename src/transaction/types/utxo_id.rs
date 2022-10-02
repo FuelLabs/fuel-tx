@@ -5,12 +5,6 @@ use fuel_types::Bytes32;
 
 use core::{fmt, str};
 
-#[cfg(feature = "std")]
-use fuel_types::bytes;
-
-#[cfg(feature = "std")]
-use std::io;
-
 #[cfg(feature = "random")]
 use rand::{
     distributions::{Distribution, Standard},
@@ -20,6 +14,7 @@ use rand::{
 /// Identification of unspend transaction output.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(crate::canonical::Serialize, crate::canonical::Deserialize)]
 pub struct UtxoId {
     /// transaction id
     tx_id: TxId,
@@ -102,42 +97,6 @@ impl str::FromStr for UtxoId {
 impl SizedBytes for UtxoId {
     fn serialized_size(&self) -> usize {
         Self::LEN
-    }
-}
-
-#[cfg(feature = "std")]
-impl io::Write for UtxoId {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if buf.len() < Self::LEN {
-            return Err(bytes::eof());
-        }
-
-        // Safety: buf len is checked
-        let (tx_id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
-        let (output_index, _) = unsafe { bytes::restore_word_unchecked(buf) };
-
-        self.tx_id = tx_id.into();
-        self.output_index = output_index as u8;
-
-        Ok(Self::LEN)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-
-#[cfg(feature = "std")]
-impl io::Read for UtxoId {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if buf.len() < Self::LEN {
-            return Err(bytes::eof());
-        }
-
-        let buf = bytes::store_array_unchecked(buf, &self.tx_id);
-        bytes::store_number_unchecked(buf, self.output_index);
-
-        Ok(Self::LEN)
     }
 }
 

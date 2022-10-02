@@ -1,6 +1,6 @@
+use fuel_tx::canonical::{Deserialize, Serialize};
 use fuel_tx::*;
 use fuel_tx_test_helpers::TransactionFactory;
-use fuel_types::bytes::{Deserializable, SerializableVec};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -42,7 +42,7 @@ fn tx_offset() {
     // cases, will cover everything.
     TransactionFactory::from_seed(1295)
         .take(cases)
-        .for_each(|(mut tx, _)| {
+        .for_each(|(tx, _)| {
             let bytes = tx.to_bytes();
 
             if let Some(salt) = tx.salt() {
@@ -74,7 +74,7 @@ fn tx_offset() {
             tx.inputs().iter().enumerate().for_each(|(idx, i)| {
                 let input_ofs = tx.input_offset(idx).expect("failed to fetch input offset");
                 let i_p =
-                    Input::from_bytes(&bytes[input_ofs..]).expect("failed to deserialize input");
+                    Input::decode(&mut &bytes[input_ofs..]).expect("failed to deserialize input");
 
                 assert_eq!(i, &i_p);
 
@@ -83,7 +83,7 @@ fn tx_offset() {
 
                     let ofs = input_ofs + i.repr().utxo_id_offset().expect("input have utxo_id");
                     let utxo_id_p =
-                        UtxoId::from_bytes(&bytes[ofs..]).expect("failed to deserialize utxo id");
+                        UtxoId::decode(&mut &bytes[ofs..]).expect("failed to deserialize utxo id");
 
                     assert_eq!(utxo_id, &utxo_id_p);
                 }
@@ -262,8 +262,8 @@ fn tx_offset() {
                 let output_ofs = tx
                     .output_offset(idx)
                     .expect("failed to fetch output offset");
-                let o_p =
-                    Output::from_bytes(&bytes[output_ofs..]).expect("failed to deserialize output");
+                let o_p = Output::decode(&mut &bytes[output_ofs..])
+                    .expect("failed to deserialize output");
 
                 assert_eq!(o, &o_p);
 
@@ -391,7 +391,7 @@ fn iow_offset() {
                 let offset_p = tx_p.input_offset(x).unwrap();
 
                 let input =
-                    Input::from_bytes(&bytes[offset..]).expect("Failed to deserialize input!");
+                    Input::decode(&mut &bytes[offset..]).expect("Failed to deserialize input!");
 
                 assert_eq!(i, &input);
                 assert_eq!(offset, offset_p);
@@ -402,7 +402,7 @@ fn iow_offset() {
                 let offset_p = tx_p.output_offset(x).unwrap();
 
                 let output =
-                    Output::from_bytes(&bytes[offset..]).expect("Failed to deserialize output!");
+                    Output::decode(&mut &bytes[offset..]).expect("Failed to deserialize output!");
 
                 assert_eq!(o, &output);
                 assert_eq!(offset, offset_p);
@@ -413,7 +413,7 @@ fn iow_offset() {
                 let offset_p = tx_p.witness_offset(x).unwrap();
 
                 let witness =
-                    Witness::from_bytes(&bytes[offset..]).expect("Failed to deserialize witness!");
+                    Witness::decode(&mut &bytes[offset..]).expect("Failed to deserialize witness!");
 
                 assert_eq!(w, &witness);
                 assert_eq!(offset, offset_p);

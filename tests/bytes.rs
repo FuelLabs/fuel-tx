@@ -1,4 +1,5 @@
 use fuel_asm::Opcode;
+use fuel_tx::canonical::{Deserialize, Error, Serialize};
 use fuel_tx::*;
 use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
 use fuel_types::{bytes, Immediate24};
@@ -6,71 +7,60 @@ use rand::rngs::StdRng;
 use rand::{Rng, RngCore, SeedableRng};
 
 use std::fmt;
-use std::io::{self, Read, Write};
 
 pub fn assert_encoding_correct<'a, T>(data: &[T])
 where
-    T: Read
-        + Write
-        + fmt::Debug
+    T: fmt::Debug
         + Clone
         + PartialEq
-        + bytes::SizedBytes
-        + bytes::SerializableVec
-        + bytes::Deserializable
+        + Deserialize
+        + Serialize
         + serde::Serialize
         + serde::Deserialize<'a>,
 {
-    let mut buffer;
-
     for data in data.iter() {
-        let d_s = bincode::serialize(&data).expect("Failed to serialize data");
-        // Safety: bincode/serde fails to understand the elision so this is a cheap way to convince it
-        let d_s: T = bincode::deserialize(unsafe { std::mem::transmute(d_s.as_slice()) })
-            .expect("Failed to deserialize data");
+        // Check serde serialization and deserialization
+        {
+            let d_s = bincode::serialize(&data).expect("Failed to serialize data");
+            // Safety: bincode/serde fails to understand the elision so this is a cheap way to convince it
+            let d_s: T = bincode::deserialize(unsafe { std::mem::transmute(d_s.as_slice()) })
+                .expect("Failed to deserialize data");
 
-        assert_eq!(&d_s, data);
+            assert_eq!(&d_s, data);
+        }
 
-        let mut d = data.clone();
-
-        let d_bytes = data.clone().to_bytes();
-        let d_p = T::from_bytes(d_bytes.as_slice()).expect("Failed to deserialize T");
-
+        let d = data.clone();
+        let d_bytes = data.to_bytes();
+        let d_p = T::decode(&mut d_bytes.as_slice()).expect("Failed to deserialize T");
         assert_eq!(d, d_p);
 
-        let mut d_p = data.clone();
+        let mut buffer_e = vec![];
+        d.encode(&mut buffer_e).expect("Failed to read");
+        // The serialization size eq to serialized len
+        assert_eq!(d.size(), buffer_e.len());
 
-        buffer = vec![0u8; 2048];
-        let read_size = d.read(buffer.as_mut_slice()).expect("Failed to read");
-        let write_size = d_p.write(buffer.as_slice()).expect("Failed to write");
+        let mut buffer_d = buffer_e.as_slice();
+        assert_eq!(d.size(), buffer_d.len());
+        let d_p = T::decode(&mut buffer_d).expect("Failed to deserialize T");
+        assert_eq!(buffer_d.len(), 0);
 
         // Simple RW assertion
         assert_eq!(d, d_p);
-        assert_eq!(read_size, write_size);
-
-        buffer = vec![0u8; read_size];
-
-        // Minimum size buffer assertion
-        let _ = d.read(buffer.as_mut_slice()).expect("Failed to read");
-        let _ = d_p.write(buffer.as_slice()).expect("Failed to write");
-        assert_eq!(d, d_p);
-        assert_eq!(d_bytes.as_slice(), buffer.as_slice());
 
         // No panic assertion
         loop {
-            buffer.pop();
+            buffer_e.pop();
 
-            let err = d
-                .read(buffer.as_mut_slice())
-                .expect_err("Insufficient buffer should fail!");
-            assert_eq!(io::ErrorKind::UnexpectedEof, err.kind());
+            let err =
+                T::decode(&mut buffer_e.as_slice()).expect_err("Insufficient buffer should fail!");
+            assert_eq!(Error::BufferIsTooShort, err);
 
             let err = d_p
-                .write(buffer.as_slice())
+                .encode(&mut buffer_e.as_mut())
                 .expect_err("Insufficient buffer should fail!");
-            assert_eq!(io::ErrorKind::UnexpectedEof, err.kind());
+            assert_eq!(Error::BufferIsTooShort, err);
 
-            if buffer.is_empty() {
+            if buffer_e.is_empty() {
                 break;
             }
         }
@@ -704,7 +694,6 @@ fn create_input_data_offset() {
         predicate_data,
     );
 
-    let mut buffer = vec![0u8; 4096];
     for storage_slot in storage_slots.iter() {
         for inputs in inputs.iter() {
             for outputs in outputs.iter() {
@@ -717,7 +706,7 @@ fn create_input_data_offset() {
                     let input_message_idx = inputs.len();
                     inputs.push(input_message.clone());
 
-                    let mut tx = Transaction::create(
+                    let tx = Transaction::create(
                         gas_price,
                         gas_limit,
                         maturity,
@@ -732,10 +721,7 @@ fn create_input_data_offset() {
                     let mut tx_p = tx.clone();
                     tx_p.precompute_metadata();
 
-                    buffer.iter_mut().for_each(|b| *b = 0x00);
-                    let _ = tx
-                        .read(buffer.as_mut_slice())
-                        .expect("Failed to serialize input");
+                    let buffer = Serialize::to_bytes(&tx);
 
                     let (offset, len) = tx
                         .input_predicate_offset(input_coin_idx)
@@ -831,7 +817,6 @@ fn script_input_coin_data_offset() {
         predicate_data,
     );
 
-    let mut buffer = vec![0u8; 4096];
     for script in script.iter() {
         for script_data in script_data.iter() {
             for inputs in inputs.iter() {
@@ -841,7 +826,7 @@ fn script_input_coin_data_offset() {
                         let offset = inputs.len();
                         inputs.push(input_coin.clone());
 
-                        let mut tx = Transaction::script(
+                        let tx = Transaction::script(
                             gas_price,
                             gas_limit,
                             maturity,
@@ -855,11 +840,7 @@ fn script_input_coin_data_offset() {
                         let mut tx_p = tx.clone();
                         tx_p.precompute_metadata();
 
-                        buffer.iter_mut().for_each(|b| *b = 0x00);
-
-                        let _ = tx
-                            .read(buffer.as_mut_slice())
-                            .expect("Failed to serialize input");
+                        let buffer = Serialize::to_bytes(&tx);
 
                         let script_offset = Transaction::script_offset();
                         assert_eq!(

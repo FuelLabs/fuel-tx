@@ -4,18 +4,18 @@
 //! This allows the VM to accept transactions that have been already verified upstream,
 //! and consolidates logic around fee calculations and free balances.
 
+use crate::canonical::{Error, Serialize};
 use crate::{
     ConsensusParameters, Input, Metadata, Output, Transaction, TransactionFee, ValidationError,
 };
 use fuel_asm::PanicReason;
-use fuel_types::bytes::SerializableVec;
 use fuel_types::{Address, AssetId, Bytes32, Word};
 
 use alloc::collections::BTreeMap;
 use core::{borrow::Borrow, ops::Index};
 
 use core::mem;
-use std::io::{self, Read};
+use std::io;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 // Avoid serde serialization of this type. Since checked tx would need to be re-validated on
@@ -119,12 +119,15 @@ impl CheckedTransaction {
         self.transaction.to_bytes()
     }
 
-    pub fn tx_output_to_mem(&mut self, idx: usize, buf: &mut [u8]) -> io::Result<usize> {
+    pub fn tx_output_to_mem(&mut self, idx: usize, mut buf: &mut [u8]) -> Result<usize, Error> {
         self.transaction
             ._outputs_mut()
             .get_mut(idx)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Invalid output idx"))
-            .and_then(|o| o.read(buf))
+            .ok_or(Error::Unknown("Invalid output idx"))
+            .and_then(|o| {
+                o.encode(&mut buf)?;
+                Ok(o.size())
+            })
     }
 
     pub fn tx_set_receipts_root(&mut self, root: Bytes32) -> Option<Bytes32> {

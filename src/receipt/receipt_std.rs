@@ -72,12 +72,19 @@ impl io::Read for Receipt {
                 bytes::store_number_unchecked(buf, *is);
             }
 
-            Self::Panic { id, reason, pc, is } => {
+            Self::Panic {
+                id,
+                reason,
+                pc,
+                is,
+                contract_id,
+            } => {
                 let buf = bytes::store_number_unchecked(buf, ReceiptRepr::Panic as Word);
 
                 let buf = bytes::store_array_unchecked(buf, id);
                 let buf = bytes::store_number_unchecked(buf, *reason);
                 let buf = bytes::store_number_unchecked(buf, *pc);
+                let buf = bytes::store_array_unchecked(buf, contract_id);
 
                 bytes::store_number_unchecked(buf, *is);
             }
@@ -287,11 +294,13 @@ impl io::Write for Receipt {
                 let (id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
                 let (reason, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (pc, buf) = unsafe { bytes::restore_word_unchecked(buf) };
-                let (is, _) = unsafe { bytes::restore_word_unchecked(buf) };
+                let (is, buf) = unsafe { bytes::restore_word_unchecked(buf) };
+                let (contract_id, _) = unsafe { bytes::restore_array_unchecked(buf) };
 
                 let id = id.into();
+                let contract_id = contract_id.into();
 
-                *self = Self::panic(id, InstructionResult::from(reason), pc, is);
+                *self = Self::panic(id, InstructionResult::from(reason), pc, is, contract_id);
             }
 
             ReceiptRepr::Revert => {

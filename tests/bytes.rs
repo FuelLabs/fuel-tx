@@ -1,12 +1,13 @@
+use std::fmt;
+use std::io::{self, Read, Write};
+
 use fuel_asm::Opcode;
-use fuel_tx::*;
 use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
 use fuel_types::{bytes, Immediate24};
 use rand::rngs::StdRng;
 use rand::{Rng, RngCore, SeedableRng};
 
-use std::fmt;
-use std::io::{self, Read, Write};
+use fuel_tx::*;
 
 pub fn assert_encoding_correct<'a, T>(data: &[T])
 where
@@ -212,6 +213,7 @@ fn receipt() {
             InstructionResult::success(),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -219,6 +221,7 @@ fn receipt() {
                 PanicReason::Revert,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -230,6 +233,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -237,6 +241,7 @@ fn receipt() {
                 PanicReason::TransactionValidity,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -248,6 +253,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -255,6 +261,7 @@ fn receipt() {
                 PanicReason::ArithmeticOverflow,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -266,6 +273,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -273,6 +281,7 @@ fn receipt() {
                 PanicReason::MemoryOwnership,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -284,6 +293,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -291,6 +301,7 @@ fn receipt() {
                 PanicReason::ExpectedInternalContext,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -302,6 +313,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -309,6 +321,7 @@ fn receipt() {
                 PanicReason::InputNotFound,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -320,6 +333,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -327,6 +341,7 @@ fn receipt() {
                 PanicReason::WitnessNotFound,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -338,6 +353,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -345,6 +361,7 @@ fn receipt() {
                 PanicReason::InvalidMetadataIdentifier,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -356,6 +373,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -363,6 +381,7 @@ fn receipt() {
                 PanicReason::ReservedRegisterNotWritable,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -374,6 +393,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -381,6 +401,7 @@ fn receipt() {
                 PanicReason::InvalidImmediateValue,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -392,6 +413,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -399,6 +421,7 @@ fn receipt() {
                 PanicReason::MaxMemoryAccess,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -410,6 +433,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -417,6 +441,7 @@ fn receipt() {
                 PanicReason::ContractNotInInputs,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -428,6 +453,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -435,6 +461,7 @@ fn receipt() {
                 PanicReason::ContractMaxSize,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -446,6 +473,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -453,6 +481,7 @@ fn receipt() {
                 PanicReason::TransferAmountCannotBeZero,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),
@@ -464,6 +493,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
+            rng.gen(),
         ),
         Receipt::panic(
             rng.gen(),
@@ -471,6 +501,7 @@ fn receipt() {
                 PanicReason::ExpectedParentInternalContext,
                 Opcode::JI(rng.gen::<Immediate24>() & 0xffffff).into(),
             ),
+            rng.gen(),
             rng.gen(),
             rng.gen(),
         ),

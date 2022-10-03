@@ -213,7 +213,7 @@ fn receipt() {
             InstructionResult::success(),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -223,7 +223,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -233,7 +233,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -243,7 +243,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -253,7 +253,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -263,7 +263,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -273,7 +273,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -283,7 +283,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -293,7 +293,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -303,7 +303,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -313,7 +313,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -323,7 +323,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -333,7 +333,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -343,7 +343,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -353,7 +353,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -363,7 +363,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -373,7 +373,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -383,7 +383,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -393,7 +393,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -403,7 +403,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -413,7 +413,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -423,7 +423,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -433,7 +433,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -443,7 +443,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -453,7 +453,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -463,7 +463,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -473,7 +473,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -483,7 +483,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -493,7 +493,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::panic(
             rng.gen(),
@@ -503,7 +503,7 @@ fn receipt() {
             ),
             rng.gen(),
             rng.gen(),
-            rng.gen(),
+            None,
         ),
         Receipt::script_result(ScriptExecutionResult::Success, rng.gen()),
         Receipt::script_result(ScriptExecutionResult::Panic, rng.gen()),

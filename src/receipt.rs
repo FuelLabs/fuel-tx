@@ -53,7 +53,7 @@ pub enum Receipt {
         reason: InstructionResult,
         pc: Word,
         is: Word,
-        contract_id: ContractId,
+        contract_id: Option<ContractId>,
     },
 
     Revert {
@@ -188,7 +188,7 @@ impl Receipt {
         reason: InstructionResult,
         pc: Word,
         is: Word,
-        contract_id: ContractId,
+        contract_id: Option<ContractId>,
     ) -> Self {
         Self::Panic {
             id,
@@ -584,13 +584,6 @@ impl Receipt {
     pub const fn nonce(&self) -> Option<&Bytes32> {
         match self {
             Self::MessageOut { nonce, .. } => Some(nonce),
-            _ => None,
-        }
-    }
-
-    pub const fn contract_id(&self) -> Option<&ContractId> {
-        match self {
-            Self::Panic { contract_id, .. } => Some(contract_id),
             _ => None,
         }
     }

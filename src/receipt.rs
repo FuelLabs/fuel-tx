@@ -16,10 +16,9 @@ pub use script_result::ScriptExecutionResult;
 
 use crate::Output;
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, Derivative)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Derivative)]
-#[derivative(PartialEq, Hash)]
+#[derivative(Eq, PartialEq, Hash)]
 pub enum Receipt {
     Call {
         id: ContractId,

@@ -238,24 +238,27 @@ impl Transaction {
     }
 
     #[cfg(feature = "std")]
-    pub fn check_predicate_owners(&self) -> Result<bool, Error> {
-        Ok(self
-            .inputs()?
-            .iter()
-            .filter_map(|i| match i {
-                Input::CoinPredicate {
-                    owner, predicate, ..
-                } => Some((owner, predicate)),
-                Input::MessagePredicate {
-                    recipient,
-                    predicate,
-                    ..
-                } => Some((recipient, predicate)),
-                _ => None,
-            })
-            .fold(true, |result, (owner, predicate)| {
-                result && Input::is_predicate_owner_valid(owner, predicate)
-            }))
+    pub fn check_predicate_owners(&self) -> bool {
+        if let Ok(inputs) = self.inputs() {
+            inputs
+                .iter()
+                .filter_map(|i| match i {
+                    Input::CoinPredicate {
+                        owner, predicate, ..
+                    } => Some((owner, predicate)),
+                    Input::MessagePredicate {
+                        recipient,
+                        predicate,
+                        ..
+                    } => Some((recipient, predicate)),
+                    _ => None,
+                })
+                .fold(true, |result, (owner, predicate)| {
+                    result && Input::is_predicate_owner_valid(owner, predicate)
+                })
+        } else {
+            false
+        }
     }
 
     #[cfg(feature = "std")]

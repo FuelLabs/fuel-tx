@@ -846,7 +846,7 @@ mod inputs {
             ))
             .finalize();
 
-        assert!(tx.check_predicate_owners().unwrap());
+        assert!(tx.check_predicate_owners());
     }
 
     #[test]
@@ -871,7 +871,7 @@ mod inputs {
             ))
             .finalize();
 
-        assert!(!tx.check_predicate_owners().unwrap());
+        assert!(!tx.check_predicate_owners());
     }
 
     #[test]
@@ -898,7 +898,7 @@ mod inputs {
             ))
             .finalize();
 
-        assert!(tx.check_predicate_owners().unwrap());
+        assert!(tx.check_predicate_owners());
     }
 
     #[test]
@@ -923,6 +923,6 @@ mod inputs {
             ))
             .finalize();
 
-        assert!(!tx.check_predicate_owners().unwrap());
+        assert!(!tx.check_predicate_owners());
     }
 }

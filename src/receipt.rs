@@ -55,8 +55,7 @@ pub enum Receipt {
         reason: InstructionResult,
         pc: Word,
         is: Word,
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
+        #[derivative(PartialEq = "ignore", Hash = "ignore")]
         contract_id: Option<ContractId>,
     },
 

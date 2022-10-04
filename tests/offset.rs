@@ -410,7 +410,7 @@ fn iow_offset() {
             });
 
             let witnesses = tx.witnesses().unwrap();
-            witnesses.unwrap().iter().enumerate().for_each(|(x, w)| {
+            witnesses.iter().enumerate().for_each(|(x, w)| {
                 let offset = tx.witness_offset(x).unwrap();
                 let offset_p = tx_p.witness_offset(x).unwrap();
 

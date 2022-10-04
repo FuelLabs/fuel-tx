@@ -383,11 +383,8 @@ fn transaction_with_duplicate_coin_inputs_is_invalid() {
 
     let err = TransactionBuilder::script(vec![], vec![])
         .add_input(a)
-        .unwrap()
         .add_input(b)
-        .unwrap()
         .add_witness(rng.gen())
-        .unwrap()
         .finalize()
         .validate_without_signature(0, &Default::default())
         .expect_err("Expected validation failure");
@@ -412,12 +409,9 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
 
     let err = TransactionBuilder::script(vec![], vec![])
         .add_input(message_input.clone())
-        .unwrap()
         // duplicate input
         .add_input(message_input)
-        .unwrap()
         .add_witness(rng.gen())
-        .unwrap()
         .finalize()
         .validate_without_signature(0, &Default::default())
         .expect_err("Expected validation failure");
@@ -438,9 +432,7 @@ fn transaction_with_duplicate_contract_inputs_is_invalid() {
 
     let err = TransactionBuilder::script(vec![], vec![])
         .add_input(a)
-        .unwrap()
         .add_input(b)
-        .unwrap()
         .add_output(o)
         .add_output(p)
         .finalize()
@@ -466,9 +458,7 @@ fn transaction_with_duplicate_contract_utxo_id_is_valid() {
 
     TransactionBuilder::script(vec![], vec![])
         .add_input(a)
-        .unwrap()
         .add_input(b)
-        .unwrap()
         .add_output(o)
         .add_output(p)
         .finalize()

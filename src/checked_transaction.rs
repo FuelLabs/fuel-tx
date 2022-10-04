@@ -596,9 +596,7 @@ mod tests {
         // create a tx with invalid signature
         let tx = TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
-            .unwrap()
             .gas_limit(gas_limit)
-            .unwrap()
             .add_input(Input::coin_signed(
                 rng.gen(),
                 rng.gen(),
@@ -608,7 +606,6 @@ mod tests {
                 0,
                 0,
             ))
-            .unwrap()
             .add_input(Input::contract(
                 rng.gen(),
                 rng.gen(),
@@ -616,12 +613,10 @@ mod tests {
                 rng.gen(),
                 rng.gen(),
             ))
-            .unwrap()
             .add_output(Output::contract(1, rng.gen(), rng.gen()))
             .add_output(Output::coin(rng.gen(), 10, asset))
             .add_output(Output::change(rng.gen(), 0, asset))
             .add_witness(Default::default())
-            .unwrap()
             .finalize();
 
         let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
@@ -724,9 +719,7 @@ mod tests {
         let any_asset = rng.gen();
         let tx = TransactionBuilder::script(vec![], vec![])
             .gas_price(1)
-            .unwrap()
             .gas_limit(100)
-            .unwrap()
             // base asset
             .add_unsigned_coin_input(
                 secret,
@@ -736,11 +729,9 @@ mod tests {
                 rng.gen(),
                 0,
             )
-            .unwrap()
             .add_output(Output::change(rng.gen(), 0, AssetId::default()))
             // arbitrary spending asset
             .add_unsigned_coin_input(secret, rng.gen(), input_amount, any_asset, rng.gen(), 0)
-            .unwrap()
             .add_output(Output::coin(rng.gen(), input_amount + 1, any_asset))
             .add_output(Output::change(rng.gen(), 0, any_asset))
             .finalize();
@@ -804,11 +795,8 @@ mod tests {
         let asset = AssetId::default();
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
-            .unwrap()
             .gas_limit(gas_limit)
-            .unwrap()
             .add_unsigned_coin_input(rng.gen(), rng.gen(), input_amount, asset, rng.gen(), 0)
-            .unwrap()
             .add_input(Input::contract(
                 rng.gen(),
                 rng.gen(),
@@ -816,7 +804,6 @@ mod tests {
                 rng.gen(),
                 rng.gen(),
             ))
-            .unwrap()
             .add_output(Output::contract(1, rng.gen(), rng.gen()))
             .add_output(Output::coin(rng.gen(), output_amount, asset))
             .add_output(Output::change(rng.gen(), 0, asset))
@@ -833,9 +820,7 @@ mod tests {
         let asset = AssetId::default();
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
-            .unwrap()
             .gas_limit(gas_limit)
-            .unwrap()
             .add_input(Input::coin_predicate(
                 rng.gen(),
                 rng.gen(),
@@ -846,7 +831,6 @@ mod tests {
                 vec![],
                 vec![],
             ))
-            .unwrap()
             .add_output(Output::change(rng.gen(), 0, asset))
             .finalize()
     }
@@ -861,11 +845,8 @@ mod tests {
     ) -> Transaction {
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
-            .unwrap()
             .gas_limit(gas_limit)
-            .unwrap()
             .add_unsigned_message_input(rng.gen(), rng.gen(), rng.gen(), input_amount, vec![])
-            .unwrap()
             .add_output(Output::message(rng.gen(), output_amount))
             .finalize()
     }
@@ -879,9 +860,7 @@ mod tests {
     ) -> Transaction {
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
-            .unwrap()
             .gas_limit(gas_limit)
-            .unwrap()
             .add_input(Input::message_predicate(
                 rng.gen(),
                 rng.gen(),
@@ -892,7 +871,6 @@ mod tests {
                 vec![],
                 vec![],
             ))
-            .unwrap()
             .add_output(Output::message(rng.gen(), output_amount))
             .finalize()
     }
@@ -905,9 +883,7 @@ mod tests {
     ) -> Transaction {
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
-            .unwrap()
             .gas_limit(gas_limit)
-            .unwrap()
             .add_unsigned_coin_input(
                 rng.gen(),
                 rng.gen(),
@@ -916,7 +892,6 @@ mod tests {
                 rng.gen(),
                 0,
             )
-            .unwrap()
             .add_output(Output::change(rng.gen(), 0, AssetId::default()))
             .finalize()
     }

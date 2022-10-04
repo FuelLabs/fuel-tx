@@ -9,6 +9,7 @@
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+extern crate core;
 
 pub mod consts;
 
@@ -40,8 +41,9 @@ pub use receipt::{Receipt, ScriptExecutionResult};
 
 #[cfg(feature = "alloc")]
 pub use transaction::{
-    ConsensusParameters, Input, InputRepr, Metadata, Output, OutputRepr, StorageSlot, Transaction,
-    TransactionFee, TransactionRepr, TxId, TxPointer, UtxoId, ValidationError, Witness,
+    ConsensusParameters, Error as TransactionError, Input, InputRepr, Metadata, Output, OutputRepr,
+    StorageSlot, Transaction, TransactionFee, TransactionRepr, TxId, TxPointer, UtxoId,
+    ValidationError, Witness,
 };
 
 #[cfg(feature = "alloc")]

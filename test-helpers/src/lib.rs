@@ -95,6 +95,7 @@ mod use_std {
                     .map(|t| match t {
                         Transaction::Script { .. } => (),
                         Transaction::Create { .. } => (),
+                        Transaction::Mint { .. } => (),
                     })
                     .unwrap_or(());
 
@@ -170,7 +171,7 @@ mod use_std {
                             generate_bytes(&mut self.rng),
                         );
 
-                        builder.add_input(input);
+                        builder.add_input(input).unwrap();
                     }
 
                     2 => {
@@ -182,7 +183,7 @@ mod use_std {
                             self.rng.gen(),
                         );
 
-                        builder.add_input(input);
+                        builder.add_input(input).unwrap();
                     }
 
                     3 => {
@@ -206,7 +207,7 @@ mod use_std {
                             generate_bytes(&mut self.rng),
                         );
 
-                        builder.add_input(input);
+                        builder.add_input(input).unwrap();
                     }
 
                     _ => unreachable!(),
@@ -214,24 +215,28 @@ mod use_std {
             }
 
             input_coin_keys.iter().for_each(|k| {
-                builder.add_unsigned_coin_input(
-                    *k,
-                    self.rng.gen(),
-                    self.rng.gen(),
-                    self.rng.gen(),
-                    self.rng.gen(),
-                    self.rng.gen(),
-                );
+                builder
+                    .add_unsigned_coin_input(
+                        *k,
+                        self.rng.gen(),
+                        self.rng.gen(),
+                        self.rng.gen(),
+                        self.rng.gen(),
+                        self.rng.gen(),
+                    )
+                    .unwrap();
             });
 
             input_message_keys.iter().for_each(|k| {
-                builder.add_unsigned_message_input(
-                    *k,
-                    self.rng.gen(),
-                    self.rng.gen(),
-                    self.rng.gen(),
-                    generate_bytes(&mut self.rng),
-                );
+                builder
+                    .add_unsigned_message_input(
+                        *k,
+                        self.rng.gen(),
+                        self.rng.gen(),
+                        self.rng.gen(),
+                        generate_bytes(&mut self.rng),
+                    )
+                    .unwrap();
             });
 
             let outputs = self.rng.gen_range(0..10);
@@ -256,7 +261,7 @@ mod use_std {
             for _ in 0..witnesses {
                 let witness = generate_bytes(&mut self.rng).into();
 
-                builder.add_witness(witness);
+                builder.add_witness(witness).unwrap();
             }
 
             let tx = builder.finalize();

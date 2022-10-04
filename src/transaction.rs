@@ -2,7 +2,7 @@ use crate::consts::*;
 
 use fuel_asm::Opcode;
 use fuel_crypto::PublicKey;
-use fuel_types::bytes::{self, SizedBytes};
+use fuel_types::bytes::{self, SizedBytes, WORD_SIZE};
 use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
 
 #[cfg(feature = "std")]
@@ -37,6 +37,17 @@ pub use repr::TransactionRepr;
 pub use types::{Input, InputRepr, Output, OutputRepr, StorageSlot, TxPointer, UtxoId, Witness};
 pub use validation::ValidationError;
 
+/// The list of errors that you can retrieve during work with the transaction.
+#[derive(Debug)]
+pub enum Error {
+    /// Requested field doesn't exist in the transaction.
+    ///
+    /// # Note: Each variant of the transaction has a unique set of fields.
+    /// Some fields may not exist for some transaction variants.
+    FieldDoesNotExist,
+    OutOfIndex,
+}
+
 /// Identification of transaction (also called transaction hash)
 pub type TxId = Bytes32;
 
@@ -55,7 +66,6 @@ pub enum Transaction {
         witnesses: Vec<Witness>,
         metadata: Option<Metadata>,
     },
-
     Create {
         gas_price: Word,
         gas_limit: Word,
@@ -67,6 +77,10 @@ pub enum Transaction {
         inputs: Vec<Input>,
         outputs: Vec<Output>,
         witnesses: Vec<Witness>,
+        metadata: Option<Metadata>,
+    },
+    Mint {
+        outputs: Vec<Output>,
         metadata: Option<Metadata>,
     },
 }
@@ -153,8 +167,15 @@ impl Transaction {
         }
     }
 
-    pub fn input_asset_ids(&self) -> impl Iterator<Item = &AssetId> {
-        self.inputs().iter().filter_map(|input| match input {
+    pub fn mint(outputs: Vec<Output>) -> Self {
+        Self::Mint {
+            outputs,
+            metadata: None,
+        }
+    }
+
+    pub fn input_asset_ids(inputs: &[Input]) -> impl Iterator<Item = &AssetId> {
+        inputs.iter().filter_map(|input| match input {
             Input::CoinPredicate { asset_id, .. } | Input::CoinSigned { asset_id, .. } => {
                 Some(asset_id)
             }
@@ -163,10 +184,10 @@ impl Transaction {
         })
     }
 
-    pub fn input_asset_ids_unique(&self) -> impl Iterator<Item = &AssetId> {
+    pub fn input_asset_ids_unique(inputs: &[Input]) -> impl Iterator<Item = &AssetId> {
         use itertools::Itertools;
 
-        let asset_ids = self.input_asset_ids();
+        let asset_ids = Self::input_asset_ids(inputs);
 
         #[cfg(feature = "std")]
         let asset_ids = asset_ids.unique();
@@ -203,21 +224,23 @@ impl Transaction {
     }
 
     #[cfg(feature = "std")]
-    pub fn input_contracts(&self) -> impl Iterator<Item = &fuel_types::ContractId> {
+    pub fn input_contracts(&self) -> Result<impl Iterator<Item = &fuel_types::ContractId>, Error> {
         use itertools::Itertools;
 
-        self.inputs()
+        Ok(self
+            .inputs()?
             .iter()
             .filter_map(|input| match input {
                 Input::Contract { contract_id, .. } => Some(contract_id),
                 _ => None,
             })
-            .unique()
+            .unique())
     }
 
     #[cfg(feature = "std")]
-    pub fn check_predicate_owners(&self) -> bool {
-        self.inputs()
+    pub fn check_predicate_owners(&self) -> Result<bool, Error> {
+        Ok(self
+            .inputs()?
             .iter()
             .filter_map(|i| match i {
                 Input::CoinPredicate {
@@ -232,63 +255,73 @@ impl Transaction {
             })
             .fold(true, |result, (owner, predicate)| {
                 result && Input::is_predicate_owner_valid(owner, predicate)
-            })
+            }))
     }
 
     #[cfg(feature = "std")]
     pub fn check_predicate_owner(&self, idx: usize) -> bool {
-        match self.inputs().get(idx) {
-            Some(Input::CoinPredicate {
-                owner, predicate, ..
-            }) => Input::is_predicate_owner_valid(owner, predicate),
-            Some(Input::MessagePredicate {
-                recipient,
-                predicate,
-                ..
-            }) => Input::is_predicate_owner_valid(recipient, predicate),
-            _ => false,
+        if let Ok(inputs) = self.inputs() {
+            match inputs.get(idx) {
+                Some(Input::CoinPredicate {
+                    owner, predicate, ..
+                }) => Input::is_predicate_owner_valid(owner, predicate),
+                Some(Input::MessagePredicate {
+                    recipient,
+                    predicate,
+                    ..
+                }) => Input::is_predicate_owner_valid(recipient, predicate),
+                _ => false,
+            }
+        } else {
+            false
         }
     }
 
-    pub const fn gas_price(&self) -> Word {
+    pub const fn gas_price(&self) -> Result<Word, Error> {
         match self {
-            Self::Script { gas_price, .. } => *gas_price,
-            Self::Create { gas_price, .. } => *gas_price,
+            Self::Script { gas_price, .. } => Ok(*gas_price),
+            Self::Create { gas_price, .. } => Ok(*gas_price),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn set_gas_price(&mut self, price: Word) {
+    pub fn set_gas_price(&mut self, price: Word) -> Result<(), Error> {
         match self {
-            Self::Script { gas_price, .. } => *gas_price = price,
-            Self::Create { gas_price, .. } => *gas_price = price,
+            Self::Script { gas_price, .. } => Ok(*gas_price = price),
+            Self::Create { gas_price, .. } => Ok(*gas_price = price),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub const fn gas_limit(&self) -> Word {
+    pub const fn gas_limit(&self) -> Result<Word, Error> {
         match self {
-            Self::Script { gas_limit, .. } => *gas_limit,
-            Self::Create { gas_limit, .. } => *gas_limit,
+            Self::Script { gas_limit, .. } => Ok(*gas_limit),
+            Self::Create { gas_limit, .. } => Ok(*gas_limit),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn set_gas_limit(&mut self, limit: Word) {
+    pub fn set_gas_limit(&mut self, limit: Word) -> Result<(), Error> {
         match self {
-            Self::Script { gas_limit, .. } => *gas_limit = limit,
-            Self::Create { gas_limit, .. } => *gas_limit = limit,
+            Self::Script { gas_limit, .. } => Ok(*gas_limit = limit),
+            Self::Create { gas_limit, .. } => Ok(*gas_limit = limit),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub const fn maturity(&self) -> Word {
+    pub const fn maturity(&self) -> Result<Word, Error> {
         match self {
-            Self::Script { maturity, .. } => *maturity,
-            Self::Create { maturity, .. } => *maturity,
+            Self::Script { maturity, .. } => Ok(*maturity),
+            Self::Create { maturity, .. } => Ok(*maturity),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn set_maturity(&mut self, mat: Word) {
+    pub fn set_maturity(&mut self, mat: Word) -> Result<(), Error> {
         match self {
-            Self::Script { maturity, .. } => *maturity = mat,
-            Self::Create { maturity, .. } => *maturity = mat,
+            Self::Script { maturity, .. } => Ok(*maturity = mat),
+            Self::Create { maturity, .. } => Ok(*maturity = mat),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
@@ -300,20 +333,22 @@ impl Transaction {
         match self {
             Self::Script { metadata, .. } => metadata.as_ref(),
             Self::Create { metadata, .. } => metadata.as_ref(),
+            Self::Mint { metadata, .. } => metadata.as_ref(),
         }
     }
 
-    pub const fn salt(&self) -> Option<&Salt> {
+    pub const fn salt(&self) -> Result<&Salt, Error> {
         match self {
-            Transaction::Create { salt, .. } => Some(salt),
-            Transaction::Script { .. } => None,
+            Self::Create { salt, .. } => Ok(salt),
+            Self::Script { .. } | Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn inputs(&self) -> &[Input] {
+    pub fn inputs(&self) -> Result<&[Input], Error> {
         match self {
-            Self::Script { inputs, .. } => inputs.as_slice(),
-            Self::Create { inputs, .. } => inputs.as_slice(),
+            Self::Script { inputs, .. } => Ok(inputs.as_slice()),
+            Self::Create { inputs, .. } => Ok(inputs.as_slice()),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
@@ -321,35 +356,37 @@ impl Transaction {
         match self {
             Self::Script { outputs, .. } => outputs.as_slice(),
             Self::Create { outputs, .. } => outputs.as_slice(),
+            Self::Mint { outputs, .. } => outputs.as_slice(),
         }
     }
 
-    pub fn witnesses(&self) -> &[Witness] {
+    pub fn witnesses(&self) -> Result<&[Witness], Error> {
         match self {
-            Self::Script { witnesses, .. } => witnesses.as_slice(),
-            Self::Create { witnesses, .. } => witnesses.as_slice(),
+            Self::Script { witnesses, .. } => Ok(witnesses.as_slice()),
+            Self::Create { witnesses, .. } => Ok(witnesses.as_slice()),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn set_witnesses(&mut self, new_witnesses: Vec<Witness>) {
+    pub fn set_witnesses(&mut self, new_witnesses: Vec<Witness>) -> Result<(), Error> {
         match self {
-            Self::Script { witnesses, .. } => *witnesses = new_witnesses,
-            Self::Create { witnesses, .. } => *witnesses = new_witnesses,
+            Self::Script { witnesses, .. } => Ok(*witnesses = new_witnesses),
+            Self::Create { witnesses, .. } => Ok(*witnesses = new_witnesses),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub const fn receipts_root(&self) -> Option<&Bytes32> {
+    pub const fn receipts_root(&self) -> Result<&Bytes32, Error> {
         match self {
-            Self::Script { receipts_root, .. } => Some(receipts_root),
-            _ => None,
+            Self::Script { receipts_root, .. } => Ok(receipts_root),
+            Self::Create { .. } | Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn set_receipts_root(&mut self, root: Bytes32) -> Option<Bytes32> {
+    pub fn set_receipts_root(&mut self, root: Bytes32) -> Result<Bytes32, Error> {
         match self {
-            Self::Script { receipts_root, .. } => Some(mem::replace(receipts_root, root)),
-
-            _ => None,
+            Self::Script { receipts_root, .. } => Ok(mem::replace(receipts_root, root)),
+            Self::Mint { .. } | Self::Create { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
@@ -369,10 +406,10 @@ impl Transaction {
         asset_id: AssetId,
         tx_pointer: TxPointer,
         maturity: Word,
-    ) {
+    ) -> Result<(), Error> {
         let owner = Input::owner(owner);
 
-        let witness_index = self.witnesses().len() as u8;
+        let witness_index = self.witnesses()?.len() as u8;
         let input = Input::coin_signed(
             utxo_id,
             owner,
@@ -383,8 +420,8 @@ impl Transaction {
             maturity,
         );
 
-        self._add_witness(Witness::default());
-        self._add_input(input);
+        self._add_witness(Witness::default())?;
+        self._add_input(input)
     }
 
     /// Append a new unsigned message input to the transaction.
@@ -402,10 +439,10 @@ impl Transaction {
         nonce: Word,
         amount: Word,
         data: Vec<u8>,
-    ) {
+    ) -> Result<(), Error> {
         let message_id = Input::compute_message_id(&sender, &recipient, nonce, amount, &data);
 
-        let witness_index = self.witnesses().len() as u8;
+        let witness_index = self.witnesses()?.len() as u8;
         let input = Input::message_signed(
             message_id,
             sender,
@@ -416,8 +453,8 @@ impl Transaction {
             data,
         );
 
-        self._add_witness(Witness::default());
-        self._add_input(input);
+        self._add_witness(Witness::default())?;
+        self._add_input(input)
     }
 
     /// For all inputs of type `coin` or `message`, check if its `owner` equals the public
@@ -435,36 +472,37 @@ impl Transaction {
 
         let signature = Signature::sign(secret, message);
 
-        let (inputs, witnesses) = match self {
+        match self {
             Self::Script {
                 inputs, witnesses, ..
-            } => (inputs, witnesses),
-            Self::Create {
+            }
+            | Self::Create {
                 inputs, witnesses, ..
-            } => (inputs, witnesses),
+            } => {
+                inputs
+                    .iter()
+                    .filter_map(|input| match input {
+                        Input::CoinSigned {
+                            owner,
+                            witness_index,
+                            ..
+                        }
+                        | Input::MessageSigned {
+                            recipient: owner,
+                            witness_index,
+                            ..
+                        } if owner == &pk => Some(*witness_index as usize),
+                        _ => None,
+                    })
+                    .dedup()
+                    .for_each(|w| {
+                        if let Some(w) = witnesses.get_mut(w) {
+                            *w = signature.as_ref().into();
+                        }
+                    });
+            }
+            Self::Mint { .. } => {}
         };
-
-        inputs
-            .iter()
-            .filter_map(|input| match input {
-                Input::CoinSigned {
-                    owner,
-                    witness_index,
-                    ..
-                }
-                | Input::MessageSigned {
-                    recipient: owner,
-                    witness_index,
-                    ..
-                } if owner == &pk => Some(*witness_index as usize),
-                _ => None,
-            })
-            .dedup()
-            .for_each(|w| {
-                if let Some(w) = witnesses.get_mut(w) {
-                    *w = signature.as_ref().into();
-                }
-            });
     }
 
     /// Used for accounting purposes when charging byte based fees
@@ -472,19 +510,20 @@ impl Transaction {
         // Just use the default serialized size for now until
         // the compressed representation for accounting purposes
         // is defined. Witness data should still be excluded.
-        let witness_data = self
-            .witnesses()
-            .iter()
-            .map(|w| w.serialized_size())
-            .sum::<usize>();
+        let witness_data = if let Ok(witnesses) = self.witnesses() {
+            witnesses.iter().map(|w| w.serialized_size()).sum::<usize>()
+        } else {
+            0
+        };
 
         self.serialized_size() - witness_data // Witness data size
     }
 
-    pub(crate) fn _inputs_mut(&mut self) -> &mut [Input] {
+    pub(crate) fn _inputs_mut(&mut self) -> Result<&mut [Input], Error> {
         match self {
-            Self::Script { inputs, .. } => inputs.as_mut_slice(),
-            Self::Create { inputs, .. } => inputs.as_mut_slice(),
+            Self::Script { inputs, .. } => Ok(inputs.as_mut_slice()),
+            Self::Create { inputs, .. } => Ok(inputs.as_mut_slice()),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
@@ -492,13 +531,15 @@ impl Transaction {
         match self {
             Self::Script { outputs, .. } => outputs.as_mut_slice(),
             Self::Create { outputs, .. } => outputs.as_mut_slice(),
+            Self::Mint { outputs, .. } => outputs.as_mut_slice(),
         }
     }
 
-    pub(crate) fn _witnesses_mut(&mut self) -> &mut [Witness] {
+    pub(crate) fn _witnesses_mut(&mut self) -> Result<&mut [Witness], Error> {
         match self {
-            Self::Script { witnesses, .. } => witnesses.as_mut_slice(),
-            Self::Create { witnesses, .. } => witnesses.as_mut_slice(),
+            Self::Script { witnesses, .. } => Ok(witnesses.as_mut_slice()),
+            Self::Create { witnesses, .. } => Ok(witnesses.as_mut_slice()),
+            Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
@@ -517,9 +558,9 @@ impl Transaction {
 
     /// Prepare the transaction for VM initialization for predicate verification
     pub fn prepare_init_predicate(&mut self) -> &mut Self {
-        self._inputs_mut()
-            .iter_mut()
-            .for_each(|i| i.prepare_init_predicate());
+        if let Ok(inputs) = self._inputs_mut() {
+            inputs.iter_mut().for_each(|i| i.prepare_init_predicate());
+        }
 
         self._outputs_mut()
             .iter_mut()
@@ -528,59 +569,60 @@ impl Transaction {
         self
     }
 
-    pub fn script_len(&self) -> Option<usize> {
+    pub fn script_len(&self) -> Result<usize, Error> {
         match self {
-            Transaction::Script { script, .. } => Some(script.len()),
-            Transaction::Create { .. } => None,
+            Transaction::Script { script, .. } => Ok(script.len()),
+            Transaction::Create { .. } | Transaction::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn script_data_len(&self) -> Option<usize> {
+    pub fn script_data_len(&self) -> Result<usize, Error> {
         match self {
-            Transaction::Script { script_data, .. } => Some(script_data.len()),
-            Transaction::Create { .. } => None,
+            Transaction::Script { script_data, .. } => Ok(script_data.len()),
+            Transaction::Create { .. } | Transaction::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub const fn bytecode_length(&self) -> Option<Word> {
+    pub const fn bytecode_length(&self) -> Result<Word, Error> {
         match self {
             Transaction::Create {
                 bytecode_length, ..
-            } => Some(*bytecode_length),
-            Transaction::Script { .. } => None,
+            } => Ok(*bytecode_length),
+            Transaction::Script { .. } | Transaction::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub const fn bytecode_witness_index(&self) -> Option<u8> {
+    pub const fn bytecode_witness_index(&self) -> Result<u8, Error> {
         match self {
             Transaction::Create {
                 bytecode_witness_index,
                 ..
-            } => Some(*bytecode_witness_index),
-            Transaction::Script { .. } => None,
+            } => Ok(*bytecode_witness_index),
+            Transaction::Script { .. } | Transaction::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn storage_slots(&self) -> Option<&[StorageSlot]> {
+    pub fn storage_slots(&self) -> Result<&[StorageSlot], Error> {
         match self {
-            Transaction::Create { storage_slots, .. } => Some(storage_slots),
-            Transaction::Script { .. } => None,
+            Transaction::Create { storage_slots, .. } => Ok(storage_slots),
+            Transaction::Script { .. } | Transaction::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub const fn salt_offset(&self) -> Option<usize> {
+    pub const fn salt_offset(&self) -> Result<usize, Error> {
         match self {
-            Transaction::Create { .. } => Some(TRANSACTION_CREATE_SALT_OFFSET),
-            Transaction::Script { .. } => None,
+            Transaction::Create { .. } => Ok(TRANSACTION_CREATE_SALT_OFFSET),
+            Transaction::Script { .. } | Transaction::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
-    pub fn storage_slot_offset(&self, idx: usize) -> Option<usize> {
+    pub fn storage_slot_offset(&self, idx: usize) -> Result<usize, Error> {
         match self {
             Transaction::Create { storage_slots, .. } if idx < storage_slots.len() => {
-                Some(TRANSACTION_CREATE_FIXED_SIZE + idx * StorageSlot::SLOT_SIZE)
+                Ok(TRANSACTION_CREATE_FIXED_SIZE + idx * StorageSlot::SLOT_SIZE)
             }
-            _ => None,
+            Transaction::Create { .. } => Err(Error::OutOfIndex),
+            Transaction::Script { .. } | Transaction::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
@@ -595,23 +637,27 @@ impl Transaction {
 
 impl SizedBytes for Transaction {
     fn serialized_size(&self) -> usize {
-        let inputs = self
-            .inputs()
-            .iter()
-            .map(|i| i.serialized_size())
-            .sum::<usize>();
-
-        let outputs = self
-            .outputs()
-            .iter()
-            .map(|o| o.serialized_size())
-            .sum::<usize>();
-
-        let witnesses = self
-            .witnesses()
-            .iter()
-            .map(|w| w.serialized_size())
-            .sum::<usize>();
+        let dynamic_size = match self {
+            Self::Script {
+                inputs,
+                outputs,
+                witnesses,
+                ..
+            }
+            | Self::Create {
+                inputs,
+                outputs,
+                witnesses,
+                ..
+            } => {
+                inputs.iter().map(|i| i.serialized_size()).sum::<usize>()
+                    + outputs.iter().map(|o| o.serialized_size()).sum::<usize>()
+                    + witnesses.iter().map(|w| w.serialized_size()).sum::<usize>()
+            }
+            Self::Mint { outputs, .. } => {
+                outputs.iter().map(|o| o.serialized_size()).sum::<usize>()
+            }
+        };
 
         let n = match self {
             Self::Script {
@@ -627,9 +673,12 @@ impl SizedBytes for Transaction {
             Self::Create { storage_slots, .. } => {
                 TRANSACTION_CREATE_FIXED_SIZE + storage_slots.len() * StorageSlot::SLOT_SIZE
             }
+            Self::Mint { outputs, .. } => {
+                WORD_SIZE + WORD_SIZE + outputs.iter().map(|o| o.serialized_size()).sum::<usize>()
+            }
         };
 
-        n + inputs + outputs + witnesses
+        n + dynamic_size
     }
 }
 

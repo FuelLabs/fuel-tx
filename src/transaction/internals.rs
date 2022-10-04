@@ -1,4 +1,4 @@
-use crate::{Input, Output, Transaction, Witness};
+use crate::{Input, Output, Transaction, TransactionError, Witness};
 
 use fuel_asm::Word;
 use itertools::Itertools;
@@ -25,32 +25,32 @@ where
 
 #[cfg(feature = "internals")]
 impl Transaction {
-    /// Append an input to the transaction
-    pub fn add_input(&mut self, input: Input) {
-        self._add_input(input);
+    /// Append an input to the transaction. Return error otherwise.
+    pub fn add_input(&mut self, input: Input) -> Result<(), TransactionError> {
+        self._add_input(input)
     }
 
-    /// Append an output to the transaction
+    /// Append an output to the transaction. Return error otherwise.
     pub fn add_output(&mut self, output: Output) {
-        self._add_output(output);
+        self._add_output(output)
     }
 
-    /// Append a witness to the transaction
-    pub fn add_witness(&mut self, witness: Witness) {
-        self._add_witness(witness);
+    /// Append a witness to the transaction. Return error otherwise.
+    pub fn add_witness(&mut self, witness: Witness) -> Result<(), TransactionError> {
+        self._add_witness(witness)
     }
 
-    /// Set the transaction script, if script variant. Return none otherwise.
-    pub fn set_script(&mut self, script: Vec<u8>) -> Option<()> {
+    /// Set the transaction script, if script variant. Return error otherwise.
+    pub fn set_script(&mut self, script: Vec<u8>) -> Result<(), TransactionError> {
         self._set_script(script)
     }
 
-    /// Set the transaction bytecode, if create variant. Return none otherwise.
-    pub fn set_bytecode(&mut self, bytecode: Witness) -> Option<()> {
+    /// Set the transaction bytecode, if create variant. Return error otherwise.
+    pub fn set_bytecode(&mut self, bytecode: Witness) -> Result<(), TransactionError> {
         self._set_bytecode(bytecode)
     }
 
-    pub fn inputs_mut(&mut self) -> &mut [Input] {
+    pub fn inputs_mut(&mut self) -> Result<&mut [Input], TransactionError> {
         self._inputs_mut()
     }
 
@@ -58,16 +58,17 @@ impl Transaction {
         self._outputs_mut()
     }
 
-    pub fn witnesses_mut(&mut self) -> &mut [Witness] {
+    pub fn witnesses_mut(&mut self) -> Result<&mut [Witness], TransactionError> {
         self._witnesses_mut()
     }
 }
 
 impl Transaction {
-    pub(crate) fn _add_input(&mut self, input: Input) {
+    pub(crate) fn _add_input(&mut self, input: Input) -> Result<(), TransactionError> {
         match self {
-            Self::Script { inputs, .. } => inputs.push(input),
-            Self::Create { inputs, .. } => inputs.push(input),
+            Self::Script { inputs, .. } => Ok(inputs.push(input)),
+            Self::Create { inputs, .. } => Ok(inputs.push(input)),
+            Self::Mint { .. } => Err(TransactionError::FieldDoesNotExist),
         }
     }
 
@@ -75,29 +76,30 @@ impl Transaction {
         match self {
             Self::Script { outputs, .. } => outputs.push(output),
             Self::Create { outputs, .. } => outputs.push(output),
+            Self::Mint { outputs, .. } => outputs.push(output),
         }
     }
 
-    pub(crate) fn _add_witness(&mut self, witness: Witness) {
+    pub(crate) fn _add_witness(&mut self, witness: Witness) -> Result<(), TransactionError> {
         match self {
-            Self::Script { witnesses, .. } => witnesses.push(witness),
-            Self::Create { witnesses, .. } => witnesses.push(witness),
+            Self::Script { witnesses, .. } => Ok(witnesses.push(witness)),
+            Self::Create { witnesses, .. } => Ok(witnesses.push(witness)),
+            Self::Mint { .. } => Err(TransactionError::FieldDoesNotExist),
         }
     }
 
-    pub(crate) fn _set_script(&mut self, _script: Vec<u8>) -> Option<()> {
+    pub(crate) fn _set_script(&mut self, _script: Vec<u8>) -> Result<(), TransactionError> {
         match self {
             Self::Script { script, .. } => {
                 *script = _script;
-                Some(())
+                Ok(())
             }
-            Self::Create { .. } => None,
+            Self::Create { .. } | Self::Mint { .. } => Err(TransactionError::FieldDoesNotExist),
         }
     }
 
-    pub(crate) fn _set_bytecode(&mut self, bytecode: Witness) -> Option<()> {
+    pub(crate) fn _set_bytecode(&mut self, bytecode: Witness) -> Result<(), TransactionError> {
         match self {
-            Self::Script { .. } => None,
             Self::Create {
                 bytecode_length,
                 bytecode_witness_index,
@@ -109,8 +111,9 @@ impl Transaction {
 
                 witnesses.push(bytecode);
 
-                Some(())
+                Ok(())
             }
+            Self::Script { .. } | Self::Mint { .. } => Err(TransactionError::FieldDoesNotExist),
         }
     }
 }

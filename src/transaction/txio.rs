@@ -86,22 +86,37 @@ impl io::Read for Transaction {
 
                 buf
             }
+            Self::Mint { outputs, .. } => {
+                let buf = bytes::store_number_unchecked(buf, TransactionRepr::Mint as Word);
+                let buf = bytes::store_number_unchecked(buf, outputs.len() as Word);
+                buf
+            }
         };
 
-        for input in self._inputs_mut() {
-            let input_len = input.read(buf)?;
-            buf = &mut buf[input_len..];
-        }
+        match self {
+            Self::Script { inputs, .. } | Self::Create { inputs, .. } => {
+                for input in inputs {
+                    let input_len = input.read(buf)?;
+                    buf = &mut buf[input_len..];
+                }
+            }
+            Self::Mint { .. } => {}
+        };
 
         for output in self._outputs_mut() {
             let output_len = output.read(buf)?;
             buf = &mut buf[output_len..];
         }
 
-        for witness in self._witnesses_mut() {
-            let witness_len = witness.read(buf)?;
-            buf = &mut buf[witness_len..];
-        }
+        match self {
+            Self::Script { witnesses, .. } | Self::Create { witnesses, .. } => {
+                for witness in witnesses {
+                    let witness_len = witness.read(buf)?;
+                    buf = &mut buf[witness_len..];
+                }
+            }
+            Self::Mint { .. } => {}
+        };
 
         Ok(n)
     }
@@ -244,19 +259,53 @@ impl Write for Transaction {
 
                 Ok(n)
             }
+
+            TransactionRepr::Mint => {
+                let mut n = WORD_SIZE /* Identifier */ + WORD_SIZE /* Output size */;
+                if buf.len() < n - WORD_SIZE {
+                    return Err(bytes::eof());
+                }
+
+                // Safety: buffer size is checked
+                let (outputs_len, mut buf) = unsafe { bytes::restore_usize_unchecked(buf) };
+
+                let mut outputs = vec![Output::default(); outputs_len];
+                for output in outputs.iter_mut() {
+                    let output_len = output.write(buf)?;
+                    buf = &buf[output_len..];
+                    n += output_len;
+                }
+
+                *self = Self::Mint {
+                    outputs,
+                    metadata: None,
+                };
+
+                Ok(n)
+            }
         }
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self._inputs_mut()
-            .iter_mut()
-            .try_for_each(|input| input.flush())?;
+        match self {
+            Self::Script { inputs, .. } | Self::Create { inputs, .. } => {
+                inputs.iter_mut().try_for_each(|input| input.flush())?;
+            }
+            Self::Mint { .. } => {}
+        };
+
         self._outputs_mut()
             .iter_mut()
             .try_for_each(|output| output.flush())?;
-        self._witnesses_mut()
-            .iter_mut()
-            .try_for_each(|witness| witness.flush())?;
+
+        match self {
+            Self::Script { witnesses, .. } | Self::Create { witnesses, .. } => {
+                witnesses
+                    .iter_mut()
+                    .try_for_each(|witness| witness.flush())?;
+            }
+            Self::Mint { .. } => {}
+        };
 
         if let Transaction::Create { storage_slots, .. } = self {
             storage_slots.iter_mut().try_for_each(|slot| slot.flush())?;

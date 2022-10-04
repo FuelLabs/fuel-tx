@@ -117,8 +117,8 @@ impl TransactionFee {
         let tx = tx.borrow();
 
         let metered_bytes = tx.metered_bytes_size() as Word;
-        let gas_limit = tx.gas_limit();
-        let gas_price = tx.gas_price();
+        let gas_limit = tx.gas_limit().unwrap_or(0);
+        let gas_price = tx.gas_price().unwrap_or(0);
 
         Self::checked_from_values(params, metered_bytes, gas_limit, gas_price)
     }

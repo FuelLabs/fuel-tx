@@ -16,9 +16,10 @@ fn input_coin_message_signature() {
     fn validate_inputs(tx: Transaction) -> Result<(), ValidationError> {
         let txhash = tx.id();
         let outputs = tx.outputs();
-        let witnesses = tx.witnesses();
+        let witnesses = tx.witnesses().unwrap();
 
         tx.inputs()
+            .unwrap()
             .iter()
             .enumerate()
             .try_for_each(|(index, input)| match input {
@@ -63,6 +64,7 @@ fn input_coin_message_signature() {
 
         sign_and_validate(rng, txs.by_ref(), |tx, public| {
             tx.add_unsigned_coin_input(utxo_id, public, amount, asset_id, tx_pointer, maturity)
+                .unwrap()
         })
         .expect("Failed to validate transaction");
     }
@@ -75,6 +77,7 @@ fn input_coin_message_signature() {
 
         sign_and_validate(rng, txs.by_ref(), |tx, public| {
             tx.add_unsigned_message_input(sender, Input::owner(public), nonce, amount, data.clone())
+                .unwrap()
         })
         .expect("Failed to validate transaction");
     }
@@ -95,7 +98,7 @@ fn coin_signed() {
         0,
         rng.gen(),
     );
-    tx.add_input(input);
+    tx.add_input(input).unwrap();
 
     let block_height = rng.gen();
     let err = tx
@@ -260,7 +263,7 @@ fn message() {
         generate_bytes(rng),
     );
 
-    tx.add_input(input);
+    tx.add_input(input).unwrap();
 
     let block_height = rng.gen();
     let err = tx
@@ -380,8 +383,11 @@ fn transaction_with_duplicate_coin_inputs_is_invalid() {
 
     let err = TransactionBuilder::script(vec![], vec![])
         .add_input(a)
+        .unwrap()
         .add_input(b)
+        .unwrap()
         .add_witness(rng.gen())
+        .unwrap()
         .finalize()
         .validate_without_signature(0, &Default::default())
         .expect_err("Expected validation failure");
@@ -406,9 +412,12 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
 
     let err = TransactionBuilder::script(vec![], vec![])
         .add_input(message_input.clone())
+        .unwrap()
         // duplicate input
         .add_input(message_input)
+        .unwrap()
         .add_witness(rng.gen())
+        .unwrap()
         .finalize()
         .validate_without_signature(0, &Default::default())
         .expect_err("Expected validation failure");
@@ -429,7 +438,9 @@ fn transaction_with_duplicate_contract_inputs_is_invalid() {
 
     let err = TransactionBuilder::script(vec![], vec![])
         .add_input(a)
+        .unwrap()
         .add_input(b)
+        .unwrap()
         .add_output(o)
         .add_output(p)
         .finalize()
@@ -455,7 +466,9 @@ fn transaction_with_duplicate_contract_utxo_id_is_valid() {
 
     TransactionBuilder::script(vec![], vec![])
         .add_input(a)
+        .unwrap()
         .add_input(b)
+        .unwrap()
         .add_output(o)
         .add_output(p)
         .finalize()

@@ -7,29 +7,31 @@ use fuel_types::Bytes32;
 use core::mem;
 
 impl Transaction {
-    pub(crate) fn prepare_sign(&mut self) -> &mut Self {
-        self.set_receipts_root(Default::default());
+    fn prepare_sign(&mut self) -> &mut Self {
+        let _ = self.set_receipts_root(Default::default());
 
-        self._inputs_mut().iter_mut().for_each(|input| match input {
-            Input::CoinSigned { tx_pointer, .. } | Input::CoinPredicate { tx_pointer, .. } => {
-                mem::take(tx_pointer);
-            }
+        if let Ok(inputs) = self._inputs_mut() {
+            inputs.iter_mut().for_each(|input| match input {
+                Input::CoinSigned { tx_pointer, .. } | Input::CoinPredicate { tx_pointer, .. } => {
+                    mem::take(tx_pointer);
+                }
 
-            Input::Contract {
-                utxo_id,
-                balance_root,
-                state_root,
-                tx_pointer,
-                ..
-            } => {
-                mem::take(utxo_id);
-                mem::take(balance_root);
-                mem::take(state_root);
-                mem::take(tx_pointer);
-            }
+                Input::Contract {
+                    utxo_id,
+                    balance_root,
+                    state_root,
+                    tx_pointer,
+                    ..
+                } => {
+                    mem::take(utxo_id);
+                    mem::take(balance_root);
+                    mem::take(state_root);
+                    mem::take(tx_pointer);
+                }
 
-            _ => (),
-        });
+                _ => (),
+            });
+        }
 
         self._outputs_mut()
             .iter_mut()
@@ -70,7 +72,8 @@ impl Transaction {
             Transaction::Script { witnesses, .. } | Transaction::Create { witnesses, .. } => {
                 witnesses.clear()
             }
-        }
+            Transaction::Mint { .. } => {}
+        };
 
         self
     }
@@ -182,6 +185,17 @@ mod tests {
         };
     }
 
+    macro_rules! assert_io_ne_unwrap {
+        ($tx:expr, $t:ident, $i:path, $a:ident, $inv:expr) => {
+            assert_id_ne($tx, |t| {
+                t.$t().unwrap().iter_mut().for_each(|x| match x {
+                    $i { $a, .. } => $inv($a),
+                    _ => (),
+                })
+            });
+        };
+    }
+
     macro_rules! assert_io_eq {
         ($tx:expr, $t:ident, $i:path, $a:ident, $inv:expr) => {
             assert_id_eq($tx, |t| {
@@ -193,37 +207,52 @@ mod tests {
         };
     }
 
+    macro_rules! assert_io_eq_unwrap {
+        ($tx:expr, $t:ident, $i:path, $a:ident, $inv:expr) => {
+            assert_id_eq($tx, |t| {
+                t.$t().unwrap().iter_mut().for_each(|x| match x {
+                    $i { $a, .. } => $inv($a),
+                    _ => (),
+                })
+            });
+        };
+    }
+
     fn assert_id_common_attrs(tx: &Transaction) {
-        assert_id_ne(tx, |t| t.set_gas_price(t.gas_price().not()));
-        assert_id_ne(tx, |t| t.set_gas_limit(t.gas_limit().not()));
-        assert_id_ne(tx, |t| t.set_maturity(t.maturity().not()));
+        assert_id_ne(tx, |t| {
+            t.set_gas_price(t.gas_price().unwrap().not()).unwrap()
+        });
+        assert_id_ne(tx, |t| {
+            t.set_gas_limit(t.gas_limit().unwrap().not()).unwrap()
+        });
+        assert_id_ne(tx, |t| t.set_maturity(t.maturity().unwrap().not()).unwrap());
 
-        if !tx.inputs().is_empty() {
-            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, utxo_id, invert_utxo_id);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, owner, invert);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, amount, not);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, asset_id, invert);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, witness_index, not);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinSigned, maturity, not);
+        if !tx.inputs().unwrap().is_empty() {
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinSigned, utxo_id, invert_utxo_id);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinSigned, owner, invert);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinSigned, amount, not);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinSigned, asset_id, invert);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinSigned, witness_index, not);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinSigned, maturity, not);
 
-            assert_io_ne!(
+            assert_io_ne_unwrap!(
                 tx,
                 _inputs_mut,
                 Input::CoinPredicate,
                 utxo_id,
                 invert_utxo_id
             );
-            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, owner, invert);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, amount, not);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, asset_id, invert);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, maturity, not);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, predicate, inv_v);
-            assert_io_ne!(tx, _inputs_mut, Input::CoinPredicate, predicate_data, inv_v);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinPredicate, owner, invert);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinPredicate, amount, not);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinPredicate, asset_id, invert);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinPredicate, maturity, not);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinPredicate, predicate, inv_v);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::CoinPredicate, predicate_data, inv_v);
 
-            assert_io_eq!(tx, _inputs_mut, Input::Contract, utxo_id, invert_utxo_id);
-            assert_io_eq!(tx, _inputs_mut, Input::Contract, balance_root, invert);
-            assert_io_eq!(tx, _inputs_mut, Input::Contract, state_root, invert);
-            assert_io_ne!(tx, _inputs_mut, Input::Contract, contract_id, invert);
+            assert_io_eq_unwrap!(tx, _inputs_mut, Input::Contract, utxo_id, invert_utxo_id);
+            assert_io_eq_unwrap!(tx, _inputs_mut, Input::Contract, balance_root, invert);
+            assert_io_eq_unwrap!(tx, _inputs_mut, Input::Contract, state_root, invert);
+            assert_io_ne_unwrap!(tx, _inputs_mut, Input::Contract, contract_id, invert);
         }
 
         if !tx.outputs().is_empty() {
@@ -255,9 +284,15 @@ mod tests {
             );
         }
 
-        if !tx.witnesses().is_empty() {
+        if !tx.witnesses().unwrap().is_empty() {
             assert_id_eq(tx, |t| {
-                inv_v(t._witnesses_mut().first_mut().unwrap().as_vec_mut())
+                inv_v(
+                    t._witnesses_mut()
+                        .unwrap()
+                        .first_mut()
+                        .unwrap()
+                        .as_vec_mut(),
+                )
             });
         }
     }

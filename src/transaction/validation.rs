@@ -1,5 +1,6 @@
 use super::{Input, Output, Transaction, Witness};
 use crate::transaction::internals;
+use std::collections::HashSet;
 
 use fuel_types::{AssetId, Word};
 
@@ -189,71 +190,77 @@ impl Transaction {
     pub fn validate_input_signature(&self) -> Result<(), ValidationError> {
         let id = self.id();
 
-        self.inputs()
-            .iter()
-            .enumerate()
-            .try_for_each(|(index, input)| {
-                input.validate_signature(index, &id, self.witnesses())
-            })?;
+        match self {
+            Transaction::Script {
+                inputs, witnesses, ..
+            }
+            | Transaction::Create {
+                inputs, witnesses, ..
+            } => {
+                inputs.iter().enumerate().try_for_each(|(index, input)| {
+                    input.validate_signature(index, &id, witnesses)
+                })?;
+            }
+            Transaction::Mint { .. } => {}
+        };
 
         Ok(())
     }
 
-    /// Validate the transaction.
-    ///
-    /// This function will reflect the stateful property of [`Output::validate`]
-    pub fn validate_without_signature(
-        &self,
+    pub fn validate_without_signature_internal<'a>(
         block_height: Word,
         parameters: &ConsensusParameters,
+        gas_limit: u64,
+        maturity: u64,
+        inputs: &[Input],
+        outputs: &[Output],
+        witnesses: &[Witness],
     ) -> Result<(), ValidationError> {
-        if self.gas_limit() > parameters.max_gas_per_tx {
+        if gas_limit > parameters.max_gas_per_tx {
             Err(ValidationError::TransactionGasLimit)?
         }
 
-        if block_height < self.maturity() as Word {
+        if block_height < maturity {
             Err(ValidationError::TransactionMaturity)?;
         }
 
-        if self.inputs().len() > parameters.max_inputs as usize {
+        if inputs.len() > parameters.max_inputs as usize {
             Err(ValidationError::TransactionInputsMax)?
         }
 
-        if self.outputs().len() > parameters.max_outputs as usize {
+        if outputs.len() > parameters.max_outputs as usize {
             Err(ValidationError::TransactionOutputsMax)?
         }
 
-        if self.witnesses().len() > parameters.max_witnesses as usize {
+        if witnesses.len() > parameters.max_witnesses as usize {
             Err(ValidationError::TransactionWitnessesMax)?
         }
 
-        self.input_asset_ids_unique()
-            .try_for_each(|input_asset_id| {
-                // check for duplicate change outputs
-                if self
-                    .outputs()
-                    .iter()
-                    .filter_map(|output| match output {
-                        Output::Change { asset_id, .. } if input_asset_id == asset_id => Some(()),
-                        Output::Change { asset_id, .. }
-                            if asset_id != &AssetId::default() && input_asset_id == asset_id =>
-                        {
-                            Some(())
-                        }
-                        _ => None,
-                    })
-                    .count()
-                    > 1
-                {
-                    return Err(ValidationError::TransactionOutputChangeAssetIdDuplicated);
-                }
+        let mut unique_assets = Transaction::input_asset_ids_unique(inputs);
+        unique_assets.try_for_each(|input_asset_id| {
+            // check for duplicate change outputs
+            if outputs
+                .iter()
+                .filter_map(|output| match output {
+                    Output::Change { asset_id, .. } if input_asset_id == asset_id => Some(()),
+                    Output::Change { asset_id, .. }
+                        if asset_id != &AssetId::default() && input_asset_id == asset_id =>
+                    {
+                        Some(())
+                    }
+                    _ => None,
+                })
+                .count()
+                > 1
+            {
+                return Err(ValidationError::TransactionOutputChangeAssetIdDuplicated);
+            }
 
-                Ok(())
-            })?;
+            Ok(())
+        })?;
 
         // Check for duplicated input utxo id
-        let duplicated_utxo_id = self
-            .inputs()
+        let duplicated_utxo_id = inputs
             .iter()
             .filter_map(|i| i.is_coin().then(|| i.utxo_id()).flatten());
 
@@ -262,69 +269,78 @@ impl Transaction {
         }
 
         // Check for duplicated input contract id
-        let duplicated_contract_id = self.inputs().iter().filter_map(Input::contract_id);
+        let duplicated_contract_id = inputs.iter().filter_map(Input::contract_id);
 
         if let Some(contract_id) = internals::next_duplicate(duplicated_contract_id).copied() {
             return Err(ValidationError::DuplicateInputContractId { contract_id });
         }
 
         // Check for duplicated input message id
-        let duplicated_message_id = self.inputs().iter().filter_map(Input::message_id);
+        let duplicated_message_id = inputs.iter().filter_map(Input::message_id);
         if let Some(message_id) = internals::next_duplicate(duplicated_message_id).copied() {
             return Err(ValidationError::DuplicateMessageInputId { message_id });
         }
 
         // Validate the inputs without checking signature
-        self.inputs()
-            .iter()
-            .enumerate()
-            .try_for_each(|(index, input)| {
-                input.validate_without_signature(
-                    index,
-                    self.outputs(),
-                    self.witnesses(),
-                    parameters,
-                )
-            })?;
+        inputs.iter().enumerate().try_for_each(|(index, input)| {
+            input.validate_without_signature(index, outputs, witnesses, parameters)
+        })?;
 
-        self.outputs()
-            .iter()
-            .enumerate()
-            .try_for_each(|(index, output)| {
-                output.validate(index, self.inputs())?;
+        outputs.iter().enumerate().try_for_each(|(index, output)| {
+            output.validate(index, inputs)?;
 
-                if let Output::Change { asset_id, .. } = output {
-                    if !self
-                        .input_asset_ids()
-                        .any(|input_asset_id| input_asset_id == asset_id)
-                    {
-                        return Err(ValidationError::TransactionOutputChangeAssetIdNotFound(
-                            *asset_id,
-                        ));
-                    }
+            if let Output::Change { asset_id, .. } = output {
+                if !Transaction::input_asset_ids(inputs)
+                    .any(|input_asset_id| input_asset_id == asset_id)
+                {
+                    return Err(ValidationError::TransactionOutputChangeAssetIdNotFound(
+                        *asset_id,
+                    ));
                 }
+            }
 
-                if let Output::Coin { asset_id, .. } = output {
-                    if !self
-                        .input_asset_ids()
-                        .any(|input_asset_id| input_asset_id == asset_id)
-                    {
-                        return Err(ValidationError::TransactionOutputCoinAssetIdNotFound(
-                            *asset_id,
-                        ));
-                    }
+            if let Output::Coin { asset_id, .. } = output {
+                if !Transaction::input_asset_ids(inputs)
+                    .any(|input_asset_id| input_asset_id == asset_id)
+                {
+                    return Err(ValidationError::TransactionOutputCoinAssetIdNotFound(
+                        *asset_id,
+                    ));
                 }
+            }
 
-                Ok(())
-            })?;
-
+            Ok(())
+        })
+    }
+    /// Validate the transaction.
+    ///
+    /// This function will reflect the stateful property of [`Output::validate`]
+    pub fn validate_without_signature(
+        &self,
+        block_height: Word,
+        parameters: &ConsensusParameters,
+    ) -> Result<(), ValidationError> {
         match self {
             Self::Script {
+                gas_limit,
+                maturity,
+                inputs,
                 outputs,
+                witnesses,
                 script,
                 script_data,
                 ..
             } => {
+                Self::validate_without_signature_internal(
+                    block_height,
+                    parameters,
+                    *gas_limit,
+                    *maturity,
+                    &inputs,
+                    &outputs,
+                    &witnesses,
+                )?;
+
                 if script.len() > parameters.max_script_length as usize {
                     Err(ValidationError::TransactionScriptLength)?;
                 }
@@ -347,6 +363,8 @@ impl Transaction {
             }
 
             Self::Create {
+                gas_limit,
+                maturity,
                 inputs,
                 outputs,
                 witnesses,
@@ -355,6 +373,16 @@ impl Transaction {
                 storage_slots,
                 ..
             } => {
+                Self::validate_without_signature_internal(
+                    block_height,
+                    parameters,
+                    *gas_limit,
+                    *maturity,
+                    &inputs,
+                    &outputs,
+                    &witnesses,
+                )?;
+
                 let bytecode_witness_len = witnesses
                     .get(*bytecode_witness_index as usize)
                     .map(|w| w.as_ref().len() as Word)
@@ -419,6 +447,22 @@ impl Transaction {
 
                         _ => Ok(()),
                     })?;
+
+                Ok(())
+            }
+            Transaction::Mint { outputs, .. } => {
+                let mut unique_assets = HashSet::new();
+                for output in outputs {
+                    if let Output::Coin { asset_id, .. } = output {
+                        unique_assets.insert(asset_id);
+                    } else {
+                        return Err(ValidationError::OutputOfMintIsNotCoin);
+                    }
+                }
+
+                if unique_assets.len() != outputs.len() {
+                    return Err(ValidationError::TransactionOutputCoinAssetIdDuplicated);
+                }
 
                 Ok(())
             }

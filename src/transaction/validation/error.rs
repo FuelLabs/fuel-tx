@@ -75,6 +75,7 @@ pub enum ValidationError {
     TransactionOutputsMax,
     TransactionWitnessesMax,
     TransactionOutputChangeAssetIdDuplicated,
+    TransactionOutputCoinAssetIdDuplicated,
     TransactionOutputChangeAssetIdNotFound(AssetId),
     /// This error happens when a transaction attempts to create a coin output for an asset type
     /// that doesn't exist in the coin inputs.
@@ -100,6 +101,8 @@ pub enum ValidationError {
     /// The user provided amounts for coins or gas prices that caused an arithmetic
     /// overflow.
     ArithmeticOverflow,
+    /// The output of the `Mint` transaction is not a `Output::Coin`.
+    OutputOfMintIsNotCoin,
 }
 
 impl fmt::Display for ValidationError {

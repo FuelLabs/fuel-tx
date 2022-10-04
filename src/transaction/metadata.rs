@@ -69,31 +69,36 @@ impl Transaction {
         match self {
             Self::Script { metadata, .. } => metadata,
             Self::Create { metadata, .. } => metadata,
+            Self::Mint { metadata, .. } => metadata,
         }
     }
 
     pub fn precompute_metadata(&mut self) {
         let id = self._id();
 
-        let script_data_offset = self._script_data_offset();
-        let input_predicate_offset = self
-            .inputs()
-            .iter()
-            .enumerate()
-            .map(|(i, _)| self._input_predicate_offset(i))
-            .collect();
+        let script_data_offset = self._script_data_offset().ok();
+        let input_predicate_offset = if let Ok(inputs) = self.inputs() {
+            inputs
+                .iter()
+                .enumerate()
+                .map(|(i, _)| self._input_predicate_offset(i))
+                .collect()
+        } else {
+            vec![]
+        };
 
-        let offset = self.inputs_offset();
-        let inputs_offset = self
-            .inputs()
-            .iter()
-            .scan(offset, |offset, input| {
-                let i = *offset;
-                *offset += input.serialized_size();
+        let inputs_offset = match (self.inputs_offset(), self.inputs()) {
+            (Ok(offset), Ok(inputs)) => inputs
+                .iter()
+                .scan(offset, |offset, input| {
+                    let i = *offset;
+                    *offset += input.serialized_size();
 
-                Some(i)
-            })
-            .collect();
+                    Some(i)
+                })
+                .collect(),
+            _ => vec![],
+        };
 
         let offset = self.outputs_offset();
         let outputs_offset = self
@@ -107,17 +112,18 @@ impl Transaction {
             })
             .collect();
 
-        let offset = self.witnesses_offset();
-        let witnesses_offset = self
-            .witnesses()
-            .iter()
-            .scan(offset, |offset, witness| {
-                let i = *offset;
-                *offset += witness.serialized_size();
+        let witnesses_offset = match (self.witnesses_offset(), self.witnesses()) {
+            (Ok(offset), Ok(witnesses)) => witnesses
+                .iter()
+                .scan(offset, |offset, witness| {
+                    let i = *offset;
+                    *offset += witness.serialized_size();
 
-                Some(i)
-            })
-            .collect();
+                    Some(i)
+                })
+                .collect(),
+            _ => vec![],
+        };
 
         let metadata = Metadata::new(
             id,

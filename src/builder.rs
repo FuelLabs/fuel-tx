@@ -1,6 +1,6 @@
 use crate::{
-    CheckedTransaction, ConsensusParameters, Input, Output, StorageSlot, Transaction, TxPointer,
-    Witness,
+    CheckedTransaction, ConsensusParameters, Input, Output, StorageSlot, Transaction,
+    TransactionError, TxPointer, Witness,
 };
 
 use fuel_crypto::SecretKey;
@@ -47,7 +47,7 @@ impl TransactionBuilder {
             Default::default(),
         );
 
-        tx._set_bytecode(bytecode);
+        tx._set_bytecode(bytecode).expect("Should set bytecode");
 
         Self::with_tx(tx)
     }
@@ -85,22 +85,22 @@ impl TransactionBuilder {
         self.sign_keys.as_slice()
     }
 
-    pub fn gas_price(&mut self, gas_price: Word) -> &mut Self {
-        self.tx.set_gas_price(gas_price);
+    pub fn gas_price(&mut self, gas_price: Word) -> Result<&mut Self, TransactionError> {
+        self.tx.set_gas_price(gas_price)?;
 
-        self
+        Ok(self)
     }
 
-    pub fn gas_limit(&mut self, gas_limit: Word) -> &mut Self {
-        self.tx.set_gas_limit(gas_limit);
+    pub fn gas_limit(&mut self, gas_limit: Word) -> Result<&mut Self, TransactionError> {
+        self.tx.set_gas_limit(gas_limit)?;
 
-        self
+        Ok(self)
     }
 
-    pub fn maturity(&mut self, maturity: Word) -> &mut Self {
-        self.tx.set_maturity(maturity);
+    pub fn maturity(&mut self, maturity: Word) -> Result<&mut Self, TransactionError> {
+        self.tx.set_maturity(maturity)?;
 
-        self
+        Ok(self)
     }
 
     #[cfg(feature = "std")]
@@ -112,14 +112,14 @@ impl TransactionBuilder {
         asset_id: fuel_types::AssetId,
         tx_pointer: TxPointer,
         maturity: Word,
-    ) -> &mut Self {
+    ) -> Result<&mut Self, TransactionError> {
         let pk = secret.public_key();
 
         self.sign_keys.push(secret);
         self.tx
-            .add_unsigned_coin_input(utxo_id, &pk, amount, asset_id, tx_pointer, maturity);
+            .add_unsigned_coin_input(utxo_id, &pk, amount, asset_id, tx_pointer, maturity)?;
 
-        self
+        Ok(self)
     }
 
     #[cfg(feature = "std")]
@@ -130,19 +130,19 @@ impl TransactionBuilder {
         nonce: Word,
         amount: Word,
         data: Vec<u8>,
-    ) -> &mut Self {
+    ) -> Result<&mut Self, TransactionError> {
         let pk = secret.public_key();
         self.sign_keys.push(secret);
 
         let recipient = Input::owner(&pk);
 
         self.tx
-            .add_unsigned_message_input(sender, recipient, nonce, amount, data);
+            .add_unsigned_message_input(sender, recipient, nonce, amount, data)?;
 
-        self
+        Ok(self)
     }
 
-    pub fn inputs(&self) -> &[Input] {
+    pub fn inputs(&self) -> Result<&[Input], TransactionError> {
         self.tx.inputs()
     }
 
@@ -150,14 +150,14 @@ impl TransactionBuilder {
         self.tx.outputs()
     }
 
-    pub fn witnesses(&self) -> &[Witness] {
+    pub fn witnesses(&self) -> Result<&[Witness], TransactionError> {
         self.tx.witnesses()
     }
 
-    pub fn add_input(&mut self, input: Input) -> &mut Self {
-        self.tx.add_input(input);
+    pub fn add_input(&mut self, input: Input) -> Result<&mut Self, TransactionError> {
+        self.tx.add_input(input)?;
 
-        self
+        Ok(self)
     }
 
     pub fn add_output(&mut self, output: Output) -> &mut Self {
@@ -166,10 +166,10 @@ impl TransactionBuilder {
         self
     }
 
-    pub fn add_witness(&mut self, witness: Witness) -> &mut Self {
-        self.tx.add_witness(witness);
+    pub fn add_witness(&mut self, witness: Witness) -> Result<&mut Self, TransactionError> {
+        self.tx.add_witness(witness)?;
 
-        self
+        Ok(self)
     }
 
     fn prepare_finalize(&mut self) {

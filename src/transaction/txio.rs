@@ -88,8 +88,7 @@ impl io::Read for Transaction {
             }
             Self::Mint { outputs, .. } => {
                 let buf = bytes::store_number_unchecked(buf, TransactionRepr::Mint as Word);
-                let buf = bytes::store_number_unchecked(buf, outputs.len() as Word);
-                buf
+                bytes::store_number_unchecked(buf, outputs.len() as Word)
             }
         };
 

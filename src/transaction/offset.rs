@@ -22,7 +22,7 @@ impl Transaction {
                 m.script_data_offset()
                     .ok_or(TransactionError::FieldDoesNotExist)
             })
-            .unwrap_or(self._script_data_offset())
+            .unwrap_or_else(|| self._script_data_offset())
     }
 
     pub(crate) fn _script_data_offset(&self) -> Result<usize, TransactionError> {
@@ -83,7 +83,7 @@ impl Transaction {
 
     pub(crate) fn _input_offset(&self, index: usize) -> Option<usize> {
         match (self.inputs_offset(), self.inputs()) {
-            (Ok(offset), Ok(inputs)) => inputs.iter().nth(index).map(|_| {
+            (Ok(offset), Ok(inputs)) => inputs.get(index).map(|_| {
                 inputs
                     .iter()
                     .take(index)
@@ -185,7 +185,7 @@ impl Transaction {
 
     pub(crate) fn _witness_offset(&self, index: usize) -> Option<usize> {
         match (self.witnesses_offset(), self.witnesses()) {
-            (Ok(offset), Ok(witnesses)) => witnesses.iter().nth(index).map(|_| {
+            (Ok(offset), Ok(witnesses)) => witnesses.get(index).map(|_| {
                 witnesses
                     .iter()
                     .take(index)

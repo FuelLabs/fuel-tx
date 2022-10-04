@@ -66,24 +66,27 @@ impl Transaction {
 impl Transaction {
     pub(crate) fn _add_input(&mut self, input: Input) -> Result<(), TransactionError> {
         match self {
-            Self::Script { inputs, .. } => Ok(inputs.push(input)),
-            Self::Create { inputs, .. } => Ok(inputs.push(input)),
+            Self::Script { inputs, .. } | Self::Create { inputs, .. } => {
+                inputs.push(input);
+                Ok(())
+            }
             Self::Mint { .. } => Err(TransactionError::FieldDoesNotExist),
         }
     }
 
     pub(crate) fn _add_output(&mut self, output: Output) {
         match self {
-            Self::Script { outputs, .. } => outputs.push(output),
-            Self::Create { outputs, .. } => outputs.push(output),
+            Self::Script { outputs, .. } | Self::Create { outputs, .. } => outputs.push(output),
             Self::Mint { outputs, .. } => outputs.push(output),
         }
     }
 
     pub(crate) fn _add_witness(&mut self, witness: Witness) -> Result<(), TransactionError> {
         match self {
-            Self::Script { witnesses, .. } => Ok(witnesses.push(witness)),
-            Self::Create { witnesses, .. } => Ok(witnesses.push(witness)),
+            Self::Script { witnesses, .. } | Self::Create { witnesses, .. } => {
+                witnesses.push(witness);
+                Ok(())
+            }
             Self::Mint { .. } => Err(TransactionError::FieldDoesNotExist),
         }
     }

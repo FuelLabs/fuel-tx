@@ -279,48 +279,51 @@ impl Transaction {
 
     pub const fn gas_price(&self) -> Result<Word, Error> {
         match self {
-            Self::Script { gas_price, .. } => Ok(*gas_price),
-            Self::Create { gas_price, .. } => Ok(*gas_price),
+            Self::Script { gas_price, .. } | Self::Create { gas_price, .. } => Ok(*gas_price),
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
     pub fn set_gas_price(&mut self, price: Word) -> Result<(), Error> {
         match self {
-            Self::Script { gas_price, .. } => Ok(*gas_price = price),
-            Self::Create { gas_price, .. } => Ok(*gas_price = price),
+            Self::Script { gas_price, .. } | Self::Create { gas_price, .. } => {
+                *gas_price = price;
+                Ok(())
+            }
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
     pub const fn gas_limit(&self) -> Result<Word, Error> {
         match self {
-            Self::Script { gas_limit, .. } => Ok(*gas_limit),
-            Self::Create { gas_limit, .. } => Ok(*gas_limit),
+            Self::Script { gas_limit, .. } | Self::Create { gas_limit, .. } => Ok(*gas_limit),
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
     pub fn set_gas_limit(&mut self, limit: Word) -> Result<(), Error> {
         match self {
-            Self::Script { gas_limit, .. } => Ok(*gas_limit = limit),
-            Self::Create { gas_limit, .. } => Ok(*gas_limit = limit),
+            Self::Script { gas_limit, .. } | Self::Create { gas_limit, .. } => {
+                *gas_limit = limit;
+                Ok(())
+            }
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
     pub const fn maturity(&self) -> Result<Word, Error> {
         match self {
-            Self::Script { maturity, .. } => Ok(*maturity),
-            Self::Create { maturity, .. } => Ok(*maturity),
+            Self::Script { maturity, .. } | Self::Create { maturity, .. } => Ok(*maturity),
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
     pub fn set_maturity(&mut self, mat: Word) -> Result<(), Error> {
         match self {
-            Self::Script { maturity, .. } => Ok(*maturity = mat),
-            Self::Create { maturity, .. } => Ok(*maturity = mat),
+            Self::Script { maturity, .. } | Self::Create { maturity, .. } => {
+                *maturity = mat;
+                Ok(())
+            }
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
@@ -331,9 +334,9 @@ impl Transaction {
 
     pub const fn metadata(&self) -> Option<&Metadata> {
         match self {
-            Self::Script { metadata, .. } => metadata.as_ref(),
-            Self::Create { metadata, .. } => metadata.as_ref(),
-            Self::Mint { metadata, .. } => metadata.as_ref(),
+            Self::Script { metadata, .. }
+            | Self::Create { metadata, .. }
+            | Self::Mint { metadata, .. } => metadata.as_ref(),
         }
     }
 
@@ -362,16 +365,19 @@ impl Transaction {
 
     pub fn witnesses(&self) -> Result<&[Witness], Error> {
         match self {
-            Self::Script { witnesses, .. } => Ok(witnesses.as_slice()),
-            Self::Create { witnesses, .. } => Ok(witnesses.as_slice()),
+            Self::Script { witnesses, .. } | Self::Create { witnesses, .. } => {
+                Ok(witnesses.as_slice())
+            }
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }
 
     pub fn set_witnesses(&mut self, new_witnesses: Vec<Witness>) -> Result<(), Error> {
         match self {
-            Self::Script { witnesses, .. } => Ok(*witnesses = new_witnesses),
-            Self::Create { witnesses, .. } => Ok(*witnesses = new_witnesses),
+            Self::Script { witnesses, .. } | Self::Create { witnesses, .. } => {
+                *witnesses = new_witnesses;
+                Ok(())
+            }
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }

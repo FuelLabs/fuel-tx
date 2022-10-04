@@ -208,7 +208,7 @@ impl Transaction {
         Ok(())
     }
 
-    pub fn validate_without_signature_internal<'a>(
+    pub fn validate_without_signature_internal(
         block_height: Word,
         parameters: &ConsensusParameters,
         gas_limit: u64,
@@ -337,9 +337,9 @@ impl Transaction {
                     parameters,
                     *gas_limit,
                     *maturity,
-                    &inputs,
-                    &outputs,
-                    &witnesses,
+                    inputs,
+                    outputs,
+                    witnesses,
                 )?;
 
                 if script.len() > parameters.max_script_length as usize {
@@ -379,9 +379,9 @@ impl Transaction {
                     parameters,
                     *gas_limit,
                     *maturity,
-                    &inputs,
-                    &outputs,
-                    &witnesses,
+                    inputs,
+                    outputs,
+                    witnesses,
                 )?;
 
                 let bytecode_witness_len = witnesses

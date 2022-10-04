@@ -1,13 +1,12 @@
-use std::fmt;
-use std::io::{self, Read, Write};
-
 use fuel_asm::Opcode;
+use fuel_tx::*;
 use fuel_tx_test_helpers::{generate_bytes, generate_nonempty_padded_bytes};
 use fuel_types::{bytes, Immediate24};
 use rand::rngs::StdRng;
 use rand::{Rng, RngCore, SeedableRng};
 
-use fuel_tx::*;
+use std::fmt;
+use std::io::{self, Read, Write};
 
 pub fn assert_encoding_correct<'a, T>(data: &[T])
 where

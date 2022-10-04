@@ -538,16 +538,17 @@ impl Transaction {
 
     pub(crate) fn _outputs_mut(&mut self) -> &mut [Output] {
         match self {
-            Self::Script { outputs, .. } => outputs.as_mut_slice(),
-            Self::Create { outputs, .. } => outputs.as_mut_slice(),
-            Self::Mint { outputs, .. } => outputs.as_mut_slice(),
+            Self::Script { outputs, .. }
+            | Self::Create { outputs, .. }
+            | Self::Mint { outputs, .. } => outputs.as_mut_slice(),
         }
     }
 
     pub(crate) fn _witnesses_mut(&mut self) -> Result<&mut [Witness], Error> {
         match self {
-            Self::Script { witnesses, .. } => Ok(witnesses.as_mut_slice()),
-            Self::Create { witnesses, .. } => Ok(witnesses.as_mut_slice()),
+            Self::Script { witnesses, .. } | Self::Create { witnesses, .. } => {
+                Ok(witnesses.as_mut_slice())
+            }
             Self::Mint { .. } => Err(Error::FieldDoesNotExist),
         }
     }

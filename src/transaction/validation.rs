@@ -1,6 +1,7 @@
 use super::{Input, Output, Transaction, Witness};
 use crate::transaction::internals;
-use std::collections::HashSet;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
 use fuel_types::{AssetId, Word};
 
@@ -451,17 +452,17 @@ impl Transaction {
                 Ok(())
             }
             Transaction::Mint { outputs, .. } => {
-                let mut unique_assets = HashSet::new();
+                let mut assets = Vec::new();
                 for output in outputs {
                     if let Output::Coin { asset_id, .. } = output {
-                        unique_assets.insert(asset_id);
+                        if assets.contains(&asset_id) {
+                            return Err(ValidationError::TransactionOutputCoinAssetIdDuplicated);
+                        } else {
+                            assets.push(asset_id);
+                        }
                     } else {
                         return Err(ValidationError::OutputOfMintIsNotCoin);
                     }
-                }
-
-                if unique_assets.len() != outputs.len() {
-                    return Err(ValidationError::TransactionOutputCoinAssetIdDuplicated);
                 }
 
                 Ok(())

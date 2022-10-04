@@ -98,7 +98,7 @@ fn coin_signed() {
         0,
         rng.gen(),
     );
-    tx.add_input(input).unwrap();
+    tx.add_input(input);
 
     let block_height = rng.gen();
     let err = tx
@@ -263,7 +263,7 @@ fn message() {
         generate_bytes(rng),
     );
 
-    tx.add_input(input).unwrap();
+    tx.add_input(input);
 
     let block_height = rng.gen();
     let err = tx

@@ -161,7 +161,7 @@ impl TransactionBuilder {
     }
 
     pub fn add_input(&mut self, input: Input) -> &mut Self {
-        self.tx.add_input(input).expect("Should add input");
+        self.tx.add_input(input);
 
         self
     }
@@ -173,7 +173,7 @@ impl TransactionBuilder {
     }
 
     pub fn add_witness(&mut self, witness: Witness) -> &mut Self {
-        self.tx.add_witness(witness).expect("Should add witness");
+        self.tx.add_witness(witness);
 
         self
     }

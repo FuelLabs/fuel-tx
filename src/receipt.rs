@@ -196,7 +196,7 @@ impl Receipt {
         }
     }
 
-    pub fn set_panic_contract_id(mut self, _contract_id: Option<ContractId>) -> Self {
+    pub fn with_panic_contract_id(mut self, _contract_id: Option<ContractId>) -> Self {
         if let Receipt::Panic {
             ref mut contract_id,
             ..
@@ -368,7 +368,7 @@ impl Receipt {
             Self::Call { id, .. } => Some(id),
             Self::Return { id, .. } => Some(id),
             Self::ReturnData { id, .. } => Some(id),
-            Panic { id, .. } => Some(id),
+            Self::Panic { id, .. } => Some(id),
             Self::Revert { id, .. } => Some(id),
             Self::Log { id, .. } => Some(id),
             Self::LogData { id, .. } => Some(id),
@@ -384,7 +384,7 @@ impl Receipt {
             Self::Call { pc, .. } => Some(*pc),
             Self::Return { pc, .. } => Some(*pc),
             Self::ReturnData { pc, .. } => Some(*pc),
-            Panic { pc, .. } => Some(*pc),
+            Self::Panic { pc, .. } => Some(*pc),
             Self::Revert { pc, .. } => Some(*pc),
             Self::Log { pc, .. } => Some(*pc),
             Self::LogData { pc, .. } => Some(*pc),
@@ -400,7 +400,7 @@ impl Receipt {
             Self::Call { is, .. } => Some(*is),
             Self::Return { is, .. } => Some(*is),
             Self::ReturnData { is, .. } => Some(*is),
-            Panic { is, .. } => Some(*is),
+            Self::Panic { is, .. } => Some(*is),
             Self::Revert { is, .. } => Some(*is),
             Self::Log { is, .. } => Some(*is),
             Self::LogData { is, .. } => Some(*is),
@@ -518,7 +518,7 @@ impl Receipt {
 
     pub const fn reason(&self) -> Option<InstructionResult> {
         match self {
-            Panic { reason, .. } => Some(*reason),
+            Self::Panic { reason, .. } => Some(*reason),
             _ => None,
         }
     }

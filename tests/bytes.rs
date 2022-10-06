@@ -483,7 +483,7 @@ fn receipt() {
             rng.gen(),
             rng.gen(),
         )
-        .set_panic_contract_id(Some(rng.gen())),
+        .with_panic_contract_id(Some(rng.gen())),
         Receipt::script_result(ScriptExecutionResult::Success, rng.gen()),
         Receipt::script_result(ScriptExecutionResult::Panic, rng.gen()),
         Receipt::script_result(ScriptExecutionResult::Revert, rng.gen()),

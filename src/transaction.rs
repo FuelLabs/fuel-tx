@@ -70,6 +70,7 @@ pub enum Transaction {
         inputs: Vec<Input>,
         outputs: Vec<Output>,
         witnesses: Vec<Witness>,
+        #[derivative(PartialEq = "ignore", Hash = "ignore")]
         metadata: Option<Metadata>,
     },
 }

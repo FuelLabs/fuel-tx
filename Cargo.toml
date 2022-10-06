@@ -24,7 +24,6 @@ serde_json = { version = "1.0", default-features = false, features = ["alloc"], 
 
 [dev-dependencies]
 bincode = { version = "1.3", default-features = false }
-derivative = { version = "2.2.0", default-features = false }
 fuel-crypto = { version = "0.6", default-features = false, features = ["random"] }
 fuel-tx = { path = ".", features = ["builder", "random"] }
 fuel-tx-test-helpers = { path = "test-helpers" }

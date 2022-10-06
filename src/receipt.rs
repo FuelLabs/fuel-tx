@@ -15,6 +15,7 @@ use receipt_repr::ReceiptRepr;
 pub use script_result::ScriptExecutionResult;
 
 use crate::Output;
+use crate::Receipt::Panic;
 
 #[derive(Debug, Clone, Derivative)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -185,20 +186,25 @@ impl Receipt {
         }
     }
 
-    pub const fn panic(
-        id: ContractId,
-        reason: InstructionResult,
-        pc: Word,
-        is: Word,
-        contract_id: Option<ContractId>,
-    ) -> Self {
-        Self::Panic {
+    pub const fn panic(id: ContractId, reason: InstructionResult, pc: Word, is: Word) -> Self {
+        Panic {
             id,
             reason,
             pc,
             is,
-            contract_id,
+            contract_id: None,
         }
+    }
+
+    pub fn set_panic_contract_id(mut self, _contract_id: Option<ContractId>) -> Self {
+        if let Receipt::Panic {
+            ref mut contract_id,
+            ..
+        } = self
+        {
+            *contract_id = _contract_id;
+        }
+        self
     }
 
     pub const fn revert(id: ContractId, ra: Word, pc: Word, is: Word) -> Self {
@@ -362,7 +368,7 @@ impl Receipt {
             Self::Call { id, .. } => Some(id),
             Self::Return { id, .. } => Some(id),
             Self::ReturnData { id, .. } => Some(id),
-            Self::Panic { id, .. } => Some(id),
+            Panic { id, .. } => Some(id),
             Self::Revert { id, .. } => Some(id),
             Self::Log { id, .. } => Some(id),
             Self::LogData { id, .. } => Some(id),
@@ -378,7 +384,7 @@ impl Receipt {
             Self::Call { pc, .. } => Some(*pc),
             Self::Return { pc, .. } => Some(*pc),
             Self::ReturnData { pc, .. } => Some(*pc),
-            Self::Panic { pc, .. } => Some(*pc),
+            Panic { pc, .. } => Some(*pc),
             Self::Revert { pc, .. } => Some(*pc),
             Self::Log { pc, .. } => Some(*pc),
             Self::LogData { pc, .. } => Some(*pc),
@@ -394,7 +400,7 @@ impl Receipt {
             Self::Call { is, .. } => Some(*is),
             Self::Return { is, .. } => Some(*is),
             Self::ReturnData { is, .. } => Some(*is),
-            Self::Panic { is, .. } => Some(*is),
+            Panic { is, .. } => Some(*is),
             Self::Revert { is, .. } => Some(*is),
             Self::Log { is, .. } => Some(*is),
             Self::LogData { is, .. } => Some(*is),
@@ -512,7 +518,7 @@ impl Receipt {
 
     pub const fn reason(&self) -> Option<InstructionResult> {
         match self {
-            Self::Panic { reason, .. } => Some(*reason),
+            Panic { reason, .. } => Some(*reason),
             _ => None,
         }
     }

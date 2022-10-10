@@ -186,7 +186,7 @@ impl Receipt {
         }
     }
 
-    pub const fn panic(id: ContractId, reason: InstructionResult, pc: Word, is: Word) -> Self {
+    pub fn panic(id: ContractId, reason: InstructionResult, pc: Word, is: Word) -> Self {
         Panic {
             id,
             reason,
@@ -197,7 +197,7 @@ impl Receipt {
     }
 
     pub fn with_panic_contract_id(mut self, _contract_id: Option<ContractId>) -> Self {
-        if let Receipt::Panic {
+        if let Panic {
             ref mut contract_id,
             ..
         } = self
@@ -596,6 +596,13 @@ impl Receipt {
         }
     }
 
+    pub const fn contract_id(&self) -> Option<&Option<ContractId>> {
+        match self {
+            Self::Panic { contract_id, .. } => Some(contract_id),
+            _ => None,
+        }
+    }
+
     fn variant_len_without_data(variant: ReceiptRepr) -> usize {
         ContractId::LEN // id
             + WORD_SIZE // pc
@@ -618,7 +625,7 @@ impl Receipt {
                     + Bytes32::LEN // digest
             }
 
-            ReceiptRepr::Panic => WORD_SIZE, // reason
+            ReceiptRepr::Panic => WORD_SIZE + ContractId::LEN, // reason
             ReceiptRepr::Revert => WORD_SIZE, // ra
 
             ReceiptRepr::Log => {

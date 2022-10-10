@@ -73,15 +73,20 @@ impl io::Read for Receipt {
             }
 
             Self::Panic {
-                id, reason, pc, is, ..
+                id,
+                reason,
+                pc,
+                is,
+                contract_id,
             } => {
                 let buf = bytes::store_number_unchecked(buf, ReceiptRepr::Panic as Word);
-
                 let buf = bytes::store_array_unchecked(buf, id);
                 let buf = bytes::store_number_unchecked(buf, *reason);
                 let buf = bytes::store_number_unchecked(buf, *pc);
-
-                bytes::store_number_unchecked(buf, *is);
+                let buf = bytes::store_number_unchecked(buf, *is);
+                if let Some(contract_id) = contract_id {
+                    bytes::store_array_unchecked(buf, contract_id);
+                }
             }
 
             Self::Revert { id, ra, pc, is } => {
@@ -289,11 +294,18 @@ impl io::Write for Receipt {
                 let (id, buf) = unsafe { bytes::restore_array_unchecked(buf) };
                 let (reason, buf) = unsafe { bytes::restore_word_unchecked(buf) };
                 let (pc, buf) = unsafe { bytes::restore_word_unchecked(buf) };
-                let (is, _) = unsafe { bytes::restore_word_unchecked(buf) };
+                let (is, buf) = unsafe { bytes::restore_word_unchecked(buf) };
+                let (contract_id, _) = unsafe { bytes::restore_array_unchecked(buf) };
 
                 let id = id.into();
+                let is_zero = |v: &[u8; 32]| v.iter().all(|&t| t == 0);
 
-                *self = Self::panic(id, InstructionResult::from(reason), pc, is);
+                *self = Self::panic(id, InstructionResult::from(reason), pc, is)
+                    .with_panic_contract_id(if !is_zero(&contract_id) {
+                        Some(contract_id.into())
+                    } else {
+                        None
+                    })
             }
 
             ReceiptRepr::Revert => {
@@ -422,11 +434,9 @@ impl io::Write for Receipt {
 impl bytes::Deserializable for Receipt {
     fn from_bytes(bytes: &[u8]) -> io::Result<Self> {
         let mut instance = Self::ret(Default::default(), 0, 0, 0);
-
         // We are sure that all needed bytes are written or error would happen.
         // unused let is here to silence clippy warning for this check.
         let _ = instance.write(bytes)?;
-
         Ok(instance)
     }
 }

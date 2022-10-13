@@ -40,7 +40,7 @@ pub struct Create {
 #[cfg(feature = "std")]
 impl crate::UniqueIdentifier for Create {
     fn id(&self) -> fuel_types::Bytes32 {
-        // TODO: Metadata
+        // TODO: Add metadata
         let mut clone = self.clone();
 
         // Empties fields that should be zero during the signing.
@@ -167,7 +167,7 @@ impl Cacheable for Create {
     }
 
     fn precompute(&mut self) {
-        // TODO: Metadata
+        // TODO: Add metadata
     }
 }
 

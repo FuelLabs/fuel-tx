@@ -39,7 +39,7 @@ pub struct Script {
 #[cfg(feature = "std")]
 impl crate::UniqueIdentifier for Script {
     fn id(&self) -> Bytes32 {
-        // TODO: Metadata
+        // TODO: Add metadata
         let mut clone = self.clone();
 
         // Empties fields that should be zero during the signing.
@@ -115,7 +115,7 @@ impl Cacheable for Script {
     }
 
     fn precompute(&mut self) {
-        // TODO: Metadata
+        // TODO: Add metadata
     }
 }
 

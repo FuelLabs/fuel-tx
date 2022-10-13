@@ -171,8 +171,11 @@ impl Output {
     }
 }
 
+/// Means that the transaction can be validated.
 pub trait Validatable {
     #[cfg(feature = "std")]
+    /// Fully validates the transaction. It checks the validity of fields according to rules in
+    /// the specification and validity of signatures.
     fn validate(
         &self,
         block_height: Word,

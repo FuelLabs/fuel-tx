@@ -421,6 +421,8 @@ pub mod field {
         fn storage_slots(&self) -> &Vec<StorageSlot>;
         fn storage_slots_mut(&mut self) -> &mut Vec<StorageSlot>;
         fn storage_slots_offset(&self) -> usize;
+
+        /// Returns the offset to the `StorageSlot` at `idx` index, if any.
         fn storage_slots_offset_at(&self, idx: usize) -> Option<usize>;
     }
 
@@ -428,9 +430,11 @@ pub mod field {
         fn inputs(&self) -> &Vec<Input>;
         fn inputs_mut(&mut self) -> &mut Vec<Input>;
         fn inputs_offset(&self) -> usize;
+
+        /// Returns the offset to the `Input` at `idx` index, if any.
         fn inputs_offset_at(&self, idx: usize) -> Option<usize>;
 
-        /// Returns predicate's offset and length of the `Input` at `idx` if any.
+        /// Returns predicate's offset and length of the `Input` at `idx`, if any.
         fn inputs_predicate_offset_at(&self, idx: usize) -> Option<(usize, usize)>;
     }
 
@@ -438,6 +442,8 @@ pub mod field {
         fn outputs(&self) -> &Vec<Output>;
         fn outputs_mut(&mut self) -> &mut Vec<Output>;
         fn outputs_offset(&self) -> usize;
+
+        /// Returns the offset to the `Output` at `idx` index, if any.
         fn outputs_offset_at(&self, idx: usize) -> Option<usize>;
     }
 
@@ -445,6 +451,8 @@ pub mod field {
         fn witnesses(&self) -> &Vec<Witness>;
         fn witnesses_mut(&mut self) -> &mut Vec<Witness>;
         fn witnesses_offset(&self) -> usize;
+
+        /// Returns the offset to the `Witness` at `idx` index, if any.
         fn witnesses_offset_at(&self, idx: usize) -> Option<usize>;
     }
 }

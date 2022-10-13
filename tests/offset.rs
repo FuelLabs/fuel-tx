@@ -40,7 +40,7 @@ fn tx_offset() {
 
     let mut cases = TestedFields::default();
 
-    fn common_parts<Tx: Buildable>(tx: &Tx, bytes: &Vec<u8>, cases: &mut TestedFields) {
+    fn common_parts<Tx: Buildable>(tx: &Tx, bytes: &[u8], cases: &mut TestedFields) {
         tx.inputs().iter().enumerate().for_each(|(idx, i)| {
             let input_ofs = tx
                 .inputs_offset_at(idx)

@@ -379,34 +379,34 @@ impl io::Read for Script {
             return Err(bytes::eof());
         }
 
-        let mut buf = match self {
-            Script {
-                gas_price,
-                gas_limit,
-                maturity,
-                receipts_root,
-                script,
-                script_data,
-                inputs,
-                outputs,
-                witnesses,
-                ..
-            } => {
-                let buf = bytes::store_number_unchecked(buf, *gas_price);
-                let buf = bytes::store_number_unchecked(buf, *gas_limit);
-                let buf = bytes::store_number_unchecked(buf, *maturity);
-                let buf = bytes::store_number_unchecked(buf, script.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, script_data.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, inputs.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, outputs.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, witnesses.len() as Word);
-                let buf = bytes::store_array_unchecked(buf, receipts_root);
+        let Script {
+            gas_price,
+            gas_limit,
+            maturity,
+            receipts_root,
+            script,
+            script_data,
+            inputs,
+            outputs,
+            witnesses,
+            ..
+        } = self;
 
-                let (_, buf) = bytes::store_raw_bytes(buf, script.as_slice())?;
-                let (_, buf) = bytes::store_raw_bytes(buf, script_data.as_slice())?;
+        let mut buf = {
+            let buf = bytes::store_number_unchecked(buf, *gas_price);
+            let buf = bytes::store_number_unchecked(buf, *gas_limit);
+            let buf = bytes::store_number_unchecked(buf, *maturity);
+            let buf = bytes::store_number_unchecked(buf, script.len() as Word);
+            let buf = bytes::store_number_unchecked(buf, script_data.len() as Word);
+            let buf = bytes::store_number_unchecked(buf, inputs.len() as Word);
+            let buf = bytes::store_number_unchecked(buf, outputs.len() as Word);
+            let buf = bytes::store_number_unchecked(buf, witnesses.len() as Word);
+            let buf = bytes::store_array_unchecked(buf, receipts_root);
 
-                buf
-            }
+            let (_, buf) = bytes::store_raw_bytes(buf, script.as_slice())?;
+            let (_, buf) = bytes::store_raw_bytes(buf, script_data.as_slice())?;
+
+            buf
         };
 
         for input in self.inputs.iter_mut() {

@@ -4,8 +4,7 @@ use fuel_types::bytes::{SizedBytes, WORD_SIZE};
 use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
 
 use alloc::vec::{IntoIter, Vec};
-use core::iter::FilterMap;
-use core::slice::Iter;
+use itertools::Itertools;
 
 mod fee;
 mod metadata;
@@ -180,19 +179,23 @@ impl Transaction {
 }
 
 pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
-    fn input_asset_ids(&self) -> FilterMap<Iter<'_, Input>, fn(&'_ Input) -> Option<&AssetId>> {
-        self.inputs().iter().filter_map(|input| match input {
-            Input::CoinPredicate { asset_id, .. } | Input::CoinSigned { asset_id, .. } => {
-                Some(asset_id)
-            }
-            Input::MessagePredicate { .. } | Input::MessageSigned { .. } => Some(&AssetId::BASE),
-            _ => None,
-        })
+    fn input_asset_ids(&self) -> IntoIter<&AssetId> {
+        self.inputs()
+            .iter()
+            .filter_map(|input| match input {
+                Input::CoinPredicate { asset_id, .. } | Input::CoinSigned { asset_id, .. } => {
+                    Some(asset_id)
+                }
+                Input::MessagePredicate { .. } | Input::MessageSigned { .. } => {
+                    Some(&AssetId::BASE)
+                }
+                _ => None,
+            })
+            .collect_vec()
+            .into_iter()
     }
 
     fn input_asset_ids_unique(&self) -> IntoIter<&AssetId> {
-        use itertools::Itertools;
-
         let asset_ids = self.input_asset_ids();
 
         #[cfg(feature = "std")]
@@ -201,16 +204,12 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
         #[cfg(not(feature = "std"))]
         let asset_ids = asset_ids.sorted().dedup();
 
-        let asset_ids = asset_ids.collect_vec().into_iter();
-
-        asset_ids
+        asset_ids.collect_vec().into_iter()
     }
 
     // TODO: Return `Vec<input::Contract>` instead
     #[cfg(feature = "std")]
     fn input_contracts(&self) -> Vec<&fuel_types::ContractId> {
-        use itertools::Itertools;
-
         self.inputs()
             .iter()
             .filter_map(|input| match input {

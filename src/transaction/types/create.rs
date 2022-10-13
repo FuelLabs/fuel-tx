@@ -454,38 +454,38 @@ impl io::Read for Create {
             return Err(bytes::eof());
         }
 
-        let mut buf = match self {
-            Create {
-                gas_price,
-                gas_limit,
-                maturity,
-                bytecode_length,
-                bytecode_witness_index,
-                salt,
-                storage_slots,
-                inputs,
-                outputs,
-                witnesses,
-                ..
-            } => {
-                let buf = bytes::store_number_unchecked(buf, *gas_price);
-                let buf = bytes::store_number_unchecked(buf, *gas_limit);
-                let buf = bytes::store_number_unchecked(buf, *maturity);
-                let buf = bytes::store_number_unchecked(buf, *bytecode_length);
-                let buf = bytes::store_number_unchecked(buf, *bytecode_witness_index);
-                let buf = bytes::store_number_unchecked(buf, storage_slots.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, inputs.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, outputs.len() as Word);
-                let buf = bytes::store_number_unchecked(buf, witnesses.len() as Word);
-                let mut buf = bytes::store_array_unchecked(buf, salt);
+        let Create {
+            gas_price,
+            gas_limit,
+            maturity,
+            bytecode_length,
+            bytecode_witness_index,
+            salt,
+            storage_slots,
+            inputs,
+            outputs,
+            witnesses,
+            ..
+        } = self;
 
-                for storage_slot in storage_slots.iter_mut() {
-                    let storage_len = storage_slot.read(buf)?;
-                    buf = &mut buf[storage_len..];
-                }
+        let mut buf = {
+            let buf = bytes::store_number_unchecked(buf, *gas_price);
+            let buf = bytes::store_number_unchecked(buf, *gas_limit);
+            let buf = bytes::store_number_unchecked(buf, *maturity);
+            let buf = bytes::store_number_unchecked(buf, *bytecode_length);
+            let buf = bytes::store_number_unchecked(buf, *bytecode_witness_index);
+            let buf = bytes::store_number_unchecked(buf, storage_slots.len() as Word);
+            let buf = bytes::store_number_unchecked(buf, inputs.len() as Word);
+            let buf = bytes::store_number_unchecked(buf, outputs.len() as Word);
+            let buf = bytes::store_number_unchecked(buf, witnesses.len() as Word);
+            let mut buf = bytes::store_array_unchecked(buf, salt);
 
-                buf
+            for storage_slot in storage_slots.iter_mut() {
+                let storage_len = storage_slot.read(buf)?;
+                buf = &mut buf[storage_len..];
             }
+
+            buf
         };
 
         for input in self.inputs.iter_mut() {

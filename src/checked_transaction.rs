@@ -5,17 +5,13 @@
 //! and consolidates logic around fee calculations and free balances.
 
 use crate::{
-    ConsensusParameters, Input, Metadata, Output, Transaction, TransactionFee, ValidationError,
+    field, Cacheable, Chargeable, ConsensusParameters, Input, Output, Transaction, TransactionFee,
+    Validatable, ValidationError,
 };
-use fuel_asm::PanicReason;
-use fuel_types::bytes::SerializableVec;
-use fuel_types::{Address, AssetId, Bytes32, Word};
+use fuel_types::{AssetId, Word};
 
 use alloc::collections::BTreeMap;
-use core::{borrow::Borrow, ops::Index};
-
-use core::mem;
-use std::io::{self, Read};
+use core::borrow::Borrow;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 // Avoid serde serialization of this type. Since checked tx would need to be re-validated on
@@ -48,7 +44,12 @@ impl CheckedTransaction {
         params: &ConsensusParameters,
     ) -> Result<Self, ValidationError> {
         let mut checked_tx = Self::check_unsigned(transaction, block_height, params)?;
-        checked_tx.transaction.validate_input_signature()?;
+
+        match &checked_tx.transaction {
+            Transaction::Script(script) => script.validate_signatures()?,
+            Transaction::Create(create) => create.validate_signatures()?,
+        };
+
         checked_tx.checked_signatures = true;
         Ok(checked_tx)
     }
@@ -59,15 +60,25 @@ impl CheckedTransaction {
         block_height: Word,
         params: &ConsensusParameters,
     ) -> Result<Self, ValidationError> {
-        // fully validate transaction (with signature)
-        transaction.validate_without_signature(block_height, params)?;
-        transaction.precompute_metadata();
+        transaction.precompute();
+
+        match &transaction {
+            Transaction::Script(script) => {
+                script.validate_without_signatures(block_height, params)?
+            }
+            Transaction::Create(create) => {
+                create.validate_without_signatures(block_height, params)?
+            }
+        };
 
         // validate fees and compute free balances
         let AvailableBalances {
             initial_free_balances,
             fee,
-        } = Self::_initial_free_balances(&transaction, params)?;
+        } = match &transaction {
+            Transaction::Script(script) => Self::_initial_free_balances(script, params)?,
+            Transaction::Create(create) => Self::_initial_free_balances(create, params)?,
+        };
 
         Ok(CheckedTransaction {
             transaction,
@@ -111,163 +122,13 @@ impl CheckedTransaction {
         self.checked_signatures
     }
 
-    pub const fn metadata(&self) -> Option<&Metadata> {
-        self.transaction.metadata()
-    }
-
-    pub fn tx_bytes(&mut self) -> Vec<u8> {
-        self.transaction.to_bytes()
-    }
-
-    pub fn tx_output_to_mem(&mut self, idx: usize, buf: &mut [u8]) -> io::Result<usize> {
-        self.transaction
-            ._outputs_mut()
-            .get_mut(idx)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Invalid output idx"))
-            .and_then(|o| o.read(buf))
-    }
-
-    pub fn tx_set_receipts_root(&mut self, root: Bytes32) -> Option<Bytes32> {
-        self.transaction.set_receipts_root(root)
-    }
-
-    pub fn tx_replace_message_output(
-        &mut self,
-        idx: usize,
-        output: Output,
-    ) -> Result<(), PanicReason> {
-        // TODO increase the error granularity for this case - create a new variant of panic reason
-        if !matches!(&output, Output::Message {
-                recipient,
-                ..
-            } if recipient != &Address::zeroed())
-        {
-            return Err(PanicReason::OutputNotFound);
-        }
-
-        self.transaction
-            ._outputs_mut()
-            .get_mut(idx)
-            .and_then(|o| match o {
-                Output::Message { recipient, .. } if recipient == &Address::zeroed() => Some(o),
-                _ => None,
-            })
-            .map(|o| mem::replace(o, output))
-            .map(|_| ())
-            .ok_or(PanicReason::NonZeroMessageOutputRecipient)
-    }
-
-    pub fn tx_replace_variable_output(
-        &mut self,
-        idx: usize,
-        output: Output,
-    ) -> Result<(), PanicReason> {
-        if !output.is_variable() {
-            return Err(PanicReason::ExpectedOutputVariable);
-        }
-
-        // TODO increase the error granularity for this case - create a new variant of panic reason
-        self.transaction
-            ._outputs_mut()
-            .get_mut(idx)
-            .and_then(|o| match o {
-                Output::Variable { amount, .. } if amount == &0 => Some(o),
-                _ => None,
-            })
-            .map(|o| mem::replace(o, output))
-            .map(|_| ())
-            .ok_or(PanicReason::OutputNotFound)
-    }
-
-    /// Update change and variable outputs.
-    ///
-    /// `revert` will signal if the execution was reverted. It will refund the unused gas cost to
-    /// the base asset and reset output changes to their initial balances.
-    ///
-    /// `remaining_gas` expects the raw content of `$ggas`
-    ///
-    /// `balances` will contain the current state of the free balances
-    pub fn update_outputs<I>(
-        &mut self,
+    fn _initial_free_balances<T>(
+        transaction: &T,
         params: &ConsensusParameters,
-        revert: bool,
-        remaining_gas: Word,
-        balances: &I,
-    ) -> Result<(), ValidationError>
+    ) -> Result<AvailableBalances, ValidationError>
     where
-        I: for<'a> Index<&'a AssetId, Output = Word>,
+        T: Chargeable + field::Inputs + field::Outputs,
     {
-        let gas_refund =
-            TransactionFee::gas_refund_value(params, remaining_gas, self.transaction.gas_price())
-                .ok_or(ValidationError::ArithmeticOverflow)?;
-
-        self.transaction
-            ._outputs_mut()
-            .iter_mut()
-            .try_for_each(|o| match o {
-                // If revert, set base asset to initial balance and refund unused gas
-                //
-                // Note: the initial balance deducts the gas limit from base asset
-                Output::Change {
-                    asset_id, amount, ..
-                } if revert && asset_id == &AssetId::BASE => self.initial_free_balances
-                    [&AssetId::BASE]
-                    .checked_add(gas_refund)
-                    .map(|v| *amount = v)
-                    .ok_or(ValidationError::ArithmeticOverflow),
-
-                // If revert, reset any non-base asset to its initial balance
-                Output::Change {
-                    asset_id, amount, ..
-                } if revert => {
-                    *amount = self.initial_free_balances[asset_id];
-                    Ok(())
-                }
-
-                // The change for the base asset will be the available balance + unused gas
-                Output::Change {
-                    asset_id, amount, ..
-                } if asset_id == &AssetId::BASE => balances[asset_id]
-                    .checked_add(gas_refund)
-                    .map(|v| *amount = v)
-                    .ok_or(ValidationError::ArithmeticOverflow),
-
-                // Set changes to the remainder provided balances
-                Output::Change {
-                    asset_id, amount, ..
-                } => {
-                    *amount = balances[asset_id];
-                    Ok(())
-                }
-
-                // If revert, zeroes all variable output values
-                Output::Variable { amount, .. } if revert => {
-                    *amount = 0;
-                    Ok(())
-                }
-
-                // Other outputs are unaffected
-                _ => Ok(()),
-            })
-    }
-
-    /// Prepare the transaction for VM initialization for script execution
-    #[cfg(feature = "std")]
-    pub fn prepare_init_script(&mut self) -> io::Result<&mut Self> {
-        self.transaction.prepare_init_script()?;
-        Ok(self)
-    }
-
-    /// Prepare the transaction for VM initialization for predicate verification
-    pub fn prepare_init_predicate(&mut self) -> &mut Self {
-        self.transaction.prepare_init_predicate();
-        self
-    }
-
-    fn _initial_free_balances(
-        transaction: &Transaction,
-        params: &ConsensusParameters,
-    ) -> Result<AvailableBalances, ValidationError> {
         let mut balances = BTreeMap::<AssetId, Word>::new();
 
         // Add up all the inputs for each asset ID
@@ -390,7 +251,7 @@ impl Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{TransactionBuilder, ValidationError};
+    use crate::{Script, TransactionBuilder, ValidationError};
     use fuel_crypto::SecretKey;
     use quickcheck::TestResult;
     use quickcheck_macros::quickcheck;
@@ -415,7 +276,8 @@ mod tests {
         let gas_limit = 1000;
         let input_amount = 1000;
         let output_amount = 10;
-        let tx = valid_coin_tx(rng, gas_price, gas_limit, input_amount, output_amount);
+        let tx: Transaction =
+            valid_coin_tx(rng, gas_price, gas_limit, input_amount, output_amount).into();
 
         let checked = CheckedTransaction::check(tx.clone(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
@@ -439,7 +301,7 @@ mod tests {
         let gas_limit = 1000;
         let tx = signed_message_tx(rng, gas_price, gas_limit, input_amount, output_amount);
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
+        let checked = CheckedTransaction::check(tx.into(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 
         // verify available balance was decreased by max fee
@@ -460,7 +322,7 @@ mod tests {
         let gas_limit = 1000;
         let tx = signed_message_tx(rng, gas_price, gas_limit, input_amount, output_amount);
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
+        let checked = CheckedTransaction::check(tx.into(), 0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 
         // verify available balance was decreased by max fee
@@ -611,7 +473,7 @@ mod tests {
             .add_witness(Default::default())
             .finalize();
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
+        let checked = CheckedTransaction::check(tx.into(), 0, &ConsensusParameters::DEFAULT)
             .expect_err("Expected invalid transaction");
 
         // assert that tx without base input assets fails
@@ -636,7 +498,7 @@ mod tests {
 
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
-        let err = CheckedTransaction::check(transaction, 0, &params)
+        let err = CheckedTransaction::check(transaction.into(), 0, &params)
             .expect_err("insufficient fee amount expected");
 
         let provided = match err {
@@ -660,7 +522,7 @@ mod tests {
 
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
-        let err = CheckedTransaction::check(transaction, 0, &params)
+        let err = CheckedTransaction::check(transaction.into(), 0, &params)
             .expect_err("insufficient fee amount expected");
 
         let provided = match err {
@@ -681,8 +543,8 @@ mod tests {
         let params = ConsensusParameters::default().with_gas_price_factor(1);
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
-        let err =
-            CheckedTransaction::check(transaction, 0, &params).expect_err("overflow expected");
+        let err = CheckedTransaction::check(transaction.into(), 0, &params)
+            .expect_err("overflow expected");
 
         assert_eq!(err, ValidationError::ArithmeticOverflow);
     }
@@ -697,8 +559,8 @@ mod tests {
 
         let transaction = base_asset_tx(rng, input_amount, gas_price, gas_limit);
 
-        let err =
-            CheckedTransaction::check(transaction, 0, &params).expect_err("overflow expected");
+        let err = CheckedTransaction::check(transaction.into(), 0, &params)
+            .expect_err("overflow expected");
 
         assert_eq!(err, ValidationError::ArithmeticOverflow);
     }
@@ -728,7 +590,7 @@ mod tests {
             .add_output(Output::change(rng.gen(), 0, any_asset))
             .finalize();
 
-        let checked = CheckedTransaction::check(tx, 0, &ConsensusParameters::DEFAULT)
+        let checked = CheckedTransaction::check(tx.into(), 0, &ConsensusParameters::DEFAULT)
             .expect_err("Expected valid transaction");
 
         assert_eq!(
@@ -741,16 +603,16 @@ mod tests {
         );
     }
 
-    fn is_valid_max_fee(
-        tx: &Transaction,
-        params: &ConsensusParameters,
-    ) -> Result<bool, ValidationError> {
+    fn is_valid_max_fee<Tx>(tx: &Tx, params: &ConsensusParameters) -> Result<bool, ValidationError>
+    where
+        Tx: Chargeable + field::Inputs + field::Outputs,
+    {
         let available_balances = CheckedTransaction::_initial_free_balances(tx, params)?;
         // cant overflow as metered bytes * gas_per_byte < u64::MAX
         let bytes = (tx.metered_bytes_size() as u128)
             * params.gas_per_byte as u128
-            * tx.gas_price() as u128;
-        let gas = tx.gas_limit() as u128 * tx.gas_price() as u128;
+            * *tx.gas_price() as u128;
+        let gas = *tx.gas_limit() as u128 * *tx.gas_price() as u128;
         let total = bytes + gas;
         // use different division mechanism than impl
         let fee = total / params.gas_price_factor as u128;
@@ -760,15 +622,15 @@ mod tests {
         Ok(rounded_fee == available_balances.fee.total)
     }
 
-    fn is_valid_min_fee(
-        tx: &Transaction,
-        params: &ConsensusParameters,
-    ) -> Result<bool, ValidationError> {
+    fn is_valid_min_fee<Tx>(tx: &Tx, params: &ConsensusParameters) -> Result<bool, ValidationError>
+    where
+        Tx: Chargeable + field::Inputs + field::Outputs,
+    {
         let available_balances = CheckedTransaction::_initial_free_balances(tx, params)?;
         // cant overflow as metered bytes * gas_per_byte < u64::MAX
         let bytes = (tx.metered_bytes_size() as u128)
             * params.gas_per_byte as u128
-            * tx.gas_price() as u128;
+            * *tx.gas_price() as u128;
         // use different division mechanism than impl
         let fee = bytes / params.gas_price_factor as u128;
         let fee_remainder = (bytes.rem_euclid(params.gas_price_factor as u128) > 0) as u128;
@@ -783,7 +645,7 @@ mod tests {
         gas_limit: u64,
         input_amount: u64,
         output_amount: u64,
-    ) -> Transaction {
+    ) -> Script {
         let asset = AssetId::default();
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
@@ -808,7 +670,7 @@ mod tests {
         gas_price: u64,
         gas_limit: u64,
         fee_input_amount: u64,
-    ) -> Transaction {
+    ) -> Script {
         let asset = AssetId::default();
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
@@ -834,7 +696,7 @@ mod tests {
         gas_limit: u64,
         input_amount: u64,
         output_amount: u64,
-    ) -> Transaction {
+    ) -> Script {
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
             .gas_limit(gas_limit)
@@ -849,7 +711,7 @@ mod tests {
         gas_limit: u64,
         input_amount: u64,
         output_amount: u64,
-    ) -> Transaction {
+    ) -> Script {
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
             .gas_limit(gas_limit)
@@ -872,7 +734,7 @@ mod tests {
         input_amount: u64,
         gas_price: u64,
         gas_limit: u64,
-    ) -> Transaction {
+    ) -> Script {
         TransactionBuilder::script(vec![], vec![])
             .gas_price(gas_price)
             .gas_limit(gas_limit)

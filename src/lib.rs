@@ -33,15 +33,17 @@ mod transaction;
 mod checked_transaction;
 
 #[cfg(feature = "builder")]
-pub use builder::TransactionBuilder;
+pub use builder::{Buildable, TransactionBuilder};
 
 #[cfg(feature = "alloc")]
 pub use receipt::{Receipt, ScriptExecutionResult};
 
 #[cfg(feature = "alloc")]
 pub use transaction::{
-    ConsensusParameters, Input, InputRepr, Metadata, Output, OutputRepr, StorageSlot, Transaction,
-    TransactionFee, TransactionRepr, TxId, TxPointer, UtxoId, ValidationError, Witness,
+    field, Cacheable, Chargeable, ConsensusParameters, Create, Executable, Input, InputRepr,
+    Output, OutputRepr, Script, Signable, StorageSlot, Transaction, TransactionFee,
+    TransactionRepr, TxId, TxPointer, UniqueIdentifier, UtxoId, Validatable, ValidationError,
+    Witness,
 };
 
 #[cfg(feature = "alloc")]

@@ -1,4 +1,4 @@
-use crate::{StorageSlot, Transaction, ValidationError};
+use crate::{Create, StorageSlot, Transaction, ValidationError};
 
 use fuel_crypto::Hasher;
 use fuel_merkle::binary::in_memory::MerkleTree as BinaryMerkleTree;
@@ -124,11 +124,11 @@ impl TryFrom<&Transaction> for Contract {
 
     fn try_from(tx: &Transaction) -> Result<Self, Self::Error> {
         match tx {
-            Transaction::Create {
+            Transaction::Create(Create {
                 bytecode_witness_index,
                 witnesses,
                 ..
-            } => witnesses
+            }) => witnesses
                 .get(*bytecode_witness_index as usize)
                 .map(|c| c.as_ref().into())
                 .ok_or(ValidationError::TransactionCreateBytecodeWitnessIndex),

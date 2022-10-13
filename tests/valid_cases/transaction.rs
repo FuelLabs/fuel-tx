@@ -650,7 +650,7 @@ fn create() {
         vec![],
         vec![],
     )
-    .validate_without_signature(block_height, &PARAMS)
+    .validate_without_signatures(block_height, &PARAMS)
     .expect_err("Expected erroneous transaction");
 
     assert_eq!(err, ValidationError::TransactionCreateBytecodeWitnessIndex);

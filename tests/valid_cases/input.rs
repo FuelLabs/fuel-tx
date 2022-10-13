@@ -8,83 +8,97 @@ use rand::{Rng, SeedableRng};
 
 #[test]
 fn input_coin_message_signature() {
-    let rng = &mut StdRng::seed_from_u64(8586);
+    fn test<Tx: Buildable>(txs: &mut impl Iterator<Item = (Tx, Vec<SecretKey>)>) {
+        let rng = &mut StdRng::seed_from_u64(8586);
 
-    let mut factory = TransactionFactory::from_seed(3493);
-    let txs = factory.by_ref();
+        fn validate_inputs<Tx: Buildable>(tx: Tx) -> Result<(), ValidationError> {
+            let txhash = tx.id();
+            let outputs = tx.outputs();
+            let witnesses = tx.witnesses();
 
-    fn validate_inputs(tx: Transaction) -> Result<(), ValidationError> {
-        let txhash = tx.id();
-        let outputs = tx.outputs();
-        let witnesses = tx.witnesses();
+            tx.inputs()
+                .iter()
+                .enumerate()
+                .try_for_each(|(index, input)| match input {
+                    Input::CoinSigned { .. } | Input::MessageSigned { .. } => {
+                        input.validate(index, &txhash, outputs, witnesses, &Default::default())
+                    }
+                    _ => Ok(()),
+                })
+        }
 
-        tx.inputs()
-            .iter()
-            .enumerate()
-            .try_for_each(|(index, input)| match input {
-                Input::CoinSigned { .. } | Input::MessageSigned { .. } => {
-                    input.validate(index, &txhash, outputs, witnesses, &Default::default())
-                }
-                _ => Ok(()),
+        #[allow(clippy::too_many_arguments)]
+        fn sign_and_validate<R, I, F, Tx>(
+            rng: &mut R,
+            mut iter: I,
+            f: F,
+        ) -> Result<(), ValidationError>
+        where
+            R: Rng,
+            I: Iterator<Item = (Tx, Vec<SecretKey>)>,
+            F: Fn(&mut Tx, &PublicKey),
+            Tx: Buildable,
+        {
+            let (mut tx, keys) = iter.next().expect("Failed to generate a transaction");
+
+            let secret = SecretKey::random(rng);
+            let public = secret.public_key();
+
+            f(&mut tx, &public);
+
+            tx.sign_inputs(&secret);
+            keys.iter().for_each(|sk| tx.sign_inputs(sk));
+
+            validate_inputs(tx)
+        }
+
+        txs.take(10)
+            .map(|(tx, _)| tx)
+            .try_for_each(validate_inputs)
+            .expect("Failed to validate transactions");
+
+        for _ in 0..3 {
+            let utxo_id = rng.gen();
+            let amount = rng.gen();
+            let asset_id = rng.gen();
+            let tx_pointer = rng.gen();
+            let maturity = rng.gen();
+
+            sign_and_validate(rng, txs.by_ref(), |tx, public| {
+                tx.add_unsigned_coin_input(utxo_id, public, amount, asset_id, tx_pointer, maturity)
             })
+            .expect("Failed to validate transaction");
+        }
+
+        for _ in 0..3 {
+            let sender = rng.gen();
+            let nonce = rng.gen();
+            let amount = rng.gen();
+            let data = generate_bytes(rng);
+
+            sign_and_validate(rng, txs.by_ref(), |tx, public| {
+                tx.add_unsigned_message_input(
+                    sender,
+                    Input::owner(public),
+                    nonce,
+                    amount,
+                    data.clone(),
+                )
+            })
+            .expect("Failed to validate transaction");
+        }
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn sign_and_validate<R, I, F>(rng: &mut R, mut iter: I, f: F) -> Result<(), ValidationError>
-    where
-        R: Rng,
-        I: Iterator<Item = (Transaction, Vec<SecretKey>)>,
-        F: Fn(&mut Transaction, &PublicKey),
-    {
-        let (mut tx, keys) = iter.next().expect("Failed to generate a transaction");
-
-        let secret = SecretKey::random(rng);
-        let public = secret.public_key();
-
-        f(&mut tx, &public);
-
-        tx.sign_inputs(&secret);
-        keys.iter().for_each(|sk| tx.sign_inputs(sk));
-
-        validate_inputs(tx)
-    }
-
-    txs.take(10)
-        .map(|(tx, _)| tx)
-        .try_for_each(validate_inputs)
-        .expect("Failed to validate transactions");
-
-    for _ in 0..3 {
-        let utxo_id = rng.gen();
-        let amount = rng.gen();
-        let asset_id = rng.gen();
-        let tx_pointer = rng.gen();
-        let maturity = rng.gen();
-
-        sign_and_validate(rng, txs.by_ref(), |tx, public| {
-            tx.add_unsigned_coin_input(utxo_id, public, amount, asset_id, tx_pointer, maturity)
-        })
-        .expect("Failed to validate transaction");
-    }
-
-    for _ in 0..3 {
-        let sender = rng.gen();
-        let nonce = rng.gen();
-        let amount = rng.gen();
-        let data = generate_bytes(rng);
-
-        sign_and_validate(rng, txs.by_ref(), |tx, public| {
-            tx.add_unsigned_message_input(sender, Input::owner(public), nonce, amount, data.clone())
-        })
-        .expect("Failed to validate transaction");
-    }
+    let mut factory = TransactionFactory::<_, Script>::from_seed(3493);
+    let txs = factory.by_ref();
+    test(txs);
 }
 
 #[test]
 fn coin_signed() {
     let rng = &mut StdRng::seed_from_u64(8586);
 
-    let mut tx = Transaction::default();
+    let mut tx = Script::default();
 
     let input = Input::coin_signed(
         rng.gen(),
@@ -248,7 +262,7 @@ fn message() {
     .validate(1, &txhash, &[], &[], &Default::default())
     .expect("failed to validate empty message input");
 
-    let mut tx = Transaction::default();
+    let mut tx = Script::default();
 
     let input = Input::message_signed(
         rng.gen(),
@@ -383,7 +397,7 @@ fn transaction_with_duplicate_coin_inputs_is_invalid() {
         .add_input(b)
         .add_witness(rng.gen())
         .finalize()
-        .validate_without_signature(0, &Default::default())
+        .validate_without_signatures(0, &Default::default())
         .expect_err("Expected validation failure");
 
     assert_eq!(err, ValidationError::DuplicateInputUtxoId { utxo_id });
@@ -410,7 +424,7 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
         .add_input(message_input)
         .add_witness(rng.gen())
         .finalize()
-        .validate_without_signature(0, &Default::default())
+        .validate_without_signatures(0, &Default::default())
         .expect_err("Expected validation failure");
 
     assert_eq!(err, ValidationError::DuplicateMessageInputId { message_id });
@@ -433,7 +447,7 @@ fn transaction_with_duplicate_contract_inputs_is_invalid() {
         .add_output(o)
         .add_output(p)
         .finalize()
-        .validate_without_signature(0, &Default::default())
+        .validate_without_signatures(0, &Default::default())
         .expect_err("Expected validation failure");
 
     assert_eq!(
@@ -459,6 +473,6 @@ fn transaction_with_duplicate_contract_utxo_id_is_valid() {
         .add_output(o)
         .add_output(p)
         .finalize()
-        .validate_without_signature(0, &Default::default())
+        .validate_without_signatures(0, &Default::default())
         .expect("Duplicated UTXO id is valid for contract input");
 }

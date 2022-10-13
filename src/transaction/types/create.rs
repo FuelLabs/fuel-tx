@@ -3,16 +3,20 @@ use crate::transaction::field::{
     Salt as SaltField, StorageSlots, Witnesses,
 };
 use crate::transaction::validation::{validate_common_part, Validatable};
-use crate::transaction::{Chargeable, UniqueIdentifier};
+use crate::transaction::Chargeable;
 use crate::{Cacheable, ConsensusParameters, Input, Output, StorageSlot, ValidationError, Witness};
 use derivative::Derivative;
-use fuel_crypto::Hasher;
-use fuel_types::bytes::{SerializableVec, SizedBytes, WORD_SIZE};
-use fuel_types::{bytes, AssetId, Bytes32, Salt, Word};
+use fuel_types::bytes::{SizedBytes, WORD_SIZE};
+use fuel_types::{bytes, AssetId, Salt, Word};
 
-use crate::consts::TRANSACTION_CREATE_FIXED_SIZE;
 #[cfg(feature = "std")]
 use std::io;
+
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+
+#[cfg(feature = "std")]
+use fuel_types::bytes::SerializableVec;
 
 #[derive(Default, Debug, Clone, Derivative)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -33,8 +37,9 @@ pub struct Create {
     pub(crate) metadata: Option<()>,
 }
 
-impl UniqueIdentifier for Create {
-    fn id(&self) -> Bytes32 {
+#[cfg(feature = "std")]
+impl crate::UniqueIdentifier for Create {
+    fn id(&self) -> fuel_types::Bytes32 {
         // TODO: Metadata
         let mut clone = self.clone();
 
@@ -46,7 +51,7 @@ impl UniqueIdentifier for Create {
             .for_each(Output::prepare_sign);
         clone.witnesses_mut().clear();
 
-        Hasher::hash(clone.to_bytes().as_slice())
+        fuel_crypto::Hasher::hash(clone.to_bytes().as_slice())
     }
 }
 
@@ -61,7 +66,10 @@ impl Chargeable for Create {
 }
 
 impl Validatable for Create {
+    #[cfg(feature = "std")]
     fn validate_signatures(&self) -> Result<(), ValidationError> {
+        use crate::UniqueIdentifier;
+
         let id = self.id();
 
         self.inputs()
@@ -502,7 +510,7 @@ impl io::Read for Create {
 #[cfg(feature = "std")]
 impl io::Write for Create {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let mut n = TRANSACTION_CREATE_FIXED_SIZE - WORD_SIZE;
+        let mut n = crate::consts::TRANSACTION_CREATE_FIXED_SIZE - WORD_SIZE;
         if buf.len() < n {
             return Err(bytes::eof());
         }

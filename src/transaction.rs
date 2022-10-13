@@ -1,12 +1,11 @@
 use fuel_asm::Opcode;
 use fuel_crypto::PublicKey;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
-use fuel_types::{Address, AssetId, Bytes32, ContractId, Salt, Word};
+use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
 
-use alloc::vec::Vec;
+use alloc::vec::{IntoIter, Vec};
 use core::iter::FilterMap;
 use core::slice::Iter;
-use itertools::Unique;
 
 mod fee;
 mod metadata;
@@ -24,13 +23,15 @@ pub mod consensus_parameters;
 
 pub use consensus_parameters::ConsensusParameters;
 pub use fee::{Chargeable, TransactionFee};
-pub use id::{Signable, UniqueIdentifier};
 pub use metadata::Cacheable;
 pub use repr::TransactionRepr;
 pub use types::{
     Create, Input, InputRepr, Output, OutputRepr, Script, StorageSlot, TxPointer, UtxoId, Witness,
 };
 pub use validation::{Validatable, ValidationError};
+
+#[cfg(feature = "std")]
+pub use id::{Signable, UniqueIdentifier};
 
 /// Identification of transaction (also called transaction hash)
 pub type TxId = Bytes32;
@@ -189,9 +190,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
         })
     }
 
-    fn input_asset_ids_unique(
-        &self,
-    ) -> Unique<FilterMap<Iter<'_, Input>, fn(&Input) -> Option<&AssetId>>> {
+    fn input_asset_ids_unique(&self) -> IntoIter<&AssetId> {
         use itertools::Itertools;
 
         let asset_ids = self.input_asset_ids();
@@ -202,12 +201,14 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
         #[cfg(not(feature = "std"))]
         let asset_ids = asset_ids.sorted().dedup();
 
+        let asset_ids = asset_ids.collect_vec().into_iter();
+
         asset_ids
     }
 
     // TODO: Return `Vec<input::Contract>` instead
     #[cfg(feature = "std")]
-    fn input_contracts(&self) -> Vec<&ContractId> {
+    fn input_contracts(&self) -> Vec<&fuel_types::ContractId> {
         use itertools::Itertools;
 
         self.inputs()
@@ -360,6 +361,8 @@ impl From<Create> for Transaction {
 pub mod field {
     use crate::{Input, Output, StorageSlot, Witness};
     use fuel_types::{Bytes32, Word};
+
+    use alloc::vec::Vec;
 
     pub trait GasPrice {
         fn gas_price(&self) -> &Word;

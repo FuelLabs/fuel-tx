@@ -32,7 +32,6 @@ where
 {
     /// For all inputs of type `coin` or `message`, check if its `owner` equals the public
     /// counterpart of the provided key. Sign all matches.
-    #[cfg(feature = "std")]
     fn sign_inputs(&mut self, secret: &SecretKey) {
         use itertools::Itertools;
 

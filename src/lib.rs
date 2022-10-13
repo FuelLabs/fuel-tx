@@ -41,10 +41,12 @@ pub use receipt::{Receipt, ScriptExecutionResult};
 #[cfg(feature = "alloc")]
 pub use transaction::{
     field, Cacheable, Chargeable, ConsensusParameters, Create, Executable, Input, InputRepr,
-    Output, OutputRepr, Script, Signable, StorageSlot, Transaction, TransactionFee,
-    TransactionRepr, TxId, TxPointer, UniqueIdentifier, UtxoId, Validatable, ValidationError,
-    Witness,
+    Output, OutputRepr, Script, StorageSlot, Transaction, TransactionFee, TransactionRepr, TxId,
+    TxPointer, UtxoId, Validatable, ValidationError, Witness,
 };
+
+#[cfg(feature = "std")]
+pub use transaction::{Signable, UniqueIdentifier};
 
 #[cfg(feature = "alloc")]
 #[allow(deprecated)]

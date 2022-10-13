@@ -172,6 +172,7 @@ impl Output {
 }
 
 pub trait Validatable {
+    #[cfg(feature = "std")]
     fn validate(
         &self,
         block_height: Word,
@@ -183,6 +184,7 @@ pub trait Validatable {
         Ok(())
     }
 
+    #[cfg(feature = "std")]
     /// Validates that all required signatures are set in the transaction and that they are valid.
     fn validate_signatures(&self) -> Result<(), ValidationError>;
 
@@ -196,6 +198,7 @@ pub trait Validatable {
 }
 
 impl Validatable for Transaction {
+    #[cfg(feature = "std")]
     fn validate_signatures(&self) -> Result<(), ValidationError> {
         match self {
             Transaction::Script(script) => script.validate_signatures(),

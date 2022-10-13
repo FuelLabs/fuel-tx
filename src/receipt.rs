@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use core::fmt::Debug;
 use derivative::Derivative;
 use fuel_asm::InstructionResult;
 use fuel_types::bytes::{self, padded_len_usize, SizedBytes, WORD_SIZE};

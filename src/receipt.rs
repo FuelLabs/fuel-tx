@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use core::fmt::Debug;
 use derivative::Derivative;
 use fuel_asm::InstructionResult;
 use fuel_types::bytes::{self, padded_len_usize, SizedBytes, WORD_SIZE};
@@ -592,6 +593,13 @@ impl Receipt {
     pub const fn nonce(&self) -> Option<&Bytes32> {
         match self {
             Self::MessageOut { nonce, .. } => Some(nonce),
+            _ => None,
+        }
+    }
+
+    pub const fn contract_id(&self) -> Option<&ContractId> {
+        match self {
+            Self::Panic { contract_id, .. } => contract_id.as_ref(),
             _ => None,
         }
     }

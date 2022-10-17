@@ -1,24 +1,19 @@
-use crate::checked_transaction::{initial_free_balances, AvailableBalances};
 use crate::transaction::checkable::{check_common_part, Checkable};
 use crate::transaction::field::{
     GasLimit, GasPrice, Inputs, Maturity, Outputs, ReceiptsRoot, Script as ScriptField, ScriptData,
     Witnesses,
 };
 use crate::transaction::Chargeable;
-use crate::{
-    Cacheable, CheckError, Checked, ConsensusParameters, Input, IntoChecked, Output, Partially,
-    TransactionFee, Witness,
-};
+use crate::{Cacheable, CheckError, ConsensusParameters, Input, Output, Witness};
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
-use fuel_types::{bytes, AssetId, Bytes32, Word};
+use fuel_types::{bytes, Bytes32, Word};
 
 #[cfg(feature = "std")]
 use std::io;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
-use std::collections::BTreeMap;
 
 #[cfg(feature = "std")]
 use fuel_types::bytes::SerializableVec;
@@ -136,40 +131,51 @@ impl SizedBytes for Script {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct CheckedMetadata {
-    /// The mapping of initial free balances
-    pub initial_free_balances: BTreeMap<AssetId, Word>,
-    /// The block height this tx was verified with
-    pub block_height: Word,
-    /// The fees and gas usage
-    pub fee: TransactionFee,
-}
+#[cfg(feature = "std")]
+mod checked {
+    use crate::checked_transaction::{initial_free_balances, AvailableBalances};
+    use crate::{
+        Cacheable, CheckError, Checkable, Checked, ConsensusParameters, IntoChecked, Partially,
+        Script, TransactionFee,
+    };
+    use fuel_types::{AssetId, Word};
+    use std::collections::BTreeMap;
 
-impl IntoChecked for Script {
-    type Metadata = CheckedMetadata;
+    #[derive(Debug, Clone, Eq, PartialEq, Hash)]
+    pub struct CheckedMetadata {
+        /// The mapping of initial free balances
+        pub initial_free_balances: BTreeMap<AssetId, Word>,
+        /// The block height this tx was verified with
+        pub block_height: Word,
+        /// The fees and gas usage
+        pub fee: TransactionFee,
+    }
 
-    fn into_checked_partially(
-        mut self,
-        block_height: Word,
-        params: &ConsensusParameters,
-    ) -> Result<Checked<Self, Partially>, CheckError> {
-        self.precompute();
-        self.check_without_signatures(block_height, params)?;
+    impl IntoChecked for Script {
+        type Metadata = CheckedMetadata;
 
-        // validate fees and compute free balances
-        let AvailableBalances {
-            initial_free_balances,
-            fee,
-        } = initial_free_balances(&self, params)?;
+        fn into_checked_partially(
+            mut self,
+            block_height: Word,
+            params: &ConsensusParameters,
+        ) -> Result<Checked<Self, Partially>, CheckError> {
+            self.precompute();
+            self.check_without_signatures(block_height, params)?;
 
-        let metadata = CheckedMetadata {
-            initial_free_balances,
-            block_height,
-            fee,
-        };
+            // validate fees and compute free balances
+            let AvailableBalances {
+                initial_free_balances,
+                fee,
+            } = initial_free_balances(&self, params)?;
 
-        Ok(Checked::new(self, metadata))
+            let metadata = CheckedMetadata {
+                initial_free_balances,
+                block_height,
+                fee,
+            };
+
+            Ok(Checked::new(self, metadata))
+        }
     }
 }
 

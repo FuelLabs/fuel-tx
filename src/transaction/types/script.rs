@@ -1,19 +1,24 @@
+use crate::checked_transaction::{initial_free_balances, AvailableBalances};
+use crate::transaction::checkable::{check_common_part, Checkable};
 use crate::transaction::field::{
     GasLimit, GasPrice, Inputs, Maturity, Outputs, ReceiptsRoot, Script as ScriptField, ScriptData,
     Witnesses,
 };
-use crate::transaction::validation::{validate_common_part, Validatable};
 use crate::transaction::Chargeable;
-use crate::{Cacheable, ConsensusParameters, Input, Output, ValidationError, Witness};
+use crate::{
+    Cacheable, CheckError, Checked, ConsensusParameters, Input, IntoChecked, Output, Partially,
+    TransactionFee, Witness,
+};
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
-use fuel_types::{bytes, Bytes32, Word};
+use fuel_types::{bytes, AssetId, Bytes32, Word};
 
 #[cfg(feature = "std")]
 use std::io;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
+use std::collections::BTreeMap;
 
 #[cfg(feature = "std")]
 use fuel_types::bytes::SerializableVec;
@@ -65,9 +70,9 @@ impl Chargeable for Script {
     }
 }
 
-impl Validatable for Script {
+impl Checkable for Script {
     #[cfg(feature = "std")]
-    fn validate_signatures(&self) -> Result<(), ValidationError> {
+    fn check_signatures(&self) -> Result<(), CheckError> {
         use crate::UniqueIdentifier;
 
         let id = self.id();
@@ -75,24 +80,24 @@ impl Validatable for Script {
         self.inputs()
             .iter()
             .enumerate()
-            .try_for_each(|(index, input)| input.validate_signature(index, &id, &self.witnesses))?;
+            .try_for_each(|(index, input)| input.check_signature(index, &id, &self.witnesses))?;
 
         Ok(())
     }
 
-    fn validate_without_signatures(
+    fn check_without_signatures(
         &self,
         block_height: Word,
         parameters: &ConsensusParameters,
-    ) -> Result<(), ValidationError> {
-        validate_common_part(self, block_height, parameters)?;
+    ) -> Result<(), CheckError> {
+        check_common_part(self, block_height, parameters)?;
 
         if self.script.len() > parameters.max_script_length as usize {
-            Err(ValidationError::TransactionScriptLength)?;
+            Err(CheckError::TransactionScriptLength)?;
         }
 
         if self.script_data.len() > parameters.max_script_data_length as usize {
-            Err(ValidationError::TransactionScriptDataLength)?;
+            Err(CheckError::TransactionScriptDataLength)?;
         }
 
         self.outputs
@@ -100,7 +105,7 @@ impl Validatable for Script {
             .enumerate()
             .try_for_each(|(index, output)| match output {
                 Output::ContractCreated { .. } => {
-                    Err(ValidationError::TransactionScriptOutputContractCreated { index })
+                    Err(CheckError::TransactionScriptOutputContractCreated { index })
                 }
                 _ => Ok(()),
             })?;
@@ -131,242 +136,285 @@ impl SizedBytes for Script {
     }
 }
 
-impl GasPrice for Script {
-    #[inline(always)]
-    fn gas_price(&self) -> &Word {
-        &self.gas_price
-    }
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct CheckedMetadata {
+    /// The mapping of initial free balances
+    pub initial_free_balances: BTreeMap<AssetId, Word>,
+    /// The block height this tx was verified with
+    pub block_height: Word,
+    /// The fees and gas usage
+    pub fee: TransactionFee,
+}
 
-    #[inline(always)]
-    fn gas_price_mut(&mut self) -> &mut Word {
-        &mut self.gas_price
-    }
+impl IntoChecked for Script {
+    type Metadata = CheckedMetadata;
 
-    #[inline(always)]
-    fn gas_price_offset(&self) -> usize {
-        // Before `Script` transaction should be `TransactionRepr`, but it is handled by the
-        // `Transaction` type itself.
-        //
-        // #Note : If you need offset from `Transaction`, it should be `Transaction::offset()` + `Script::*_offset`.
-        0
+    fn into_checked_partially(
+        mut self,
+        block_height: Word,
+        params: &ConsensusParameters,
+    ) -> Result<Checked<Self, Partially>, CheckError> {
+        self.precompute();
+        self.check_without_signatures(block_height, params)?;
+
+        // validate fees and compute free balances
+        let AvailableBalances {
+            initial_free_balances,
+            fee,
+        } = initial_free_balances(&self, params)?;
+
+        let metadata = CheckedMetadata {
+            initial_free_balances,
+            block_height,
+            fee,
+        };
+
+        Ok(Checked::new(self, metadata))
     }
 }
 
-impl GasLimit for Script {
-    #[inline(always)]
-    fn gas_limit(&self) -> &Word {
-        &self.gas_limit
-    }
+mod field {
+    use super::*;
 
-    #[inline(always)]
-    fn gas_limit_mut(&mut self) -> &mut Word {
-        &mut self.gas_limit
-    }
+    impl GasPrice for Script {
+        #[inline(always)]
+        fn gas_price(&self) -> &Word {
+            &self.gas_price
+        }
 
-    #[inline(always)]
-    fn gas_limit_offset(&self) -> usize {
-        self.gas_price_offset() + WORD_SIZE
-    }
-}
+        #[inline(always)]
+        fn gas_price_mut(&mut self) -> &mut Word {
+            &mut self.gas_price
+        }
 
-impl Maturity for Script {
-    #[inline(always)]
-    fn maturity(&self) -> &Word {
-        &self.maturity
-    }
-
-    #[inline(always)]
-    fn maturity_mut(&mut self) -> &mut Word {
-        &mut self.maturity
-    }
-
-    #[inline(always)]
-    fn maturity_offset(&self) -> usize {
-        self.gas_limit_offset() + WORD_SIZE
-    }
-}
-
-impl ReceiptsRoot for Script {
-    #[inline(always)]
-    fn receipts_root(&self) -> &Bytes32 {
-        &self.receipts_root
-    }
-
-    #[inline(always)]
-    fn receipts_root_mut(&mut self) -> &mut Bytes32 {
-        &mut self.receipts_root
-    }
-
-    #[inline(always)]
-    fn receipts_root_offset(&self) -> usize {
-        self.maturity_offset() + WORD_SIZE
-            + WORD_SIZE // Script size
-            + WORD_SIZE // Script data size
-            + WORD_SIZE // Inputs size
-            + WORD_SIZE // Outputs size
-            + WORD_SIZE // Witnesses size
-    }
-}
-
-impl ScriptField for Script {
-    #[inline(always)]
-    fn script(&self) -> &Vec<u8> {
-        &self.script
-    }
-
-    #[inline(always)]
-    fn script_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.script
-    }
-
-    #[inline(always)]
-    fn script_offset(&self) -> usize {
-        self.receipts_root_offset() + Bytes32::LEN // Receipts root
-    }
-}
-
-impl ScriptData for Script {
-    #[inline(always)]
-    fn script_data(&self) -> &Vec<u8> {
-        &self.script_data
-    }
-
-    #[inline(always)]
-    fn script_data_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.script_data
-    }
-
-    #[inline(always)]
-    fn script_data_offset(&self) -> usize {
-        // TODO: Add metadata
-        self.script_offset() + bytes::padded_len(self.script.as_slice())
-    }
-}
-
-impl Inputs for Script {
-    #[inline(always)]
-    fn inputs(&self) -> &Vec<Input> {
-        &self.inputs
-    }
-
-    #[inline(always)]
-    fn inputs_mut(&mut self) -> &mut Vec<Input> {
-        &mut self.inputs
-    }
-
-    #[inline(always)]
-    fn inputs_offset(&self) -> usize {
-        // TODO: Add metadata
-        self.script_data_offset() + bytes::padded_len(self.script_data.as_slice())
-    }
-
-    #[inline(always)]
-    fn inputs_offset_at(&self, idx: usize) -> Option<usize> {
-        // TODO: Add metadata
-        if idx < self.inputs.len() {
-            Some(
-                self.inputs_offset()
-                    + self
-                        .inputs()
-                        .iter()
-                        .take(idx)
-                        .map(|i| i.serialized_size())
-                        .sum::<usize>(),
-            )
-        } else {
-            None
+        #[inline(always)]
+        fn gas_price_offset(&self) -> usize {
+            // Before `Script` transaction should be `TransactionRepr`, but it is handled by the
+            // `Transaction` type itself.
+            //
+            // #Note : If you need offset from `Transaction`, it should be `Transaction::offset()` + `Script::*_offset`.
+            0
         }
     }
 
-    #[inline(always)]
-    fn inputs_predicate_offset_at(&self, idx: usize) -> Option<(usize, usize)> {
-        self.inputs().get(idx).and_then(|input| {
-            input
-                .predicate_offset()
-                .and_then(|predicate| self.inputs_offset_at(idx).map(|inputs| inputs + predicate))
-                .zip(input.predicate_len().map(bytes::padded_len_usize))
-        })
-    }
-}
+    impl GasLimit for Script {
+        #[inline(always)]
+        fn gas_limit(&self) -> &Word {
+            &self.gas_limit
+        }
 
-impl Outputs for Script {
-    #[inline(always)]
-    fn outputs(&self) -> &Vec<Output> {
-        &self.outputs
-    }
+        #[inline(always)]
+        fn gas_limit_mut(&mut self) -> &mut Word {
+            &mut self.gas_limit
+        }
 
-    #[inline(always)]
-    fn outputs_mut(&mut self) -> &mut Vec<Output> {
-        &mut self.outputs
-    }
-
-    #[inline(always)]
-    fn outputs_offset(&self) -> usize {
-        // TODO: Add metadata
-        self.inputs_offset()
-            + self
-                .inputs()
-                .iter()
-                .map(|i| i.serialized_size())
-                .sum::<usize>()
-    }
-
-    #[inline(always)]
-    fn outputs_offset_at(&self, idx: usize) -> Option<usize> {
-        // TODO: Add metadata
-        if idx < self.outputs.len() {
-            Some(
-                self.outputs_offset()
-                    + self
-                        .outputs()
-                        .iter()
-                        .take(idx)
-                        .map(|i| i.serialized_size())
-                        .sum::<usize>(),
-            )
-        } else {
-            None
+        #[inline(always)]
+        fn gas_limit_offset(&self) -> usize {
+            self.gas_price_offset() + WORD_SIZE
         }
     }
-}
 
-impl Witnesses for Script {
-    #[inline(always)]
-    fn witnesses(&self) -> &Vec<Witness> {
-        &self.witnesses
+    impl Maturity for Script {
+        #[inline(always)]
+        fn maturity(&self) -> &Word {
+            &self.maturity
+        }
+
+        #[inline(always)]
+        fn maturity_mut(&mut self) -> &mut Word {
+            &mut self.maturity
+        }
+
+        #[inline(always)]
+        fn maturity_offset(&self) -> usize {
+            self.gas_limit_offset() + WORD_SIZE
+        }
     }
 
-    #[inline(always)]
-    fn witnesses_mut(&mut self) -> &mut Vec<Witness> {
-        &mut self.witnesses
+    impl ReceiptsRoot for Script {
+        #[inline(always)]
+        fn receipts_root(&self) -> &Bytes32 {
+            &self.receipts_root
+        }
+
+        #[inline(always)]
+        fn receipts_root_mut(&mut self) -> &mut Bytes32 {
+            &mut self.receipts_root
+        }
+
+        #[inline(always)]
+        fn receipts_root_offset(&self) -> usize {
+            self.maturity_offset() + WORD_SIZE
+                + WORD_SIZE // Script size
+                + WORD_SIZE // Script data size
+                + WORD_SIZE // Inputs size
+                + WORD_SIZE // Outputs size
+                + WORD_SIZE // Witnesses size
+        }
     }
 
-    #[inline(always)]
-    fn witnesses_offset(&self) -> usize {
-        // TODO: Add metadata
-        self.outputs_offset()
-            + self
-                .outputs()
-                .iter()
-                .map(|i| i.serialized_size())
-                .sum::<usize>()
+    impl ScriptField for Script {
+        #[inline(always)]
+        fn script(&self) -> &Vec<u8> {
+            &self.script
+        }
+
+        #[inline(always)]
+        fn script_mut(&mut self) -> &mut Vec<u8> {
+            &mut self.script
+        }
+
+        #[inline(always)]
+        fn script_offset(&self) -> usize {
+            self.receipts_root_offset() + Bytes32::LEN // Receipts root
+        }
     }
 
-    #[inline(always)]
-    fn witnesses_offset_at(&self, idx: usize) -> Option<usize> {
-        // TODO: Add metadata
-        if idx < self.witnesses.len() {
-            Some(
-                self.witnesses_offset()
-                    + self
-                        .witnesses()
-                        .iter()
-                        .take(idx)
-                        .map(|i| i.serialized_size())
-                        .sum::<usize>(),
-            )
-        } else {
-            None
+    impl ScriptData for Script {
+        #[inline(always)]
+        fn script_data(&self) -> &Vec<u8> {
+            &self.script_data
+        }
+
+        #[inline(always)]
+        fn script_data_mut(&mut self) -> &mut Vec<u8> {
+            &mut self.script_data
+        }
+
+        #[inline(always)]
+        fn script_data_offset(&self) -> usize {
+            // TODO: Add metadata
+            self.script_offset() + bytes::padded_len(self.script.as_slice())
+        }
+    }
+
+    impl Inputs for Script {
+        #[inline(always)]
+        fn inputs(&self) -> &Vec<Input> {
+            &self.inputs
+        }
+
+        #[inline(always)]
+        fn inputs_mut(&mut self) -> &mut Vec<Input> {
+            &mut self.inputs
+        }
+
+        #[inline(always)]
+        fn inputs_offset(&self) -> usize {
+            // TODO: Add metadata
+            self.script_data_offset() + bytes::padded_len(self.script_data.as_slice())
+        }
+
+        #[inline(always)]
+        fn inputs_offset_at(&self, idx: usize) -> Option<usize> {
+            // TODO: Add metadata
+            if idx < self.inputs.len() {
+                Some(
+                    self.inputs_offset()
+                        + self
+                            .inputs()
+                            .iter()
+                            .take(idx)
+                            .map(|i| i.serialized_size())
+                            .sum::<usize>(),
+                )
+            } else {
+                None
+            }
+        }
+
+        #[inline(always)]
+        fn inputs_predicate_offset_at(&self, idx: usize) -> Option<(usize, usize)> {
+            self.inputs().get(idx).and_then(|input| {
+                input
+                    .predicate_offset()
+                    .and_then(|predicate| {
+                        self.inputs_offset_at(idx).map(|inputs| inputs + predicate)
+                    })
+                    .zip(input.predicate_len().map(bytes::padded_len_usize))
+            })
+        }
+    }
+
+    impl Outputs for Script {
+        #[inline(always)]
+        fn outputs(&self) -> &Vec<Output> {
+            &self.outputs
+        }
+
+        #[inline(always)]
+        fn outputs_mut(&mut self) -> &mut Vec<Output> {
+            &mut self.outputs
+        }
+
+        #[inline(always)]
+        fn outputs_offset(&self) -> usize {
+            // TODO: Add metadata
+            self.inputs_offset()
+                + self
+                    .inputs()
+                    .iter()
+                    .map(|i| i.serialized_size())
+                    .sum::<usize>()
+        }
+
+        #[inline(always)]
+        fn outputs_offset_at(&self, idx: usize) -> Option<usize> {
+            // TODO: Add metadata
+            if idx < self.outputs.len() {
+                Some(
+                    self.outputs_offset()
+                        + self
+                            .outputs()
+                            .iter()
+                            .take(idx)
+                            .map(|i| i.serialized_size())
+                            .sum::<usize>(),
+                )
+            } else {
+                None
+            }
+        }
+    }
+
+    impl Witnesses for Script {
+        #[inline(always)]
+        fn witnesses(&self) -> &Vec<Witness> {
+            &self.witnesses
+        }
+
+        #[inline(always)]
+        fn witnesses_mut(&mut self) -> &mut Vec<Witness> {
+            &mut self.witnesses
+        }
+
+        #[inline(always)]
+        fn witnesses_offset(&self) -> usize {
+            // TODO: Add metadata
+            self.outputs_offset()
+                + self
+                    .outputs()
+                    .iter()
+                    .map(|i| i.serialized_size())
+                    .sum::<usize>()
+        }
+
+        #[inline(always)]
+        fn witnesses_offset_at(&self, idx: usize) -> Option<usize> {
+            // TODO: Add metadata
+            if idx < self.witnesses.len() {
+                Some(
+                    self.witnesses_offset()
+                        + self
+                            .witnesses()
+                            .iter()
+                            .take(idx)
+                            .map(|i| i.serialized_size())
+                            .sum::<usize>(),
+                )
+            } else {
+                None
+            }
         }
     }
 }

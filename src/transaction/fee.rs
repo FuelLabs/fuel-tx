@@ -1,8 +1,5 @@
-use fuel_asm::Word;
-
 use crate::{field, ConsensusParameters};
-
-use core::borrow::Borrow;
+use fuel_asm::Word;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -110,8 +107,6 @@ impl TransactionFee {
     ///
     /// Will return `None` if arithmetic overflow occurs.
     pub fn checked_from_tx<T: Chargeable>(params: &ConsensusParameters, tx: &T) -> Option<Self> {
-        let tx = tx.borrow();
-
         let metered_bytes = tx.metered_bytes_size() as Word;
         let gas_limit = *tx.gas_limit();
         let gas_price = *tx.gas_price();

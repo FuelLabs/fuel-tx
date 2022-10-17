@@ -40,9 +40,9 @@ pub use receipt::{Receipt, ScriptExecutionResult};
 
 #[cfg(feature = "alloc")]
 pub use transaction::{
-    field, Cacheable, Chargeable, ConsensusParameters, Create, Executable, Input, InputRepr,
-    Output, OutputRepr, Script, StorageSlot, Transaction, TransactionFee, TransactionRepr, TxId,
-    TxPointer, UtxoId, Validatable, ValidationError, Witness,
+    field, Cacheable, Chargeable, CheckError, Checkable, ConsensusParameters, Create, Executable,
+    Input, InputRepr, Output, OutputRepr, Script, StorageSlot, Transaction, TransactionFee,
+    TransactionRepr, TxId, TxPointer, UtxoId, Witness,
 };
 
 #[cfg(feature = "std")]
@@ -53,7 +53,9 @@ pub use transaction::{Signable, UniqueIdentifier};
 pub use transaction::consensus_parameters::default_parameters;
 
 #[cfg(feature = "std")]
-pub use checked_transaction::CheckedTransaction;
+pub use checked_transaction::{
+    Checked, CheckedMetadata, CheckedTransaction, Fully, IntoChecked, Partially,
+};
 
 #[cfg(feature = "alloc")]
 pub use contract::Contract;

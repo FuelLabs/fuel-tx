@@ -14,31 +14,31 @@ mod error;
 
 use crate::transaction::consensus_parameters::ConsensusParameters;
 use crate::transaction::{field, Executable};
-pub use error::ValidationError;
+pub use error::CheckError;
 
 impl Input {
     #[cfg(feature = "std")]
-    pub fn validate(
+    pub fn check(
         &self,
         index: usize,
         txhash: &Bytes32,
         outputs: &[Output],
         witnesses: &[Witness],
         parameters: &ConsensusParameters,
-    ) -> Result<(), ValidationError> {
-        self.validate_without_signature(index, outputs, witnesses, parameters)?;
-        self.validate_signature(index, txhash, witnesses)?;
+    ) -> Result<(), CheckError> {
+        self.check_without_signature(index, outputs, witnesses, parameters)?;
+        self.check_signature(index, txhash, witnesses)?;
 
         Ok(())
     }
 
     #[cfg(feature = "std")]
-    pub fn validate_signature(
+    pub fn check_signature(
         &self,
         index: usize,
         txhash: &Bytes32,
         witnesses: &[Witness],
-    ) -> Result<(), ValidationError> {
+    ) -> Result<(), CheckError> {
         match self {
             Self::CoinSigned {
                 witness_index,
@@ -52,11 +52,11 @@ impl Input {
             } => {
                 let witness = witnesses
                     .get(*witness_index as usize)
-                    .ok_or(ValidationError::InputWitnessIndexBounds { index })?
+                    .ok_or(CheckError::InputWitnessIndexBounds { index })?
                     .as_ref();
 
                 if witness.len() != Signature::LEN {
-                    return Err(ValidationError::InputInvalidSignature { index });
+                    return Err(CheckError::InputInvalidSignature { index });
                 }
 
                 // Safety: checked length
@@ -67,11 +67,11 @@ impl Input {
 
                 let pk = signature
                     .recover(message)
-                    .map_err(|_| ValidationError::InputInvalidSignature { index })
+                    .map_err(|_| CheckError::InputInvalidSignature { index })
                     .map(|pk| Input::owner(&pk))?;
 
                 if owner != &pk {
-                    return Err(ValidationError::InputInvalidSignature { index });
+                    return Err(CheckError::InputInvalidSignature { index });
                 }
 
                 Ok(())
@@ -85,44 +85,44 @@ impl Input {
                 predicate,
                 ..
             } if !Input::is_predicate_owner_valid(owner, predicate) => {
-                Err(ValidationError::InputPredicateOwner { index })
+                Err(CheckError::InputPredicateOwner { index })
             }
 
             _ => Ok(()),
         }
     }
 
-    pub fn validate_without_signature(
+    pub fn check_without_signature(
         &self,
         index: usize,
         outputs: &[Output],
         witnesses: &[Witness],
         parameters: &ConsensusParameters,
-    ) -> Result<(), ValidationError> {
+    ) -> Result<(), CheckError> {
         match self {
             Self::CoinPredicate { predicate, .. } | Self::MessagePredicate { predicate, .. }
                 if predicate.is_empty() =>
             {
-                Err(ValidationError::InputPredicateEmpty { index })
+                Err(CheckError::InputPredicateEmpty { index })
             }
 
             Self::CoinPredicate { predicate, .. } | Self::MessagePredicate { predicate, .. }
                 if predicate.len() > parameters.max_predicate_length as usize =>
             {
-                Err(ValidationError::InputPredicateLength { index })
+                Err(CheckError::InputPredicateLength { index })
             }
 
             Self::CoinPredicate { predicate_data, .. }
             | Self::MessagePredicate { predicate_data, .. }
                 if predicate_data.len() > parameters.max_predicate_data_length as usize =>
             {
-                Err(ValidationError::InputPredicateDataLength { index })
+                Err(CheckError::InputPredicateDataLength { index })
             }
 
             Self::CoinSigned { witness_index, .. } | Self::MessageSigned { witness_index, .. }
                 if *witness_index as usize >= witnesses.len() =>
             {
-                Err(ValidationError::InputWitnessIndexBounds { index })
+                Err(CheckError::InputWitnessIndexBounds { index })
             }
 
             // ∀ inputContract ∃! outputContract : outputContract.inputIndex = inputContract.index
@@ -137,13 +137,13 @@ impl Input {
                     })
                     .count() =>
             {
-                Err(ValidationError::InputContractAssociatedOutputContract { index })
+                Err(CheckError::InputContractAssociatedOutputContract { index })
             }
 
             Self::MessageSigned { data, .. } | Self::MessagePredicate { data, .. }
                 if data.len() > parameters.max_message_data_length as usize =>
             {
-                Err(ValidationError::InputMessageDataLength { index })
+                Err(CheckError::InputMessageDataLength { index })
             }
 
             // TODO If h is the block height the UTXO being spent was created, transaction is
@@ -159,11 +159,11 @@ impl Output {
     /// This function is stateful - meaning it might validate a transaction during VM
     /// initialization, but this transaction will no longer be valid in post-execution because the
     /// VM might mutate the message outputs, producing invalid transactions.
-    pub fn validate(&self, index: usize, inputs: &[Input]) -> Result<(), ValidationError> {
+    pub fn check(&self, index: usize, inputs: &[Input]) -> Result<(), CheckError> {
         match self {
             Self::Contract { input_index, .. } => match inputs.get(*input_index as usize) {
                 Some(Input::Contract { .. }) => Ok(()),
-                _ => Err(ValidationError::OutputContractInputIndex { index }),
+                _ => Err(CheckError::OutputContractInputIndex { index }),
             },
 
             _ => Ok(()),
@@ -172,64 +172,64 @@ impl Output {
 }
 
 /// Means that the transaction can be validated.
-pub trait Validatable {
+pub trait Checkable {
     #[cfg(feature = "std")]
     /// Fully validates the transaction. It checks the validity of fields according to rules in
     /// the specification and validity of signatures.
-    fn validate(
+    fn check(
         &self,
         block_height: Word,
         parameters: &ConsensusParameters,
-    ) -> Result<(), ValidationError> {
-        self.validate_without_signatures(block_height, parameters)?;
-        self.validate_signatures()?;
+    ) -> Result<(), CheckError> {
+        self.check_without_signatures(block_height, parameters)?;
+        self.check_signatures()?;
 
         Ok(())
     }
 
     #[cfg(feature = "std")]
     /// Validates that all required signatures are set in the transaction and that they are valid.
-    fn validate_signatures(&self) -> Result<(), ValidationError>;
+    fn check_signatures(&self) -> Result<(), CheckError>;
 
     /// Validates the transactions according to rules from the specification:
     /// https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#transaction
-    fn validate_without_signatures(
+    fn check_without_signatures(
         &self,
         block_height: Word,
         parameters: &ConsensusParameters,
-    ) -> Result<(), ValidationError>;
+    ) -> Result<(), CheckError>;
 }
 
-impl Validatable for Transaction {
+impl Checkable for Transaction {
     #[cfg(feature = "std")]
-    fn validate_signatures(&self) -> Result<(), ValidationError> {
+    fn check_signatures(&self) -> Result<(), CheckError> {
         match self {
-            Transaction::Script(script) => script.validate_signatures(),
-            Transaction::Create(create) => create.validate_signatures(),
+            Transaction::Script(script) => script.check_signatures(),
+            Transaction::Create(create) => create.check_signatures(),
         }
     }
 
-    fn validate_without_signatures(
+    fn check_without_signatures(
         &self,
         block_height: Word,
         parameters: &ConsensusParameters,
-    ) -> Result<(), ValidationError> {
+    ) -> Result<(), CheckError> {
         match self {
             Transaction::Script(script) => {
-                script.validate_without_signatures(block_height, parameters)
+                script.check_without_signatures(block_height, parameters)
             }
             Transaction::Create(create) => {
-                create.validate_without_signatures(block_height, parameters)
+                create.check_without_signatures(block_height, parameters)
             }
         }
     }
 }
 
-pub(crate) fn validate_common_part<T>(
+pub(crate) fn check_common_part<T>(
     tx: &T,
     block_height: Word,
     parameters: &ConsensusParameters,
-) -> Result<(), ValidationError>
+) -> Result<(), CheckError>
 where
     T: field::GasPrice
         + field::GasLimit
@@ -239,23 +239,23 @@ where
         + field::Witnesses,
 {
     if tx.gas_limit() > &parameters.max_gas_per_tx {
-        Err(ValidationError::TransactionGasLimit)?
+        Err(CheckError::TransactionGasLimit)?
     }
 
     if tx.maturity() > &block_height {
-        Err(ValidationError::TransactionMaturity)?;
+        Err(CheckError::TransactionMaturity)?;
     }
 
     if tx.inputs().len() > parameters.max_inputs as usize {
-        Err(ValidationError::TransactionInputsMax)?
+        Err(CheckError::TransactionInputsMax)?
     }
 
     if tx.outputs().len() > parameters.max_outputs as usize {
-        Err(ValidationError::TransactionOutputsMax)?
+        Err(CheckError::TransactionOutputsMax)?
     }
 
     if tx.witnesses().len() > parameters.max_witnesses as usize {
-        Err(ValidationError::TransactionWitnessesMax)?
+        Err(CheckError::TransactionWitnessesMax)?
     }
 
     tx.input_asset_ids_unique().try_for_each(|input_asset_id| {
@@ -275,7 +275,7 @@ where
             .count()
             > 1
         {
-            return Err(ValidationError::TransactionOutputChangeAssetIdDuplicated);
+            return Err(CheckError::TransactionOutputChangeAssetIdDuplicated);
         }
 
         Ok(())
@@ -288,20 +288,20 @@ where
         .filter_map(|i| i.is_coin().then(|| i.utxo_id()).flatten());
 
     if let Some(utxo_id) = next_duplicate(duplicated_utxo_id).copied() {
-        return Err(ValidationError::DuplicateInputUtxoId { utxo_id });
+        return Err(CheckError::DuplicateInputUtxoId { utxo_id });
     }
 
     // Check for duplicated input contract id
     let duplicated_contract_id = tx.inputs().iter().filter_map(Input::contract_id);
 
     if let Some(contract_id) = next_duplicate(duplicated_contract_id).copied() {
-        return Err(ValidationError::DuplicateInputContractId { contract_id });
+        return Err(CheckError::DuplicateInputContractId { contract_id });
     }
 
     // Check for duplicated input message id
     let duplicated_message_id = tx.inputs().iter().filter_map(Input::message_id);
     if let Some(message_id) = next_duplicate(duplicated_message_id).copied() {
-        return Err(ValidationError::DuplicateMessageInputId { message_id });
+        return Err(CheckError::DuplicateMessageInputId { message_id });
     }
 
     // Validate the inputs without checking signature
@@ -309,21 +309,21 @@ where
         .iter()
         .enumerate()
         .try_for_each(|(index, input)| {
-            input.validate_without_signature(index, tx.outputs(), tx.witnesses(), parameters)
+            input.check_without_signature(index, tx.outputs(), tx.witnesses(), parameters)
         })?;
 
     tx.outputs()
         .iter()
         .enumerate()
         .try_for_each(|(index, output)| {
-            output.validate(index, tx.inputs())?;
+            output.check(index, tx.inputs())?;
 
             if let Output::Change { asset_id, .. } = output {
                 if !tx
                     .input_asset_ids()
                     .any(|input_asset_id| input_asset_id == asset_id)
                 {
-                    return Err(ValidationError::TransactionOutputChangeAssetIdNotFound(
+                    return Err(CheckError::TransactionOutputChangeAssetIdNotFound(
                         *asset_id,
                     ));
                 }
@@ -334,9 +334,7 @@ where
                     .input_asset_ids()
                     .any(|input_asset_id| input_asset_id == asset_id)
                 {
-                    return Err(ValidationError::TransactionOutputCoinAssetIdNotFound(
-                        *asset_id,
-                    ));
+                    return Err(CheckError::TransactionOutputCoinAssetIdNotFound(*asset_id));
                 }
             }
 

@@ -11,7 +11,7 @@ fn input_coin_message_signature() {
     fn test<Tx: Buildable>(txs: &mut impl Iterator<Item = (Tx, Vec<SecretKey>)>) {
         let rng = &mut StdRng::seed_from_u64(8586);
 
-        fn validate_inputs<Tx: Buildable>(tx: Tx) -> Result<(), ValidationError> {
+        fn check_inputs<Tx: Buildable>(tx: Tx) -> Result<(), CheckError> {
             let txhash = tx.id();
             let outputs = tx.outputs();
             let witnesses = tx.witnesses();
@@ -21,18 +21,14 @@ fn input_coin_message_signature() {
                 .enumerate()
                 .try_for_each(|(index, input)| match input {
                     Input::CoinSigned { .. } | Input::MessageSigned { .. } => {
-                        input.validate(index, &txhash, outputs, witnesses, &Default::default())
+                        input.check(index, &txhash, outputs, witnesses, &Default::default())
                     }
                     _ => Ok(()),
                 })
         }
 
         #[allow(clippy::too_many_arguments)]
-        fn sign_and_validate<R, I, F, Tx>(
-            rng: &mut R,
-            mut iter: I,
-            f: F,
-        ) -> Result<(), ValidationError>
+        fn sign_and_validate<R, I, F, Tx>(rng: &mut R, mut iter: I, f: F) -> Result<(), CheckError>
         where
             R: Rng,
             I: Iterator<Item = (Tx, Vec<SecretKey>)>,
@@ -49,12 +45,12 @@ fn input_coin_message_signature() {
             tx.sign_inputs(&secret);
             keys.iter().for_each(|sk| tx.sign_inputs(sk));
 
-            validate_inputs(tx)
+            check_inputs(tx)
         }
 
         txs.take(10)
             .map(|(tx, _)| tx)
-            .try_for_each(validate_inputs)
+            .try_for_each(check_inputs)
             .expect("Failed to validate transactions");
 
         for _ in 0..3 {
@@ -113,10 +109,10 @@ fn coin_signed() {
 
     let block_height = rng.gen();
     let err = tx
-        .validate(block_height, &Default::default())
+        .check(block_height, &Default::default())
         .expect_err("Expected failure");
 
-    assert_eq!(ValidationError::InputWitnessIndexBounds { index: 0 }, err);
+    assert_eq!(CheckError::InputWitnessIndexBounds { index: 0 }, err);
 }
 
 #[test]
@@ -138,7 +134,7 @@ fn coin_predicate() {
         predicate,
         generate_bytes(rng),
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .unwrap();
 
     let predicate = vec![];
@@ -154,11 +150,11 @@ fn coin_predicate() {
         predicate,
         generate_bytes(rng),
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .err()
     .unwrap();
 
-    assert_eq!(ValidationError::InputPredicateEmpty { index: 1 }, err);
+    assert_eq!(CheckError::InputPredicateEmpty { index: 1 }, err);
 
     let mut predicate = generate_nonempty_padded_bytes(rng);
     let owner = (*Contract::root_from_code(&predicate)).into();
@@ -174,11 +170,11 @@ fn coin_predicate() {
         predicate,
         generate_bytes(rng),
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .err()
     .unwrap();
 
-    assert_eq!(ValidationError::InputPredicateOwner { index: 1 }, err);
+    assert_eq!(CheckError::InputPredicateOwner { index: 1 }, err);
 }
 
 #[test]
@@ -188,7 +184,7 @@ fn contract() {
     let txhash: Bytes32 = rng.gen();
 
     Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen(), rng.gen())
-        .validate(
+        .check(
             1,
             &txhash,
             &[Output::contract(1, rng.gen(), rng.gen())],
@@ -198,17 +194,17 @@ fn contract() {
         .unwrap();
 
     let err = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen(), rng.gen())
-        .validate(1, &txhash, &[], &[], &Default::default())
+        .check(1, &txhash, &[], &[], &Default::default())
         .err()
         .unwrap();
 
     assert_eq!(
-        ValidationError::InputContractAssociatedOutputContract { index: 1 },
+        CheckError::InputContractAssociatedOutputContract { index: 1 },
         err
     );
 
     let err = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen(), rng.gen())
-        .validate(
+        .check(
             1,
             &txhash,
             &[Output::coin(rng.gen(), rng.gen(), rng.gen())],
@@ -219,12 +215,12 @@ fn contract() {
         .unwrap();
 
     assert_eq!(
-        ValidationError::InputContractAssociatedOutputContract { index: 1 },
+        CheckError::InputContractAssociatedOutputContract { index: 1 },
         err
     );
 
     let err = Input::contract(rng.gen(), rng.gen(), rng.gen(), rng.gen(), rng.gen())
-        .validate(
+        .check(
             1,
             &txhash,
             &[Output::contract(2, rng.gen(), rng.gen())],
@@ -235,7 +231,7 @@ fn contract() {
         .unwrap();
 
     assert_eq!(
-        ValidationError::InputContractAssociatedOutputContract { index: 1 },
+        CheckError::InputContractAssociatedOutputContract { index: 1 },
         err
     );
 }
@@ -259,7 +255,7 @@ fn message() {
         predicate,
         generate_bytes(rng),
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .expect("failed to validate empty message input");
 
     let mut tx = Script::default();
@@ -278,10 +274,10 @@ fn message() {
 
     let block_height = rng.gen();
     let err = tx
-        .validate(block_height, &Default::default())
+        .check(block_height, &Default::default())
         .expect_err("Expected failure");
 
-    assert_eq!(ValidationError::InputWitnessIndexBounds { index: 0 }, err,);
+    assert_eq!(CheckError::InputWitnessIndexBounds { index: 0 }, err,);
 
     let mut predicate = generate_nonempty_padded_bytes(rng);
     let recipient = (*Contract::root_from_code(&predicate)).into();
@@ -297,10 +293,10 @@ fn message() {
         predicate,
         generate_bytes(rng),
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .expect_err("Expected failure");
 
-    assert_eq!(ValidationError::InputPredicateOwner { index: 1 }, err);
+    assert_eq!(CheckError::InputPredicateOwner { index: 1 }, err);
 
     let data = vec![0xff; PARAMS.max_message_data_length as usize + 1];
 
@@ -313,10 +309,10 @@ fn message() {
         0,
         data.clone(),
     )
-    .validate(1, &txhash, &[], &[vec![].into()], &Default::default())
+    .check(1, &txhash, &[], &[vec![].into()], &Default::default())
     .expect_err("expected max data length error");
 
-    assert_eq!(ValidationError::InputMessageDataLength { index: 1 }, err,);
+    assert_eq!(CheckError::InputMessageDataLength { index: 1 }, err,);
 
     let err = Input::message_predicate(
         rng.gen(),
@@ -328,10 +324,10 @@ fn message() {
         generate_nonempty_padded_bytes(rng),
         generate_bytes(rng),
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .expect_err("expected max data length error");
 
-    assert_eq!(ValidationError::InputMessageDataLength { index: 1 }, err,);
+    assert_eq!(CheckError::InputMessageDataLength { index: 1 }, err,);
 
     let predicate = vec![0xff; PARAMS.max_predicate_length as usize + 1];
 
@@ -345,10 +341,10 @@ fn message() {
         predicate,
         generate_bytes(rng),
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .expect_err("expected max predicate length error");
 
-    assert_eq!(ValidationError::InputPredicateLength { index: 1 }, err,);
+    assert_eq!(CheckError::InputPredicateLength { index: 1 }, err,);
 
     let predicate_data = vec![0xff; PARAMS.max_predicate_data_length as usize + 1];
 
@@ -362,10 +358,10 @@ fn message() {
         generate_bytes(rng),
         predicate_data,
     )
-    .validate(1, &txhash, &[], &[], &Default::default())
+    .check(1, &txhash, &[], &[], &Default::default())
     .expect_err("expected max predicate data length error");
 
-    assert_eq!(ValidationError::InputPredicateDataLength { index: 1 }, err,);
+    assert_eq!(CheckError::InputPredicateDataLength { index: 1 }, err,);
 }
 
 #[test]
@@ -397,10 +393,10 @@ fn transaction_with_duplicate_coin_inputs_is_invalid() {
         .add_input(b)
         .add_witness(rng.gen())
         .finalize()
-        .validate_without_signatures(0, &Default::default())
-        .expect_err("Expected validation failure");
+        .check_without_signatures(0, &Default::default())
+        .expect_err("Expected checkable failure");
 
-    assert_eq!(err, ValidationError::DuplicateInputUtxoId { utxo_id });
+    assert_eq!(err, CheckError::DuplicateInputUtxoId { utxo_id });
 }
 
 #[test]
@@ -424,10 +420,10 @@ fn transaction_with_duplicate_message_inputs_is_invalid() {
         .add_input(message_input)
         .add_witness(rng.gen())
         .finalize()
-        .validate_without_signatures(0, &Default::default())
-        .expect_err("Expected validation failure");
+        .check_without_signatures(0, &Default::default())
+        .expect_err("Expected checkable failure");
 
-    assert_eq!(err, ValidationError::DuplicateMessageInputId { message_id });
+    assert_eq!(err, CheckError::DuplicateMessageInputId { message_id });
 }
 
 #[test]
@@ -447,13 +443,10 @@ fn transaction_with_duplicate_contract_inputs_is_invalid() {
         .add_output(o)
         .add_output(p)
         .finalize()
-        .validate_without_signatures(0, &Default::default())
-        .expect_err("Expected validation failure");
+        .check_without_signatures(0, &Default::default())
+        .expect_err("Expected checkable failure");
 
-    assert_eq!(
-        err,
-        ValidationError::DuplicateInputContractId { contract_id }
-    );
+    assert_eq!(err, CheckError::DuplicateInputContractId { contract_id });
 }
 
 #[test]
@@ -473,6 +466,6 @@ fn transaction_with_duplicate_contract_utxo_id_is_valid() {
         .add_output(o)
         .add_output(p)
         .finalize()
-        .validate_without_signatures(0, &Default::default())
+        .check_without_signatures(0, &Default::default())
         .expect("Duplicated UTXO id is valid for contract input");
 }

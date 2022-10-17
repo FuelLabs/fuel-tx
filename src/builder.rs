@@ -1,18 +1,25 @@
+use crate::transaction::field::{BytecodeLength, BytecodeWitnessIndex, Witnesses};
+use crate::transaction::{field, Chargeable, Create, Executable, Script, Signable};
 use crate::{
-    Cacheable, CheckedTransaction, ConsensusParameters, Input, Output, StorageSlot, Transaction,
+    Cacheable, Checked, ConsensusParameters, Input, IntoChecked, Output, Partially, StorageSlot,
     TxPointer, Witness,
 };
 
 use fuel_crypto::SecretKey;
 use fuel_types::{Salt, Word};
 
-use crate::transaction::field::{BytecodeLength, BytecodeWitnessIndex, Witnesses};
-use crate::transaction::{field, Chargeable, Create, Executable, Script, Signable};
 use alloc::vec::Vec;
 
 pub trait Buildable
 where
-    Self: Default + Cacheable + Executable + Chargeable + Signable + field::Maturity + Clone,
+    Self: Default
+        + Clone
+        + Cacheable
+        + Executable
+        + Chargeable
+        + Signable
+        + field::Maturity
+        + IntoChecked,
 {
     /// Append an input to the transaction
     fn add_input(&mut self, input: Input) {
@@ -46,7 +53,14 @@ where
 }
 
 impl<T> Buildable for T where
-    Self: Default + Cacheable + Executable + Chargeable + Signable + field::Maturity + Clone
+    Self: Default
+        + Clone
+        + Cacheable
+        + Executable
+        + Chargeable
+        + Signable
+        + field::Maturity
+        + IntoChecked
 {
 }
 
@@ -260,29 +274,20 @@ impl<Tx: Buildable> TransactionBuilder<Tx> {
     }
 
     #[cfg(feature = "std")]
-    pub fn finalize_checked(
-        &mut self,
-        height: Word,
-        params: &ConsensusParameters,
-    ) -> CheckedTransaction
-    where
-        Tx: Into<Transaction>,
-    {
-        let tx: Transaction = self.finalize().into();
-        tx.check(height, params).expect("failed to check tx")
+    pub fn finalize_checked(&mut self, height: Word, params: &ConsensusParameters) -> Checked<Tx> {
+        self.finalize()
+            .into_checked(height, params)
+            .expect("failed to check tx")
     }
 
     #[cfg(feature = "std")]
-    pub fn finalize_checked_without_signature(
+    pub fn finalize_checked_partially(
         &mut self,
         height: Word,
         params: &ConsensusParameters,
-    ) -> CheckedTransaction
-    where
-        Tx: Into<Transaction>,
-    {
-        let tx: Transaction = self.finalize_without_signature().into();
-        tx.check_without_signature(height, params)
+    ) -> Checked<Tx, Partially> {
+        self.finalize()
+            .into_checked_partially(height, params)
             .expect("failed to check tx")
     }
 }

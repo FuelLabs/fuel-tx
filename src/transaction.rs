@@ -6,11 +6,11 @@ use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
 use alloc::vec::{IntoIter, Vec};
 use itertools::Itertools;
 
+mod checkable;
 mod fee;
 mod metadata;
 mod repr;
 mod types;
-mod validation;
 
 #[cfg(feature = "std")]
 mod id;
@@ -20,6 +20,7 @@ mod txio;
 
 pub mod consensus_parameters;
 
+pub use checkable::{CheckError, Checkable};
 pub use consensus_parameters::ConsensusParameters;
 pub use fee::{Chargeable, TransactionFee};
 pub use metadata::Cacheable;
@@ -27,7 +28,6 @@ pub use repr::TransactionRepr;
 pub use types::{
     Create, Input, InputRepr, Output, OutputRepr, Script, StorageSlot, TxPointer, UtxoId, Witness,
 };
-pub use validation::{Validatable, ValidationError};
 
 #[cfg(feature = "std")]
 pub use id::{Signable, UniqueIdentifier};
@@ -209,7 +209,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
 
     // TODO: Return `Vec<input::Contract>` instead
     #[cfg(feature = "std")]
-    fn input_contracts(&self) -> Vec<&fuel_types::ContractId> {
+    fn input_contracts(&self) -> IntoIter<&fuel_types::ContractId> {
         self.inputs()
             .iter()
             .filter_map(|input| match input {
@@ -218,6 +218,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
             })
             .unique()
             .collect_vec()
+            .into_iter()
     }
 
     #[cfg(feature = "std")]
@@ -242,7 +243,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
 
     /// Append a new unsigned coin input to the transaction.
     ///
-    /// When the transaction is constructed, [`Transaction::sign_inputs`] should
+    /// When the transaction is constructed, [`Signable::sign_inputs`] should
     /// be called for every secret key used with this method.
     ///
     /// The production of the signatures can be done only after the full
@@ -276,7 +277,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
 
     /// Append a new unsigned message input to the transaction.
     ///
-    /// When the transaction is constructed, [`Transaction::sign_inputs`] should
+    /// When the transaction is constructed, [`Signable::sign_inputs`] should
     /// be called for every secret key used with this method.
     ///
     /// The production of the signatures can be done only after the full

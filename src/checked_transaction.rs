@@ -397,7 +397,6 @@ mod tests {
         let tx = signed_message_tx(rng, gas_price, gas_limit, input_amount, output_amount);
 
         let checked = tx
-            .clone()
             .into_checked(0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 
@@ -420,7 +419,6 @@ mod tests {
         let tx = signed_message_tx(rng, gas_price, gas_limit, input_amount, output_amount);
 
         let checked = tx
-            .clone()
             .into_checked(0, &ConsensusParameters::DEFAULT)
             .expect("Expected valid transaction");
 

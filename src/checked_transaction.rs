@@ -97,13 +97,13 @@ impl<Tx: IntoChecked> Checked<Tx, Partially> {
     }
 }
 
-impl<Tx: IntoChecked, S: private::Stage> Into<(Tx, Tx::Metadata)> for Checked<Tx, S> {
-    fn into(self) -> (Tx, Tx::Metadata) {
+impl<Tx: IntoChecked, S: private::Stage> From<Checked<Tx, S>> for (Tx, Tx::Metadata) {
+    fn from(checked: Checked<Tx, S>) -> Self {
         let Checked {
             transaction,
             metadata,
             ..
-        } = self;
+        } = checked;
 
         (transaction, metadata)
     }

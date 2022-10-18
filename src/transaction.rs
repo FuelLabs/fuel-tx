@@ -1,4 +1,3 @@
-use fuel_asm::Opcode;
 use fuel_crypto::PublicKey;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
 use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
@@ -31,6 +30,8 @@ pub use types::{
 
 #[cfg(feature = "std")]
 pub use id::{Signable, UniqueIdentifier};
+#[cfg(feature = "std")]
+pub use types::{CreateCheckedMetadata, ScriptCheckedMetadata};
 
 /// Identification of transaction (also called transaction hash)
 pub type TxId = Bytes32;
@@ -45,24 +46,7 @@ pub enum Transaction {
 
 impl Default for Transaction {
     fn default() -> Self {
-        use alloc::vec;
-
-        // Create a valid transaction with a single return instruction
-        //
-        // The Return op is mandatory for the execution of any context
-        let script = Opcode::RET(0x10).to_bytes().to_vec();
-
-        Transaction::script(
-            0,
-            ConsensusParameters::DEFAULT.max_gas_per_tx,
-            0,
-            script,
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-        )
-        .into()
+        Script::default().into()
     }
 }
 
@@ -381,31 +365,51 @@ pub mod field {
     pub trait GasPrice {
         fn gas_price(&self) -> &Word;
         fn gas_price_mut(&mut self) -> &mut Word;
-        fn gas_price_offset(&self) -> usize;
+        fn gas_price_offset(&self) -> usize {
+            Self::gas_price_offset_static()
+        }
+
+        fn gas_price_offset_static() -> usize;
     }
 
     pub trait GasLimit {
         fn gas_limit(&self) -> &Word;
         fn gas_limit_mut(&mut self) -> &mut Word;
-        fn gas_limit_offset(&self) -> usize;
+        fn gas_limit_offset(&self) -> usize {
+            Self::gas_limit_offset_static()
+        }
+
+        fn gas_limit_offset_static() -> usize;
     }
 
     pub trait Maturity {
         fn maturity(&self) -> &Word;
         fn maturity_mut(&mut self) -> &mut Word;
-        fn maturity_offset(&self) -> usize;
+        fn maturity_offset(&self) -> usize {
+            Self::maturity_offset_static()
+        }
+
+        fn maturity_offset_static() -> usize;
     }
 
     pub trait ReceiptsRoot {
         fn receipts_root(&self) -> &Bytes32;
         fn receipts_root_mut(&mut self) -> &mut Bytes32;
-        fn receipts_root_offset(&self) -> usize;
+        fn receipts_root_offset(&self) -> usize {
+            Self::receipts_root_offset_static()
+        }
+
+        fn receipts_root_offset_static() -> usize;
     }
 
     pub trait Script {
         fn script(&self) -> &Vec<u8>;
         fn script_mut(&mut self) -> &mut Vec<u8>;
-        fn script_offset(&self) -> usize;
+        fn script_offset(&self) -> usize {
+            Self::script_offset_static()
+        }
+
+        fn script_offset_static() -> usize;
     }
 
     pub trait ScriptData {
@@ -417,25 +421,41 @@ pub mod field {
     pub trait BytecodeLength {
         fn bytecode_length(&self) -> &Word;
         fn bytecode_length_mut(&mut self) -> &mut Word;
-        fn bytecode_length_offset(&self) -> usize;
+        fn bytecode_length_offset(&self) -> usize {
+            Self::bytecode_length_offset_static()
+        }
+
+        fn bytecode_length_offset_static() -> usize;
     }
 
     pub trait BytecodeWitnessIndex {
         fn bytecode_witness_index(&self) -> &u8;
         fn bytecode_witness_index_mut(&mut self) -> &mut u8;
-        fn bytecode_witness_index_offset(&self) -> usize;
+        fn bytecode_witness_index_offset(&self) -> usize {
+            Self::bytecode_witness_index_offset_static()
+        }
+
+        fn bytecode_witness_index_offset_static() -> usize;
     }
 
     pub trait Salt {
         fn salt(&self) -> &fuel_types::Salt;
         fn salt_mut(&mut self) -> &mut fuel_types::Salt;
-        fn salt_offset(&self) -> usize;
+        fn salt_offset(&self) -> usize {
+            Self::salt_offset_static()
+        }
+
+        fn salt_offset_static() -> usize;
     }
 
     pub trait StorageSlots {
         fn storage_slots(&self) -> &Vec<StorageSlot>;
         fn storage_slots_mut(&mut self) -> &mut Vec<StorageSlot>;
-        fn storage_slots_offset(&self) -> usize;
+        fn storage_slots_offset(&self) -> usize {
+            Self::storage_slots_offset_static()
+        }
+
+        fn storage_slots_offset_static() -> usize;
 
         /// Returns the offset to the `StorageSlot` at `idx` index, if any.
         fn storage_slots_offset_at(&self, idx: usize) -> Option<usize>;

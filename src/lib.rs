@@ -46,7 +46,7 @@ pub use transaction::{
 };
 
 #[cfg(feature = "std")]
-pub use transaction::{Signable, UniqueIdentifier};
+pub use transaction::{CreateCheckedMetadata, ScriptCheckedMetadata, Signable, UniqueIdentifier};
 
 #[cfg(feature = "alloc")]
 #[allow(deprecated)]
@@ -54,7 +54,7 @@ pub use transaction::consensus_parameters::default_parameters;
 
 #[cfg(feature = "std")]
 pub use checked_transaction::{
-    Checked, CheckedMetadata, CheckedTransaction, Fully, IntoChecked, Partially,
+    Checked, CheckedMetadata, CheckedTransaction, Fully, IntoChecked, Partially, Stage,
 };
 
 #[cfg(feature = "alloc")]

@@ -14,11 +14,12 @@ use std::io;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
+use fuel_asm::Opcode;
 
 #[cfg(feature = "std")]
 use fuel_types::bytes::SerializableVec;
 
-#[derive(Default, Debug, Clone, Derivative)]
+#[derive(Debug, Clone, Derivative)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derivative(Eq, PartialEq, Hash)]
 pub struct Script {
@@ -34,6 +35,30 @@ pub struct Script {
     #[derivative(PartialEq = "ignore", Hash = "ignore")]
     // TODO: Add metadata
     pub(crate) metadata: Option<()>,
+}
+
+impl Default for Script {
+    fn default() -> Self {
+        use alloc::vec;
+
+        // Create a valid transaction with a single return instruction
+        //
+        // The Return op is mandatory for the execution of any context
+        let script = Opcode::RET(0x10).to_bytes().to_vec();
+
+        Self {
+            gas_price: 0,
+            gas_limit: ConsensusParameters::DEFAULT.max_gas_per_tx,
+            maturity: 0,
+            script,
+            script_data: vec![],
+            inputs: vec![],
+            outputs: vec![],
+            witnesses: vec![],
+            receipts_root: Default::default(),
+            metadata: None,
+        }
+    }
 }
 
 #[cfg(feature = "std")]
@@ -132,7 +157,7 @@ impl SizedBytes for Script {
 }
 
 #[cfg(feature = "std")]
-mod checked {
+pub mod checked {
     use crate::checked_transaction::{initial_free_balances, AvailableBalances};
     use crate::{
         Cacheable, CheckError, Checkable, Checked, ConsensusParameters, IntoChecked, Partially,
@@ -194,7 +219,7 @@ mod field {
         }
 
         #[inline(always)]
-        fn gas_price_offset(&self) -> usize {
+        fn gas_price_offset_static() -> usize {
             // Before `Script` transaction should be `TransactionRepr`, but it is handled by the
             // `Transaction` type itself.
             //
@@ -215,8 +240,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn gas_limit_offset(&self) -> usize {
-            self.gas_price_offset() + WORD_SIZE
+        fn gas_limit_offset_static() -> usize {
+            Self::gas_price_offset_static() + WORD_SIZE
         }
     }
 
@@ -232,8 +257,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn maturity_offset(&self) -> usize {
-            self.gas_limit_offset() + WORD_SIZE
+        fn maturity_offset_static() -> usize {
+            Self::gas_limit_offset_static() + WORD_SIZE
         }
     }
 
@@ -249,8 +274,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn receipts_root_offset(&self) -> usize {
-            self.maturity_offset() + WORD_SIZE
+        fn receipts_root_offset_static() -> usize {
+            Self::maturity_offset_static() + WORD_SIZE
                 + WORD_SIZE // Script size
                 + WORD_SIZE // Script data size
                 + WORD_SIZE // Inputs size
@@ -271,8 +296,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn script_offset(&self) -> usize {
-            self.receipts_root_offset() + Bytes32::LEN // Receipts root
+        fn script_offset_static() -> usize {
+            Self::receipts_root_offset_static() + Bytes32::LEN // Receipts root
         }
     }
 

@@ -189,7 +189,7 @@ impl SizedBytes for Create {
 }
 
 #[cfg(feature = "std")]
-mod checked {
+pub mod checked {
     use crate::checked_transaction::{initial_free_balances, AvailableBalances};
     use crate::{
         Cacheable, CheckError, Checkable, Checked, ConsensusParameters, Create, IntoChecked,
@@ -251,7 +251,7 @@ mod field {
         }
 
         #[inline(always)]
-        fn gas_price_offset(&self) -> usize {
+        fn gas_price_offset_static() -> usize {
             // Before `Create` transaction should be `TransactionRepr`, but it is handled by the
             // `Transaction` type itself.
             //
@@ -272,8 +272,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn gas_limit_offset(&self) -> usize {
-            self.gas_price_offset() + WORD_SIZE
+        fn gas_limit_offset_static() -> usize {
+            Self::gas_price_offset_static() + WORD_SIZE
         }
     }
 
@@ -289,8 +289,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn maturity_offset(&self) -> usize {
-            self.gas_limit_offset() + WORD_SIZE
+        fn maturity_offset_static() -> usize {
+            Self::gas_limit_offset_static() + WORD_SIZE
         }
     }
 
@@ -306,8 +306,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn bytecode_length_offset(&self) -> usize {
-            self.maturity_offset() + WORD_SIZE
+        fn bytecode_length_offset_static() -> usize {
+            Self::maturity_offset_static() + WORD_SIZE
         }
     }
 
@@ -323,8 +323,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn bytecode_witness_index_offset(&self) -> usize {
-            self.bytecode_length_offset() + WORD_SIZE
+        fn bytecode_witness_index_offset_static() -> usize {
+            Self::bytecode_length_offset_static() + WORD_SIZE
         }
     }
 
@@ -340,8 +340,8 @@ mod field {
         }
 
         #[inline(always)]
-        fn salt_offset(&self) -> usize {
-            self.bytecode_witness_index_offset() + WORD_SIZE
+        fn salt_offset_static() -> usize {
+            Self::bytecode_witness_index_offset_static() + WORD_SIZE
                 + WORD_SIZE // Storage slots size
                 + WORD_SIZE // Inputs size
                 + WORD_SIZE // Outputs size
@@ -361,13 +361,13 @@ mod field {
         }
 
         #[inline(always)]
-        fn storage_slots_offset(&self) -> usize {
-            self.salt_offset() + Salt::LEN
+        fn storage_slots_offset_static() -> usize {
+            Self::salt_offset_static() + Salt::LEN
         }
 
         fn storage_slots_offset_at(&self, idx: usize) -> Option<usize> {
             if idx < self.storage_slots.len() {
-                Some(self.storage_slots_offset() + idx * StorageSlot::SLOT_SIZE)
+                Some(Self::storage_slots_offset_static() + idx * StorageSlot::SLOT_SIZE)
             } else {
                 None
             }
@@ -388,7 +388,7 @@ mod field {
         #[inline(always)]
         fn inputs_offset(&self) -> usize {
             // TODO: Add metadata
-            self.storage_slots_offset() + self.storage_slots.len() * StorageSlot::SLOT_SIZE
+            Self::storage_slots_offset_static() + self.storage_slots.len() * StorageSlot::SLOT_SIZE
         }
 
         #[inline(always)]

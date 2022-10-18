@@ -13,21 +13,28 @@ use alloc::collections::BTreeMap;
 use core::borrow::Borrow;
 use core::marker::PhantomData;
 
-/// Only `fuel-tx` crate can implement this trait.
-mod private {
-    /// Describes the stage of the transaction checking.
-    pub trait Stage {}
-}
+/// Describes the stage of the transaction checking.
+pub trait Stage: private::Guard {}
 
 /// Means that transaction was fully checked.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Fully;
-impl private::Stage for Fully {}
+impl Stage for Fully {}
 
 /// Means that transaction was partially(without signatures) checked.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Partially;
-impl private::Stage for Partially {}
+impl Stage for Partially {}
+
+mod private {
+    use super::*;
+
+    /// Only `fuel-tx` crate can implement this trait.
+    pub trait Guard {}
+
+    impl Guard for Partially {}
+    impl Guard for Fully {}
+}
 
 /// The type describes that the inner transaction was already checked.
 ///
@@ -42,13 +49,13 @@ impl private::Stage for Partially {}
 /// # Dev note: Avoid serde serialization of this type. Since checked tx would need to be
 /// re-validated on deserialization anyways, it's cleaner to redo the tx check.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Checked<Tx: IntoChecked, S: private::Stage = Fully> {
+pub struct Checked<Tx: IntoChecked, S: Stage = Fully> {
     transaction: Tx,
     metadata: Tx::Metadata,
     marker: PhantomData<S>,
 }
 
-impl<Tx: IntoChecked, S: private::Stage> Checked<Tx, S> {
+impl<Tx: IntoChecked, S: Stage> Checked<Tx, S> {
     pub(crate) fn new(transaction: Tx, metadata: Tx::Metadata) -> Self {
         Self {
             transaction,
@@ -98,7 +105,7 @@ impl<Tx: IntoChecked> Checked<Tx, Partially> {
     }
 }
 
-impl<Tx: IntoChecked, S: private::Stage> From<Checked<Tx, S>> for (Tx, Tx::Metadata) {
+impl<Tx: IntoChecked, S: Stage> From<Checked<Tx, S>> for (Tx, Tx::Metadata) {
     fn from(checked: Checked<Tx, S>) -> Self {
         let Checked {
             transaction,
@@ -110,20 +117,20 @@ impl<Tx: IntoChecked, S: private::Stage> From<Checked<Tx, S>> for (Tx, Tx::Metad
     }
 }
 
-impl<Tx: IntoChecked, S: private::Stage> AsRef<Tx> for Checked<Tx, S> {
+impl<Tx: IntoChecked, S: Stage> AsRef<Tx> for Checked<Tx, S> {
     fn as_ref(&self) -> &Tx {
         &self.transaction
     }
 }
 
 #[cfg(feature = "internals")]
-impl<Tx: IntoChecked, S: private::Stage> AsMut<Tx> for Checked<Tx, S> {
+impl<Tx: IntoChecked, S: Stage> AsMut<Tx> for Checked<Tx, S> {
     fn as_mut(&mut self) -> &mut Tx {
         &mut self.transaction
     }
 }
 
-impl<Tx: IntoChecked, S: private::Stage> Borrow<Tx> for Checked<Tx, S> {
+impl<Tx: IntoChecked, S: Stage> Borrow<Tx> for Checked<Tx, S> {
     fn borrow(&self) -> &Tx {
         &self.transaction
     }
@@ -156,12 +163,12 @@ pub trait IntoChecked: Checkable + Sized {
 /// It is possible to freely convert `Checked<Transaction>` into `CheckedTransaction` and vice
 /// verse without the overhead.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum CheckedTransaction<S: private::Stage = Fully> {
+pub enum CheckedTransaction<S: Stage = Fully> {
     Script(Checked<Script, S>),
     Create(Checked<Create, S>),
 }
 
-impl<S: private::Stage> From<Checked<Transaction, S>> for CheckedTransaction<S> {
+impl<S: Stage> From<Checked<Transaction, S>> for CheckedTransaction<S> {
     fn from(checked: Checked<Transaction, S>) -> Self {
         let Checked {
             transaction,
@@ -186,19 +193,19 @@ impl<S: private::Stage> From<Checked<Transaction, S>> for CheckedTransaction<S> 
     }
 }
 
-impl<S: private::Stage> From<Checked<Script, S>> for CheckedTransaction<S> {
+impl<S: Stage> From<Checked<Script, S>> for CheckedTransaction<S> {
     fn from(checked: Checked<Script, S>) -> Self {
         Self::Script(checked)
     }
 }
 
-impl<S: private::Stage> From<Checked<Create, S>> for CheckedTransaction<S> {
+impl<S: Stage> From<Checked<Create, S>> for CheckedTransaction<S> {
     fn from(checked: Checked<Create, S>) -> Self {
         Self::Create(checked)
     }
 }
 
-impl<S: private::Stage> From<CheckedTransaction<S>> for Checked<Transaction, S> {
+impl<S: Stage> From<CheckedTransaction<S>> for Checked<Transaction, S> {
     fn from(checked: CheckedTransaction<S>) -> Self {
         match checked {
             CheckedTransaction::Script(Checked {

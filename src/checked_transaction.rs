@@ -85,6 +85,7 @@ impl<Tx: IntoChecked + Default> Default for Checked<Tx, Partially> {
 }
 
 impl<Tx: IntoChecked> Checked<Tx, Partially> {
+    /// Checks the signatures of the partially checked transaction to make it fully checked.
     pub fn check(self) -> Result<Checked<Tx, Fully>, CheckError> {
         let Checked {
             transaction,
@@ -168,6 +169,7 @@ impl<S: private::Stage> From<Checked<Transaction, S>> for CheckedTransaction<S> 
             ..
         } = checked;
 
+        // # Dev note: Avoid wildcard pattern to be sure that all variants are covered.
         match (transaction, metadata) {
             (Transaction::Script(transaction), CheckedMetadata::Script(metadata)) => {
                 Self::Script(Checked::new(transaction, metadata))
@@ -175,6 +177,9 @@ impl<S: private::Stage> From<Checked<Transaction, S>> for CheckedTransaction<S> 
             (Transaction::Create(transaction), CheckedMetadata::Create(metadata)) => {
                 Self::Create(Checked::new(transaction, metadata))
             }
+            // The code should produce the `CheckedMetadata` for the corresponding transaction
+            // variant. It is done in the implementation of the `IntoChecked` trait for
+            // `Transaction`. With the current implementation, the patterns below are unreachable.
             (Transaction::Script(_), _) => unreachable!(),
             (Transaction::Create(_), _) => unreachable!(),
         }

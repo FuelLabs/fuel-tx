@@ -173,12 +173,20 @@ impl Transaction {
         }
     }
 
-    pub const fn offset(&self) -> usize {
+    /// `Transaction` is an enum that aggregates different transaction variants.
+    /// This method returns the offset before the beginning of the variant's body.
+    /// Each variant also provides offsets methods for each inner field.
+    ///
+    /// To get the offset to the variant's inner field in the context of `Transaction`,
+    /// it should be combined with `Transaction::offset`.
+    pub const fn offset() -> usize {
+        // The `Transaction` 64 bits aligned discriminant
         WORD_SIZE
     }
 }
 
 pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
+    /// Returns the assets' ids used in the inputs in the order of inputs.
     fn input_asset_ids(&self) -> IntoIter<&AssetId> {
         self.inputs()
             .iter()
@@ -195,6 +203,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
             .into_iter()
     }
 
+    /// Returns unique assets' ids used in the inputs.
     fn input_asset_ids_unique(&self) -> IntoIter<&AssetId> {
         let asset_ids = self.input_asset_ids();
 
@@ -207,6 +216,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
         asset_ids.collect_vec().into_iter()
     }
 
+    /// Returns ids of all `Input::Contract` that are present in the inputs.
     // TODO: Return `Vec<input::Contract>` instead
     #[cfg(feature = "std")]
     fn input_contracts(&self) -> IntoIter<&fuel_types::ContractId> {
@@ -221,6 +231,7 @@ pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
             .into_iter()
     }
 
+    /// Checks that all owners of inputs in the predicates are valid.
     #[cfg(feature = "std")]
     fn check_predicate_owners(&self) -> bool {
         self.inputs()
@@ -339,10 +350,11 @@ impl<T: field::Inputs + field::Outputs + field::Witnesses> Executable for T {}
 
 impl SizedBytes for Transaction {
     fn serialized_size(&self) -> usize {
-        match self {
-            Self::Script(script) => script.serialized_size(),
-            Self::Create(create) => create.serialized_size(),
-        }
+        Self::offset()
+            + match self {
+                Self::Script(script) => script.serialized_size(),
+                Self::Create(create) => create.serialized_size(),
+            }
     }
 }
 
@@ -358,6 +370,8 @@ impl From<Create> for Transaction {
     }
 }
 
+/// The module contains traits for each possible field in the `Transaction`. Those traits can be
+/// used to write generic code based on the different combinations of the fields.
 pub mod field {
     use crate::{Input, Output, StorageSlot, Witness};
     use fuel_types::{Bytes32, Word};

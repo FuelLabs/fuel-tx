@@ -167,11 +167,13 @@ impl Cacheable for Script {
 impl SizedBytes for Script {
     fn serialized_size(&self) -> usize {
         if let Some(ScriptMetadata {
-            common: CommonMetadata { serialize_size, .. },
+            common: CommonMetadata {
+                serialized_size, ..
+            },
             ..
         }) = &self.metadata
         {
-            return *serialize_size;
+            return *serialized_size;
         }
 
         self.witnesses_offset()

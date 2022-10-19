@@ -185,8 +185,11 @@ impl Cacheable for Create {
 
 impl SizedBytes for Create {
     fn serialized_size(&self) -> usize {
-        if let Some(CommonMetadata { serialize_size, .. }) = &self.metadata {
-            return *serialize_size;
+        if let Some(CommonMetadata {
+            serialized_size, ..
+        }) = &self.metadata
+        {
+            return *serialized_size;
         }
 
         self.witnesses_offset()

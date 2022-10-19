@@ -42,7 +42,7 @@ pub(crate) struct CommonMetadata {
     pub outputs_offset_at: Vec<usize>,
     pub witnesses_offset: usize,
     pub witnesses_offset_at: Vec<usize>,
-    pub serialize_size: usize,
+    pub serialized_size: usize,
 }
 
 impl CommonMetadata {
@@ -53,6 +53,7 @@ impl CommonMetadata {
         Tx: field::Inputs,
         Tx: field::Outputs,
         Tx: field::Witnesses,
+        Tx: SizedBytes,
     {
         let id = tx.id();
 
@@ -102,7 +103,10 @@ impl CommonMetadata {
                 i
             })
             .collect_vec();
-        let serialize_size = offset;
+        let serialized_size = offset;
+
+        #[cfg(feature = "internals")]
+        assert_eq!(serialized_size, tx.serialized_size());
 
         Self {
             id,
@@ -113,7 +117,7 @@ impl CommonMetadata {
             outputs_offset_at,
             witnesses_offset,
             witnesses_offset_at,
-            serialize_size,
+            serialized_size,
         }
     }
 }

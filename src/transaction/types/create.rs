@@ -7,8 +7,7 @@ use crate::transaction::{
     metadata::CommonMetadata,
 };
 use crate::{
-    Cacheable, Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot,
-    Witness,
+    Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot, Witness,
 };
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
@@ -172,7 +171,8 @@ impl Checkable for Create {
     }
 }
 
-impl Cacheable for Create {
+#[cfg(feature = "std")]
+impl crate::Cacheable for Create {
     fn is_computed(&self) -> bool {
         self.metadata.is_some()
     }

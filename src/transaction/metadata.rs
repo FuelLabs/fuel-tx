@@ -1,8 +1,8 @@
-use super::Transaction;
-use crate::{field, UniqueIdentifier};
-use fuel_types::bytes::SizedBytes;
+use alloc::vec::Vec;
 use fuel_types::Bytes32;
-use itertools::Itertools;
+
+#[cfg(feature = "std")]
+use crate::{field, UniqueIdentifier};
 
 /// Entity support metadata computation to cache results.
 pub trait Cacheable {
@@ -15,7 +15,8 @@ pub trait Cacheable {
     fn precompute(&mut self);
 }
 
-impl Cacheable for Transaction {
+#[cfg(feature = "std")]
+impl Cacheable for super::Transaction {
     fn is_computed(&self) -> bool {
         match self {
             Self::Script(script) => script.is_computed(),
@@ -45,6 +46,7 @@ pub(crate) struct CommonMetadata {
     pub serialized_size: usize,
 }
 
+#[cfg(feature = "std")]
 impl CommonMetadata {
     /// Computes the `Metadata` for the `tx` transaction.
     pub fn compute<Tx>(tx: &Tx) -> Self
@@ -53,8 +55,11 @@ impl CommonMetadata {
         Tx: field::Inputs,
         Tx: field::Outputs,
         Tx: field::Witnesses,
-        Tx: SizedBytes,
+        Tx: fuel_types::bytes::SizedBytes,
     {
+        use fuel_types::bytes::SizedBytes;
+        use itertools::Itertools;
+
         let id = tx.id();
 
         let inputs_predicate_offset_at = tx

@@ -7,7 +7,7 @@ use crate::transaction::{
     metadata::CommonMetadata,
     Chargeable,
 };
-use crate::{Cacheable, CheckError, ConsensusParameters, Input, Output, Witness};
+use crate::{CheckError, ConsensusParameters, Input, Output, Witness};
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
 use fuel_types::{bytes, Bytes32, Word};
@@ -150,7 +150,8 @@ impl Checkable for Script {
     }
 }
 
-impl Cacheable for Script {
+#[cfg(feature = "std")]
+impl crate::Cacheable for Script {
     fn is_computed(&self) -> bool {
         self.metadata.is_some()
     }

@@ -1,7 +1,10 @@
-use crate::transaction::checkable::{check_common_part, Checkable};
-use crate::transaction::field::{
-    BytecodeLength, BytecodeWitnessIndex, GasLimit, GasPrice, Inputs, Maturity, Outputs,
-    Salt as SaltField, StorageSlots, Witnesses,
+use crate::transaction::{
+    checkable::{check_common_part, Checkable},
+    field::{
+        BytecodeLength, BytecodeWitnessIndex, GasLimit, GasPrice, Inputs, Maturity, Outputs,
+        Salt as SaltField, StorageSlots, Witnesses,
+    },
+    metadata::CommonMetadata,
 };
 use crate::{
     Cacheable, Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot,
@@ -34,15 +37,18 @@ pub struct Create {
     pub(crate) outputs: Vec<Output>,
     pub(crate) witnesses: Vec<Witness>,
     pub(crate) salt: Salt,
+    #[cfg_attr(feature = "serde", serde(skip))]
     #[derivative(PartialEq = "ignore", Hash = "ignore")]
-    // TODO: Add metadata
-    pub(crate) metadata: Option<()>,
+    pub(crate) metadata: Option<CommonMetadata>,
 }
 
 #[cfg(feature = "std")]
 impl crate::UniqueIdentifier for Create {
     fn id(&self) -> fuel_types::Bytes32 {
-        // TODO: Add metadata
+        if let Some(CommonMetadata { id, .. }) = self.metadata {
+            return id;
+        }
+
         let mut clone = self.clone();
 
         // Empties fields that should be zero during the signing.
@@ -172,13 +178,17 @@ impl Cacheable for Create {
     }
 
     fn precompute(&mut self) {
-        // TODO: Add metadata
+        self.metadata = None;
+        self.metadata = Some(CommonMetadata::compute(self));
     }
 }
 
 impl SizedBytes for Create {
     fn serialized_size(&self) -> usize {
-        // TODO: Add metadata
+        if let Some(CommonMetadata { serialize_size, .. }) = &self.metadata {
+            return *serialize_size;
+        }
+
         self.witnesses_offset()
             + self
                 .witnesses()
@@ -387,13 +397,19 @@ mod field {
 
         #[inline(always)]
         fn inputs_offset(&self) -> usize {
-            // TODO: Add metadata
             Self::storage_slots_offset_static() + self.storage_slots.len() * StorageSlot::SLOT_SIZE
         }
 
         #[inline(always)]
         fn inputs_offset_at(&self, idx: usize) -> Option<usize> {
-            // TODO: Add metadata
+            if let Some(CommonMetadata {
+                inputs_offset_at: inputs_offset,
+                ..
+            }) = &self.metadata
+            {
+                return inputs_offset.get(idx).cloned();
+            }
+
             if idx < self.inputs.len() {
                 Some(
                     self.inputs_offset()
@@ -411,6 +427,14 @@ mod field {
 
         #[inline(always)]
         fn inputs_predicate_offset_at(&self, idx: usize) -> Option<(usize, usize)> {
+            if let Some(CommonMetadata {
+                inputs_predicate_offset_at: inputs_predicate_offset,
+                ..
+            }) = &self.metadata
+            {
+                return inputs_predicate_offset.get(idx).cloned().unwrap_or(None);
+            }
+
             self.inputs().get(idx).and_then(|input| {
                 input
                     .predicate_offset()
@@ -435,7 +459,10 @@ mod field {
 
         #[inline(always)]
         fn outputs_offset(&self) -> usize {
-            // TODO: Add metadata
+            if let Some(CommonMetadata { outputs_offset, .. }) = &self.metadata {
+                return *outputs_offset;
+            }
+
             self.inputs_offset()
                 + self
                     .inputs()
@@ -446,7 +473,14 @@ mod field {
 
         #[inline(always)]
         fn outputs_offset_at(&self, idx: usize) -> Option<usize> {
-            // TODO: Add metadata
+            if let Some(CommonMetadata {
+                outputs_offset_at: outputs_offset,
+                ..
+            }) = &self.metadata
+            {
+                return outputs_offset.get(idx).cloned();
+            }
+
             if idx < self.outputs.len() {
                 Some(
                     self.outputs_offset()
@@ -476,7 +510,13 @@ mod field {
 
         #[inline(always)]
         fn witnesses_offset(&self) -> usize {
-            // TODO: Add metadata
+            if let Some(CommonMetadata {
+                witnesses_offset, ..
+            }) = &self.metadata
+            {
+                return *witnesses_offset;
+            }
+
             self.outputs_offset()
                 + self
                     .outputs()
@@ -487,7 +527,14 @@ mod field {
 
         #[inline(always)]
         fn witnesses_offset_at(&self, idx: usize) -> Option<usize> {
-            // TODO: Add metadata
+            if let Some(CommonMetadata {
+                witnesses_offset_at: witnesses_offset,
+                ..
+            }) = &self.metadata
+            {
+                return witnesses_offset.get(idx).cloned();
+            }
+
             if idx < self.witnesses.len() {
                 Some(
                     self.witnesses_offset()

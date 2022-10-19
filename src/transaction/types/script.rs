@@ -1,9 +1,12 @@
-use crate::transaction::checkable::{check_common_part, Checkable};
-use crate::transaction::field::{
-    GasLimit, GasPrice, Inputs, Maturity, Outputs, ReceiptsRoot, Script as ScriptField, ScriptData,
-    Witnesses,
+use crate::transaction::{
+    checkable::{check_common_part, Checkable},
+    field::{
+        GasLimit, GasPrice, Inputs, Maturity, Outputs, ReceiptsRoot, Script as ScriptField,
+        ScriptData, Witnesses,
+    },
+    metadata::CommonMetadata,
+    Chargeable,
 };
-use crate::transaction::Chargeable;
 use crate::{Cacheable, CheckError, ConsensusParameters, Input, Output, Witness};
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
@@ -19,6 +22,12 @@ use fuel_asm::Opcode;
 #[cfg(feature = "std")]
 use fuel_types::bytes::SerializableVec;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct ScriptMetadata {
+    pub common: CommonMetadata,
+    pub script_data_offset: usize,
+}
+
 #[derive(Debug, Clone, Derivative)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derivative(Eq, PartialEq, Hash)]
@@ -32,9 +41,9 @@ pub struct Script {
     pub(crate) outputs: Vec<Output>,
     pub(crate) witnesses: Vec<Witness>,
     pub(crate) receipts_root: Bytes32,
+    #[cfg_attr(feature = "serde", serde(skip))]
     #[derivative(PartialEq = "ignore", Hash = "ignore")]
-    // TODO: Add metadata
-    pub(crate) metadata: Option<()>,
+    pub(crate) metadata: Option<ScriptMetadata>,
 }
 
 impl Default for Script {
@@ -64,7 +73,14 @@ impl Default for Script {
 #[cfg(feature = "std")]
 impl crate::UniqueIdentifier for Script {
     fn id(&self) -> Bytes32 {
-        // TODO: Add metadata
+        if let Some(ScriptMetadata {
+            common: CommonMetadata { id, .. },
+            ..
+        }) = self.metadata
+        {
+            return id;
+        }
+
         let mut clone = self.clone();
 
         // Empties fields that should be zero during the signing.
@@ -140,13 +156,24 @@ impl Cacheable for Script {
     }
 
     fn precompute(&mut self) {
-        // TODO: Add metadata
+        self.metadata = None;
+        self.metadata = Some(ScriptMetadata {
+            common: CommonMetadata::compute(self),
+            script_data_offset: self.script_data_offset(),
+        });
     }
 }
 
 impl SizedBytes for Script {
     fn serialized_size(&self) -> usize {
-        // TODO: Add metadata
+        if let Some(ScriptMetadata {
+            common: CommonMetadata { serialize_size, .. },
+            ..
+        }) = &self.metadata
+        {
+            return *serialize_size;
+        }
+
         self.witnesses_offset()
             + self
                 .witnesses()
@@ -314,7 +341,13 @@ mod field {
 
         #[inline(always)]
         fn script_data_offset(&self) -> usize {
-            // TODO: Add metadata
+            if let Some(ScriptMetadata {
+                script_data_offset, ..
+            }) = &self.metadata
+            {
+                return *script_data_offset;
+            }
+
             self.script_offset() + bytes::padded_len(self.script.as_slice())
         }
     }
@@ -332,13 +365,29 @@ mod field {
 
         #[inline(always)]
         fn inputs_offset(&self) -> usize {
-            // TODO: Add metadata
+            if let Some(ScriptMetadata {
+                common: CommonMetadata { inputs_offset, .. },
+                ..
+            }) = &self.metadata
+            {
+                return *inputs_offset;
+            }
+
             self.script_data_offset() + bytes::padded_len(self.script_data.as_slice())
         }
 
         #[inline(always)]
         fn inputs_offset_at(&self, idx: usize) -> Option<usize> {
-            // TODO: Add metadata
+            if let Some(ScriptMetadata {
+                common: CommonMetadata {
+                    inputs_offset_at, ..
+                },
+                ..
+            }) = &self.metadata
+            {
+                return inputs_offset_at.get(idx).cloned();
+            }
+
             if idx < self.inputs.len() {
                 Some(
                     self.inputs_offset()
@@ -356,6 +405,18 @@ mod field {
 
         #[inline(always)]
         fn inputs_predicate_offset_at(&self, idx: usize) -> Option<(usize, usize)> {
+            if let Some(ScriptMetadata {
+                common:
+                    CommonMetadata {
+                        inputs_predicate_offset_at,
+                        ..
+                    },
+                ..
+            }) = &self.metadata
+            {
+                return inputs_predicate_offset_at.get(idx).cloned().unwrap_or(None);
+            }
+
             self.inputs().get(idx).and_then(|input| {
                 input
                     .predicate_offset()
@@ -380,7 +441,14 @@ mod field {
 
         #[inline(always)]
         fn outputs_offset(&self) -> usize {
-            // TODO: Add metadata
+            if let Some(ScriptMetadata {
+                common: CommonMetadata { outputs_offset, .. },
+                ..
+            }) = &self.metadata
+            {
+                return *outputs_offset;
+            }
+
             self.inputs_offset()
                 + self
                     .inputs()
@@ -391,7 +459,16 @@ mod field {
 
         #[inline(always)]
         fn outputs_offset_at(&self, idx: usize) -> Option<usize> {
-            // TODO: Add metadata
+            if let Some(ScriptMetadata {
+                common: CommonMetadata {
+                    outputs_offset_at, ..
+                },
+                ..
+            }) = &self.metadata
+            {
+                return outputs_offset_at.get(idx).cloned();
+            }
+
             if idx < self.outputs.len() {
                 Some(
                     self.outputs_offset()
@@ -421,7 +498,16 @@ mod field {
 
         #[inline(always)]
         fn witnesses_offset(&self) -> usize {
-            // TODO: Add metadata
+            if let Some(ScriptMetadata {
+                common: CommonMetadata {
+                    witnesses_offset, ..
+                },
+                ..
+            }) = &self.metadata
+            {
+                return *witnesses_offset;
+            }
+
             self.outputs_offset()
                 + self
                     .outputs()
@@ -432,7 +518,18 @@ mod field {
 
         #[inline(always)]
         fn witnesses_offset_at(&self, idx: usize) -> Option<usize> {
-            // TODO: Add metadata
+            if let Some(ScriptMetadata {
+                common:
+                    CommonMetadata {
+                        witnesses_offset_at,
+                        ..
+                    },
+                ..
+            }) = &self.metadata
+            {
+                return witnesses_offset_at.get(idx).cloned();
+            }
+
             if idx < self.witnesses.len() {
                 Some(
                     self.witnesses_offset()

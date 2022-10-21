@@ -724,10 +724,9 @@ mod tests {
     {
         let available_balances = initial_free_balances(tx, params)?;
         // cant overflow as metered bytes * gas_per_byte < u64::MAX
-        let bytes = (tx.metered_bytes_size() as u128)
-            * params.gas_per_byte as u128
-            * *tx.gas_price() as u128;
-        let gas = *tx.gas_limit() as u128 * *tx.gas_price() as u128;
+        let bytes =
+            (tx.metered_bytes_size() as u128) * params.gas_per_byte as u128 * tx.price() as u128;
+        let gas = tx.limit() as u128 * tx.price() as u128;
         let total = bytes + gas;
         // use different division mechanism than impl
         let fee = total / params.gas_price_factor as u128;
@@ -743,9 +742,8 @@ mod tests {
     {
         let available_balances = initial_free_balances(tx, params)?;
         // cant overflow as metered bytes * gas_per_byte < u64::MAX
-        let bytes = (tx.metered_bytes_size() as u128)
-            * params.gas_per_byte as u128
-            * *tx.gas_price() as u128;
+        let bytes =
+            (tx.metered_bytes_size() as u128) * params.gas_per_byte as u128 * tx.price() as u128;
         // use different division mechanism than impl
         let fee = bytes / params.gas_price_factor as u128;
         let fee_remainder = (bytes.rem_euclid(params.gas_price_factor as u128) > 0) as u128;

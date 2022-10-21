@@ -150,7 +150,21 @@ impl Transaction {
         }
     }
 
+    pub fn as_create_mut(&mut self) -> Option<&mut Create> {
+        match self {
+            Self::Create(create) => Some(create),
+            _ => None,
+        }
+    }
+
     pub const fn as_script(&self) -> Option<&Script> {
+        match self {
+            Self::Script(script) => Some(script),
+            _ => None,
+        }
+    }
+
+    pub fn as_script_mut(&mut self) -> Option<&mut Script> {
         match self {
             Self::Script(script) => Some(script),
             _ => None,

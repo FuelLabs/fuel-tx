@@ -18,6 +18,8 @@ where
         + Executable
         + Chargeable
         + Signable
+        + field::GasLimit
+        + field::GasPrice
         + field::Maturity
         + IntoChecked,
 {
@@ -59,6 +61,8 @@ impl<T> Buildable for T where
         + Executable
         + Chargeable
         + Signable
+        + field::GasPrice
+        + field::GasLimit
         + field::Maturity
         + IntoChecked
 {

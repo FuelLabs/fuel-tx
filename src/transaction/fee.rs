@@ -1,4 +1,4 @@
-use crate::{field, ConsensusParameters};
+use crate::ConsensusParameters;
 use fuel_asm::Word;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -108,15 +108,21 @@ impl TransactionFee {
     /// Will return `None` if arithmetic overflow occurs.
     pub fn checked_from_tx<T: Chargeable>(params: &ConsensusParameters, tx: &T) -> Option<Self> {
         let metered_bytes = tx.metered_bytes_size() as Word;
-        let gas_limit = *tx.gas_limit();
-        let gas_price = *tx.gas_price();
+        let gas_limit = tx.limit();
+        let gas_price = tx.price();
 
         Self::checked_from_values(params, metered_bytes, gas_limit, gas_price)
     }
 }
 
 /// Means that the blockchain charges fee for the transaction.
-pub trait Chargeable: field::GasPrice + field::GasLimit {
+pub trait Chargeable {
+    /// Returns the gas price.
+    fn price(&self) -> Word;
+
+    /// Returns the gas limit.
+    fn limit(&self) -> Word;
+
     /// Used for accounting purposes when charging byte based fees.
     fn metered_bytes_size(&self) -> usize;
 }

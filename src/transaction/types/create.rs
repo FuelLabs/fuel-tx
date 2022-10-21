@@ -63,6 +63,14 @@ impl crate::UniqueIdentifier for Create {
 }
 
 impl Chargeable for Create {
+    fn price(&self) -> Word {
+        *GasPrice::gas_price(self)
+    }
+
+    fn limit(&self) -> Word {
+        *GasLimit::gas_limit(self)
+    }
+
     #[inline(always)]
     fn metered_bytes_size(&self) -> usize {
         // Just use the default serialized size for now until

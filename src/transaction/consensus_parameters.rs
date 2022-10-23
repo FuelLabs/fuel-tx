@@ -1,4 +1,3 @@
-use crate::Transaction;
 use fuel_types::bytes::WORD_SIZE;
 use fuel_types::{AssetId, Bytes32};
 
@@ -54,17 +53,11 @@ impl ConsensusParameters {
     };
 
     /// Transaction memory offset in VM runtime
-    pub const fn tx_offset(&self, include_tx_offset: bool) -> usize {
-        let offset = Bytes32::LEN // Tx ID
+    pub const fn tx_offset(&self) -> usize {
+        Bytes32::LEN // Tx ID
             + WORD_SIZE // Tx size
-              // Asset ID/Balance coin input pairs
-            + self.max_inputs as usize * (AssetId::LEN + WORD_SIZE);
-
-        if include_tx_offset {
-            offset + Transaction::offset()
-        } else {
-            offset
-        }
+            // Asset ID/Balance coin input pairs
+            + self.max_inputs as usize * (AssetId::LEN + WORD_SIZE)
     }
 
     /// Replace the max contract size with the given argument

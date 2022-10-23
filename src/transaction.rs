@@ -1,5 +1,5 @@
 use fuel_crypto::PublicKey;
-use fuel_types::bytes::{SizedBytes, WORD_SIZE};
+use fuel_types::bytes::SizedBytes;
 use fuel_types::{Address, AssetId, Bytes32, Salt, Word};
 
 use alloc::vec::{IntoIter, Vec};
@@ -170,17 +170,6 @@ impl Transaction {
             _ => None,
         }
     }
-
-    /// `Transaction` is an enum that aggregates different transaction variants.
-    /// This method returns the offset before the beginning of the variant's body.
-    /// Each variant also provides offsets methods for each inner field.
-    ///
-    /// To get the offset to the variant's inner field in the context of `Transaction`,
-    /// it should be combined with `Transaction::offset`.
-    pub const fn offset() -> usize {
-        // The `Transaction` 64 bits aligned discriminant
-        WORD_SIZE
-    }
 }
 
 pub trait Executable: field::Inputs + field::Outputs + field::Witnesses {
@@ -348,11 +337,10 @@ impl<T: field::Inputs + field::Outputs + field::Witnesses> Executable for T {}
 
 impl SizedBytes for Transaction {
     fn serialized_size(&self) -> usize {
-        Self::offset()
-            + match self {
-                Self::Script(script) => script.serialized_size(),
-                Self::Create(create) => create.serialized_size(),
-            }
+        match self {
+            Self::Script(script) => script.serialized_size(),
+            Self::Create(create) => create.serialized_size(),
+        }
     }
 }
 

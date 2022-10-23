@@ -24,15 +24,8 @@ impl io::Read for Transaction {
         }
 
         match self {
-            Self::Script(script) => {
-                let buf = bytes::store_number_unchecked(buf, TransactionRepr::Script as Word);
-                script.read(buf)
-            }
-
-            Self::Create(create) => {
-                let buf = bytes::store_number_unchecked(buf, TransactionRepr::Create as Word);
-                create.read(buf)
-            }
+            Self::Script(script) => script.read(buf),
+            Self::Create(create) => create.read(buf),
         }
     }
 }
@@ -44,7 +37,8 @@ impl Write for Transaction {
         }
 
         // Safety: buffer size is checked
-        let (identifier, buf): (Word, _) = unsafe { bytes::restore_number_unchecked(buf) };
+        let (identifier, _): (Word, _) =
+            unsafe { bytes::restore_number_unchecked(&buf[..WORD_SIZE]) };
         let identifier = TransactionRepr::try_from(identifier)?;
 
         match identifier {

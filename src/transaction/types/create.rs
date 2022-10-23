@@ -7,7 +7,8 @@ use crate::transaction::{
     metadata::CommonMetadata,
 };
 use crate::{
-    Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot, Witness,
+    Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot,
+    TransactionRepr, Witness,
 };
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
@@ -273,11 +274,7 @@ mod field {
 
         #[inline(always)]
         fn gas_price_offset_static() -> usize {
-            // Before `Create` transaction should be `TransactionRepr`, but it is handled by the
-            // `Transaction` type itself.
-            //
-            // #Note : If you need offset from `Transaction`, it should be `Transaction::offset()` + `Create::*_offset`.
-            0
+            WORD_SIZE /* `Transaction` enum discriminant */
         }
     }
 
@@ -571,6 +568,7 @@ impl io::Read for Create {
             return Err(bytes::eof());
         }
 
+        let buf = bytes::store_number_unchecked(buf, TransactionRepr::Create as Word);
         let Create {
             gas_price,
             gas_limit,
@@ -627,9 +625,18 @@ impl io::Read for Create {
 #[cfg(feature = "std")]
 impl io::Write for Create {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let mut n = crate::consts::TRANSACTION_CREATE_FIXED_SIZE - WORD_SIZE;
+        let mut n = crate::consts::TRANSACTION_CREATE_FIXED_SIZE;
         if buf.len() < n {
             return Err(bytes::eof());
+        }
+
+        let (identifier, buf): (Word, _) = unsafe { bytes::restore_number_unchecked(buf) };
+        let identifier = TransactionRepr::try_from(identifier)?;
+        if identifier != TransactionRepr::Create {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "The provided identifier to the `Create` is invalid!",
+            ));
         }
 
         // Safety: buffer size is checked

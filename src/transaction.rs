@@ -64,6 +64,7 @@ impl Transaction {
         let receipts_root = Bytes32::zeroed();
 
         Script {
+            discriminant: TransactionRepr::Script,
             gas_price,
             gas_limit,
             maturity,
@@ -96,6 +97,7 @@ impl Transaction {
             .unwrap_or(0);
 
         Create {
+            discriminant: TransactionRepr::Create,
             gas_price,
             gas_limit,
             maturity,

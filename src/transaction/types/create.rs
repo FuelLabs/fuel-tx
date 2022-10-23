@@ -7,7 +7,8 @@ use crate::transaction::{
     metadata::CommonMetadata,
 };
 use crate::{
-    Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot, Witness,
+    Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot,
+    TransactionRepr, Witness,
 };
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
@@ -22,10 +23,11 @@ use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use fuel_types::bytes::SerializableVec;
 
-#[derive(Default, Debug, Clone, Derivative)]
+#[derive(Debug, Clone, Derivative)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derivative(Eq, PartialEq, Hash)]
 pub struct Create {
+    pub(crate) discriminant: TransactionRepr,
     pub(crate) gas_price: Word,
     pub(crate) gas_limit: Word,
     pub(crate) maturity: Word,
@@ -39,6 +41,25 @@ pub struct Create {
     #[cfg_attr(feature = "serde", serde(skip))]
     #[derivative(PartialEq = "ignore", Hash = "ignore")]
     pub(crate) metadata: Option<CommonMetadata>,
+}
+
+impl Default for Create {
+    fn default() -> Self {
+        Self {
+            discriminant: TransactionRepr::Create,
+            gas_price: Default::default(),
+            gas_limit: Default::default(),
+            maturity: Default::default(),
+            bytecode_length: Default::default(),
+            bytecode_witness_index: Default::default(),
+            storage_slots: vec![],
+            inputs: vec![],
+            outputs: vec![],
+            witnesses: vec![],
+            salt: Default::default(),
+            metadata: None,
+        }
+    }
 }
 
 #[cfg(feature = "std")]
@@ -567,7 +588,7 @@ impl io::Read for Create {
             return Err(bytes::eof());
         }
 
-        let buf = bytes::store_number_unchecked(buf, crate::TransactionRepr::Create as Word);
+        let buf = bytes::store_number_unchecked(buf, TransactionRepr::Create as Word);
         let Create {
             gas_price,
             gas_limit,
@@ -630,8 +651,8 @@ impl io::Write for Create {
         }
 
         let (identifier, buf): (Word, _) = unsafe { bytes::restore_number_unchecked(buf) };
-        let identifier = crate::TransactionRepr::try_from(identifier)?;
-        if identifier != crate::TransactionRepr::Create {
+        let identifier = TransactionRepr::try_from(identifier)?;
+        if identifier != TransactionRepr::Create {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "The provided identifier to the `Create` is invalid!",
@@ -681,6 +702,7 @@ impl io::Write for Create {
         }
 
         *self = Create {
+            discriminant: TransactionRepr::Create,
             gas_price,
             gas_limit,
             maturity,

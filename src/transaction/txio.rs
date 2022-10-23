@@ -37,8 +37,8 @@ impl Write for Transaction {
         }
 
         // Safety: buffer size is checked
-        let (identifier, _): (Word, _) =
-            unsafe { bytes::restore_number_unchecked(&buf[..WORD_SIZE]) };
+        let read_buf = &buf[..WORD_SIZE];
+        let (identifier, _): (Word, _) = unsafe { bytes::restore_number_unchecked(read_buf) };
         let identifier = TransactionRepr::try_from(identifier)?;
 
         match identifier {

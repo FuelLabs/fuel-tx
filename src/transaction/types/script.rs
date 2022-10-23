@@ -49,8 +49,6 @@ pub struct Script {
 
 impl Default for Script {
     fn default() -> Self {
-        use alloc::vec;
-
         // Create a valid transaction with a single return instruction
         //
         // The Return op is mandatory for the execution of any context
@@ -58,14 +56,14 @@ impl Default for Script {
 
         Self {
             discriminant: TransactionRepr::Script,
-            gas_price: 0,
+            gas_price: Default::default(),
             gas_limit: ConsensusParameters::DEFAULT.max_gas_per_tx,
-            maturity: 0,
+            maturity: Default::default(),
             script,
-            script_data: vec![],
-            inputs: vec![],
-            outputs: vec![],
-            witnesses: vec![],
+            script_data: Default::default(),
+            inputs: Default::default(),
+            outputs: Default::default(),
+            witnesses: Default::default(),
             receipts_root: Default::default(),
             metadata: None,
         }

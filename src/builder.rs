@@ -299,7 +299,7 @@ impl<Tx: Buildable> TransactionBuilder<Tx> {
     }
 
     #[cfg(feature = "std")]
-    pub fn finalize_checked_partially(
+    pub fn finalize_checked_stateless(
         &mut self,
         height: Word,
         params: &ConsensusParameters,

@@ -68,3 +68,6 @@ required-features = ["std"]
 name = "test-valid"
 path = "tests/valid.rs"
 required-features = ["std"]
+
+[patch.crates-io]
+fuel-types = { git = "https://github.com/FuelLabs/fuel-types/", branch = "feature/move-utxoid" }

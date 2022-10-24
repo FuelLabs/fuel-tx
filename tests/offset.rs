@@ -83,9 +83,9 @@ fn tx_offset() {
 
                     let ofs = input_ofs + i.repr().utxo_id_offset().expect("input have utxo_id");
                     let utxo_id_p =
-                        UtxoId::from_bytes(&bytes[ofs..]).expect("failed to deserialize utxo id");
+                        unsafe { UtxoId::as_ref_unchecked(&bytes[ofs..ofs + UtxoId::LEN]) };
 
-                    assert_eq!(utxo_id, &utxo_id_p);
+                    assert_eq!(utxo_id, utxo_id_p);
                 }
 
                 if let Some(owner) = i.input_owner() {

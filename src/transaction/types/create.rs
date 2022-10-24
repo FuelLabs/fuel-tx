@@ -235,7 +235,7 @@ pub mod checked {
     use crate::checked_transaction::{initial_free_balances, AvailableBalances};
     use crate::{
         Cacheable, CheckError, Checkable, Checked, ConsensusParameters, Create, IntoChecked,
-        Partially, TransactionFee,
+        TransactionFee,
     };
     use fuel_types::{AssetId, Word};
     use std::collections::BTreeMap;
@@ -253,11 +253,11 @@ pub mod checked {
     impl IntoChecked for Create {
         type Metadata = CheckedMetadata;
 
-        fn into_checked_partially(
+        fn into_checked_stateless(
             mut self,
             block_height: Word,
             params: &ConsensusParameters,
-        ) -> Result<Checked<Self, Partially>, CheckError> {
+        ) -> Result<Checked<Self>, CheckError> {
             self.precompute();
             self.check_without_signatures(block_height, params)?;
 
@@ -273,7 +273,7 @@ pub mod checked {
                 fee,
             };
 
-            Ok(Checked::new(self, metadata))
+            Ok(Checked::Stateless(self, metadata))
         }
     }
 }

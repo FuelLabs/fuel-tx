@@ -53,9 +53,7 @@ pub use transaction::{CreateCheckedMetadata, ScriptCheckedMetadata, Signable, Un
 pub use transaction::consensus_parameters::default_parameters;
 
 #[cfg(feature = "std")]
-pub use checked_transaction::{
-    Checked, CheckedMetadata, CheckedTransaction, Fully, IntoChecked, Partially, Stage,
-};
+pub use checked_transaction::{Checked, CheckedMetadata, CheckedTransaction, IntoChecked};
 
 #[cfg(feature = "alloc")]
 pub use contract::Contract;

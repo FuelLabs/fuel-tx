@@ -1,8 +1,8 @@
 use crate::transaction::field::{BytecodeLength, BytecodeWitnessIndex, Witnesses};
 use crate::transaction::{field, Chargeable, Create, Executable, Script, Signable};
 use crate::{
-    Cacheable, Checked, ConsensusParameters, Input, IntoChecked, Output, Partially, StorageSlot,
-    Transaction, TransactionRepr, TxPointer, Witness,
+    Cacheable, Checked, ConsensusParameters, Input, IntoChecked, Output, StorageSlot, Transaction,
+    TransactionRepr, TxPointer, Witness,
 };
 
 use fuel_crypto::SecretKey;
@@ -303,9 +303,9 @@ impl<Tx: Buildable> TransactionBuilder<Tx> {
         &mut self,
         height: Word,
         params: &ConsensusParameters,
-    ) -> Checked<Tx, Partially> {
+    ) -> Checked<Tx> {
         self.finalize()
-            .into_checked_partially(height, params)
+            .into_checked_stateless(height, params)
             .expect("failed to check tx")
     }
 }

@@ -2,7 +2,7 @@ use crate::transaction::field::{BytecodeLength, BytecodeWitnessIndex, Witnesses}
 use crate::transaction::{field, Chargeable, Create, Executable, Script, Signable};
 use crate::{
     Cacheable, Checked, ConsensusParameters, Input, IntoChecked, Output, Partially, StorageSlot,
-    TransactionRepr, TxPointer, Witness,
+    Transaction, TransactionRepr, TxPointer, Witness,
 };
 
 use fuel_crypto::SecretKey;
@@ -21,7 +21,8 @@ where
         + field::GasLimit
         + field::GasPrice
         + field::Maturity
-        + IntoChecked,
+        + IntoChecked
+        + Into<Transaction>,
 {
     /// Append an input to the transaction
     fn add_input(&mut self, input: Input) {
@@ -65,6 +66,7 @@ impl<T> Buildable for T where
         + field::GasLimit
         + field::Maturity
         + IntoChecked
+        + Into<Transaction>
 {
 }
 
@@ -269,6 +271,11 @@ impl<Tx: Buildable> TransactionBuilder<Tx> {
     }
 
     #[cfg(feature = "std")]
+    pub fn finalize_as_transaction(&mut self) -> Transaction {
+        self.finalize().into()
+    }
+
+    #[cfg(feature = "std")]
     pub fn finalize_without_signature(&mut self) -> Tx {
         self.prepare_finalize();
 
@@ -277,6 +284,11 @@ impl<Tx: Buildable> TransactionBuilder<Tx> {
         tx.precompute();
 
         tx
+    }
+
+    #[cfg(feature = "std")]
+    pub fn finalize_without_signature_as_transaction(&mut self) -> Transaction {
+        self.finalize_without_signature().into()
     }
 
     #[cfg(feature = "std")]

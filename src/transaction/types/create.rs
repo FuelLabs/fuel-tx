@@ -27,7 +27,6 @@ use fuel_types::bytes::SerializableVec;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derivative(Eq, PartialEq, Hash)]
 pub struct Create {
-    pub(crate) discriminant: TransactionRepr,
     pub(crate) gas_price: Word,
     pub(crate) gas_limit: Word,
     pub(crate) maturity: Word,
@@ -46,7 +45,6 @@ pub struct Create {
 impl Default for Create {
     fn default() -> Self {
         Self {
-            discriminant: TransactionRepr::Create,
             gas_price: Default::default(),
             gas_limit: Default::default(),
             maturity: Default::default(),
@@ -702,7 +700,6 @@ impl io::Write for Create {
         }
 
         *self = Create {
-            discriminant: TransactionRepr::Create,
             gas_price,
             gas_limit,
             maturity,

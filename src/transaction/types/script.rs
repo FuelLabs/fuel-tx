@@ -32,7 +32,6 @@ pub(crate) struct ScriptMetadata {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derivative(Eq, PartialEq, Hash)]
 pub struct Script {
-    pub(crate) discriminant: TransactionRepr,
     pub(crate) gas_price: Word,
     pub(crate) gas_limit: Word,
     pub(crate) maturity: Word,
@@ -55,7 +54,6 @@ impl Default for Script {
         let script = Opcode::RET(0x10).to_bytes().to_vec();
 
         Self {
-            discriminant: TransactionRepr::Script,
             gas_price: Default::default(),
             gas_limit: ConsensusParameters::DEFAULT.max_gas_per_tx,
             maturity: Default::default(),
@@ -670,7 +668,6 @@ impl io::Write for Script {
         }
 
         *self = Script {
-            discriminant: TransactionRepr::Script,
             gas_price,
             gas_limit,
             maturity,

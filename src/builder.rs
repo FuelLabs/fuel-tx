@@ -2,7 +2,7 @@ use crate::transaction::field::{BytecodeLength, BytecodeWitnessIndex, Witnesses}
 use crate::transaction::{field, Chargeable, Create, Executable, Script, Signable};
 use crate::{
     Cacheable, Checked, ConsensusParameters, Input, IntoChecked, Output, StorageSlot, Transaction,
-    TransactionRepr, TxPointer, Witness,
+    TxPointer, Witness,
 };
 
 use fuel_crypto::SecretKey;
@@ -85,7 +85,6 @@ pub struct TransactionBuilder<Tx: Buildable> {
 impl TransactionBuilder<Script> {
     pub fn script(script: Vec<u8>, script_data: Vec<u8>) -> Self {
         let tx = Script {
-            discriminant: TransactionRepr::Script,
             gas_price: Default::default(),
             gas_limit: Default::default(),
             maturity: Default::default(),
@@ -109,7 +108,6 @@ impl TransactionBuilder<Script> {
 impl TransactionBuilder<Create> {
     pub fn create(bytecode: Witness, salt: Salt, storage_slots: Vec<StorageSlot>) -> Self {
         let mut tx = Create {
-            discriminant: TransactionRepr::Create,
             gas_price: Default::default(),
             gas_limit: Default::default(),
             maturity: Default::default(),

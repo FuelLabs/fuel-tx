@@ -7,7 +7,7 @@ use crate::transaction::{
     metadata::CommonMetadata,
     Chargeable,
 };
-use crate::{CheckError, ConsensusParameters, Input, Output, TransactionRepr, Witness};
+use crate::{CheckError, ConsensusParameters, Input, Output, Witness};
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
 use fuel_types::{bytes, Bytes32, Word};
@@ -215,7 +215,7 @@ pub mod checked {
     impl IntoChecked for Script {
         type Metadata = CheckedMetadata;
 
-        fn into_checked_stateless(
+        fn into_checked_basic(
             mut self,
             block_height: Word,
             params: &ConsensusParameters,
@@ -235,7 +235,7 @@ pub mod checked {
                 fee,
             };
 
-            Ok(Checked::Stateless(self, metadata))
+            Ok(Checked::basic(self, metadata))
         }
     }
 }
@@ -560,7 +560,7 @@ impl io::Read for Script {
             return Err(bytes::eof());
         }
 
-        let buf = bytes::store_number_unchecked(buf, TransactionRepr::Script as Word);
+        let buf = bytes::store_number_unchecked(buf, crate::TransactionRepr::Script as Word);
         let Script {
             gas_price,
             gas_limit,
@@ -619,8 +619,8 @@ impl io::Write for Script {
         }
 
         let (identifier, buf): (Word, _) = unsafe { bytes::restore_number_unchecked(buf) };
-        let identifier = TransactionRepr::try_from(identifier)?;
-        if identifier != TransactionRepr::Script {
+        let identifier = crate::TransactionRepr::try_from(identifier)?;
+        if identifier != crate::TransactionRepr::Script {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "The provided identifier to the `Script` is invalid!",

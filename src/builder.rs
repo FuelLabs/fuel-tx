@@ -297,13 +297,13 @@ impl<Tx: Buildable> TransactionBuilder<Tx> {
     }
 
     #[cfg(feature = "std")]
-    pub fn finalize_checked_stateless(
+    pub fn finalize_checked_basic(
         &mut self,
         height: Word,
         params: &ConsensusParameters,
     ) -> Checked<Tx> {
         self.finalize()
-            .into_checked_stateless(height, params)
+            .into_checked_basic(height, params)
             .expect("failed to check tx")
     }
 }

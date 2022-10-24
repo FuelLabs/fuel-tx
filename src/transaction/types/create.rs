@@ -7,8 +7,7 @@ use crate::transaction::{
     metadata::CommonMetadata,
 };
 use crate::{
-    Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot,
-    TransactionRepr, Witness,
+    Chargeable, CheckError, ConsensusParameters, Contract, Input, Output, StorageSlot, Witness,
 };
 use derivative::Derivative;
 use fuel_types::bytes::{SizedBytes, WORD_SIZE};
@@ -251,7 +250,7 @@ pub mod checked {
     impl IntoChecked for Create {
         type Metadata = CheckedMetadata;
 
-        fn into_checked_stateless(
+        fn into_checked_basic(
             mut self,
             block_height: Word,
             params: &ConsensusParameters,
@@ -271,7 +270,7 @@ pub mod checked {
                 fee,
             };
 
-            Ok(Checked::Stateless(self, metadata))
+            Ok(Checked::basic(self, metadata))
         }
     }
 }
@@ -586,7 +585,7 @@ impl io::Read for Create {
             return Err(bytes::eof());
         }
 
-        let buf = bytes::store_number_unchecked(buf, TransactionRepr::Create as Word);
+        let buf = bytes::store_number_unchecked(buf, crate::TransactionRepr::Create as Word);
         let Create {
             gas_price,
             gas_limit,
@@ -649,8 +648,8 @@ impl io::Write for Create {
         }
 
         let (identifier, buf): (Word, _) = unsafe { bytes::restore_number_unchecked(buf) };
-        let identifier = TransactionRepr::try_from(identifier)?;
-        if identifier != TransactionRepr::Create {
+        let identifier = crate::TransactionRepr::try_from(identifier)?;
+        if identifier != crate::TransactionRepr::Create {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "The provided identifier to the `Create` is invalid!",

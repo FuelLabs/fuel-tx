@@ -3,6 +3,7 @@
 //!
 //! This allows the VM to accept transactions with metadata that have been already verified upstream.
 
+#![allow(non_upper_case_globals)]
 use crate::{
     field, Chargeable, CheckError, Checkable, ConsensusParameters, Create, Input, Output, Script,
     Transaction, TransactionFee,
@@ -11,6 +12,26 @@ use fuel_types::{AssetId, Word};
 
 use alloc::collections::BTreeMap;
 use core::borrow::Borrow;
+
+bitflags::bitflags! {
+    /// Possible types of transaction checks.
+    pub struct Checks: u32 {
+        /// Basic checks defined in the specification for each transaction:
+        /// https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#transaction
+        const Basic         = 0b00000001;
+        /// Check that signature in the transactions are valid.
+        const Signatures    = 0b00000010;
+        /// All possible checks.
+        const All           = Self::Basic.bits
+                            | Self::Signatures.bits;
+    }
+}
+
+impl core::fmt::Display for Checks {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{:032b}", self.bits)
+    }
+}
 
 /// The type describes that the inner transaction was already checked.
 ///
@@ -22,46 +43,50 @@ use core::borrow::Borrow;
 /// If you need to modify an inner state, you need to get inner values
 /// (via the `Into<(Tx, Tx ::Metadata)>` trait), modify them and check again.
 ///
-/// Each ascending checked status includes all previous checks. So `Signature` means that
-/// `Stateless` also is passed.
-///
 /// # Dev note: Avoid serde serialization of this type. Since checked tx would need to be
 /// re-validated on deserialization anyways, it's cleaner to redo the tx check.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum Checked<Tx: IntoChecked> {
-    /// The transaction passed checks without the usage of the state of the blockchain.
-    ///
-    /// The rules defined in the specification:
-    /// https://github.com/FuelLabs/fuel-specs/blob/master/specs/protocol/tx_format.md#transaction
-    Stateless(Tx, Tx::Metadata),
-    /// Signatures in the transaction are valid.
-    Signatures(Tx, Tx::Metadata),
+pub struct Checked<Tx: IntoChecked> {
+    transaction: Tx,
+    metadata: Tx::Metadata,
+    checks_bitmask: Checks,
 }
 
 impl<Tx: IntoChecked> Checked<Tx> {
+    pub fn new(transaction: Tx, metadata: Tx::Metadata, checks_bitmask: Checks) -> Self {
+        Checked {
+            transaction,
+            metadata,
+            checks_bitmask,
+        }
+    }
+
+    pub(crate) fn basic(transaction: Tx, metadata: Tx::Metadata) -> Self {
+        Checked::new(transaction, metadata, Checks::Basic)
+    }
+
+    /// Returns reference on inner transaction.
     pub fn transaction(&self) -> &Tx {
-        match self {
-            Checked::Stateless(tx, _) => tx,
-            Checked::Signatures(tx, _) => tx,
-        }
+        &self.transaction
     }
 
+    /// Returns the metadata generated during the check for transaction.
     pub fn metadata(&self) -> &Tx::Metadata {
-        match self {
-            Checked::Stateless(_, metadata) => metadata,
-            Checked::Signatures(_, metadata) => metadata,
-        }
+        &self.metadata
     }
 
-    /// Performs full check, if not yet.
-    pub fn check(self) -> Result<Checked<Tx>, CheckError> {
-        match self {
-            Checked::Stateless(transaction, metadata) => {
-                transaction.check_signatures()?;
-                Ok(Checked::Signatures(transaction, metadata))
-            }
-            Checked::Signatures(_, _) => Ok(self),
+    /// Returns the bitmask of all passed checks.
+    pub fn checks(&self) -> &Checks {
+        &self.checks_bitmask
+    }
+
+    /// Performs check of signatures, if not yet.
+    pub fn check_signatures(mut self) -> Result<Self, CheckError> {
+        if !self.checks_bitmask.contains(Checks::Signatures) {
+            self.transaction.check_signatures()?;
+            self.checks_bitmask.insert(Checks::Signatures);
         }
+        Ok(self)
     }
 }
 
@@ -76,38 +101,32 @@ impl<Tx: IntoChecked + Default> Default for Checked<Tx> {
 
 impl<Tx: IntoChecked> From<Checked<Tx>> for (Tx, Tx::Metadata) {
     fn from(checked: Checked<Tx>) -> Self {
-        match checked {
-            Checked::Stateless(transaction, metadata) => (transaction, metadata),
-            Checked::Signatures(transaction, metadata) => (transaction, metadata),
-        }
+        let Checked {
+            transaction,
+            metadata,
+            ..
+        } = checked;
+
+        (transaction, metadata)
     }
 }
 
 impl<Tx: IntoChecked> AsRef<Tx> for Checked<Tx> {
     fn as_ref(&self) -> &Tx {
-        match self {
-            Checked::Stateless(tx, _) => tx,
-            Checked::Signatures(tx, _) => tx,
-        }
+        &self.transaction
     }
 }
 
 #[cfg(feature = "internals")]
 impl<Tx: IntoChecked> AsMut<Tx> for Checked<Tx> {
     fn as_mut(&mut self) -> &mut Tx {
-        match self {
-            Checked::Stateless(tx, _) => tx,
-            Checked::Signatures(tx, _) => tx,
-        }
+        &mut self.transaction
     }
 }
 
 impl<Tx: IntoChecked> Borrow<Tx> for Checked<Tx> {
     fn borrow(&self) -> &Tx {
-        match self {
-            Checked::Stateless(tx, _) => tx,
-            Checked::Signatures(tx, _) => tx,
-        }
+        self.transaction()
     }
 }
 
@@ -115,17 +134,18 @@ pub trait IntoChecked: Checkable + Sized {
     /// Metadata produced during the check.
     type Metadata: Sized;
 
-    /// Fully checks transaction, including signatures.
+    /// Returns transaction that passed all `Checks`.
     fn into_checked(
         self,
         block_height: Word,
         params: &ConsensusParameters,
     ) -> Result<Checked<Self>, CheckError> {
-        self.into_checked_stateless(block_height, params)?.check()
+        self.into_checked_basic(block_height, params)?
+            .check_signatures()
     }
 
-    /// Does only stateless checks, without signature checks.
-    fn into_checked_stateless(
+    /// Returns transaction that passed only `Checks::Basic`.
+    fn into_checked_basic(
         self,
         block_height: Word,
         params: &ConsensusParameters,
@@ -145,39 +165,25 @@ pub enum CheckedTransaction {
 
 impl From<Checked<Transaction>> for CheckedTransaction {
     fn from(checked: Checked<Transaction>) -> Self {
-        match checked {
-            Checked::Stateless(transaction, metadata) => {
-                // # Dev note: Avoid wildcard pattern to be sure that all variants are covered.
-                match (transaction, metadata) {
-                    (Transaction::Script(transaction), CheckedMetadata::Script(metadata)) => {
-                        Self::Script(Checked::Stateless(transaction, metadata))
-                    }
-                    (Transaction::Create(transaction), CheckedMetadata::Create(metadata)) => {
-                        Self::Create(Checked::Stateless(transaction, metadata))
-                    }
-                    // The code should produce the `CheckedMetadata` for the corresponding transaction
-                    // variant. It is done in the implementation of the `IntoChecked` trait for
-                    // `Transaction`. With the current implementation, the patterns below are unreachable.
-                    (Transaction::Script(_), _) => unreachable!(),
-                    (Transaction::Create(_), _) => unreachable!(),
-                }
+        let Checked {
+            transaction,
+            metadata,
+            checks_bitmask,
+        } = checked;
+
+        // # Dev note: Avoid wildcard pattern to be sure that all variants are covered.
+        match (transaction, metadata) {
+            (Transaction::Script(transaction), CheckedMetadata::Script(metadata)) => {
+                Self::Script(Checked::new(transaction, metadata, checks_bitmask))
             }
-            Checked::Signatures(transaction, metadata) => {
-                // # Dev note: Avoid wildcard pattern to be sure that all variants are covered.
-                match (transaction, metadata) {
-                    (Transaction::Script(transaction), CheckedMetadata::Script(metadata)) => {
-                        Self::Script(Checked::Signatures(transaction, metadata))
-                    }
-                    (Transaction::Create(transaction), CheckedMetadata::Create(metadata)) => {
-                        Self::Create(Checked::Signatures(transaction, metadata))
-                    }
-                    // The code should produce the `CheckedMetadata` for the corresponding transaction
-                    // variant. It is done in the implementation of the `IntoChecked` trait for
-                    // `Transaction`. With the current implementation, the patterns below are unreachable.
-                    (Transaction::Script(_), _) => unreachable!(),
-                    (Transaction::Create(_), _) => unreachable!(),
-                }
+            (Transaction::Create(transaction), CheckedMetadata::Create(metadata)) => {
+                Self::Create(Checked::new(transaction, metadata, checks_bitmask))
             }
+            // The code should produce the `CheckedMetadata` for the corresponding transaction
+            // variant. It is done in the implementation of the `IntoChecked` trait for
+            // `Transaction`. With the current implementation, the patterns below are unreachable.
+            (Transaction::Script(_), _) => unreachable!(),
+            (Transaction::Create(_), _) => unreachable!(),
         }
     }
 }
@@ -197,18 +203,16 @@ impl From<Checked<Create>> for CheckedTransaction {
 impl From<CheckedTransaction> for Checked<Transaction> {
     fn from(checked: CheckedTransaction) -> Self {
         match checked {
-            CheckedTransaction::Script(Checked::Stateless(transaction, metadata)) => {
-                Checked::Stateless(transaction.into(), metadata.into())
-            }
-            CheckedTransaction::Script(Checked::Signatures(transaction, metadata)) => {
-                Checked::Signatures(transaction.into(), metadata.into())
-            }
-            CheckedTransaction::Create(Checked::Stateless(transaction, metadata)) => {
-                Checked::Stateless(transaction.into(), metadata.into())
-            }
-            CheckedTransaction::Create(Checked::Signatures(transaction, metadata)) => {
-                Checked::Signatures(transaction.into(), metadata.into())
-            }
+            CheckedTransaction::Script(Checked {
+                transaction,
+                metadata,
+                checks_bitmask,
+            }) => Checked::new(transaction.into(), metadata.into(), checks_bitmask),
+            CheckedTransaction::Create(Checked {
+                transaction,
+                metadata,
+                checks_bitmask,
+            }) => Checked::new(transaction.into(), metadata.into(), checks_bitmask),
         }
     }
 }
@@ -235,7 +239,7 @@ impl From<<Create as IntoChecked>::Metadata> for CheckedMetadata {
 impl IntoChecked for Transaction {
     type Metadata = CheckedMetadata;
 
-    fn into_checked_stateless(
+    fn into_checked_basic(
         self,
         block_height: Word,
         params: &ConsensusParameters,
@@ -243,17 +247,17 @@ impl IntoChecked for Transaction {
         let (transaction, metadata) = match self {
             Transaction::Script(script) => {
                 let (transaction, metadata) =
-                    script.into_checked_stateless(block_height, params)?.into();
+                    script.into_checked_basic(block_height, params)?.into();
                 (transaction.into(), metadata.into())
             }
             Transaction::Create(create) => {
                 let (transaction, metadata) =
-                    create.into_checked_stateless(block_height, params)?.into();
+                    create.into_checked_basic(block_height, params)?.into();
                 (transaction.into(), metadata.into())
             }
         };
 
-        Ok(Checked::Stateless(transaction, metadata))
+        Ok(Checked::basic(transaction, metadata))
     }
 }
 

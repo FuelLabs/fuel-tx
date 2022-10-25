@@ -90,7 +90,6 @@ impl crate::UniqueIdentifier for Mint {
         }
 
         let mut clone = self.clone();
-        // TODO: Wait for answer https://github.com/FuelLabs/fuel-specs/issues/421#issuecomment-1290410587
         fuel_crypto::Hasher::hash(clone.to_bytes().as_slice())
     }
 }

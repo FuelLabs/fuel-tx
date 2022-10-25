@@ -53,7 +53,7 @@ pub struct Checked<Tx: IntoChecked> {
 }
 
 impl<Tx: IntoChecked> Checked<Tx> {
-    pub fn new(transaction: Tx, metadata: Tx::Metadata, checks_bitmask: Checks) -> Self {
+    fn new(transaction: Tx, metadata: Tx::Metadata, checks_bitmask: Checks) -> Self {
         Checked {
             transaction,
             metadata,

@@ -22,7 +22,7 @@ use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use fuel_types::bytes::SerializableVec;
 
-#[derive(Debug, Clone, Derivative)]
+#[derive(Default, Debug, Clone, Derivative)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derivative(Eq, PartialEq, Hash)]
 pub struct Create {
@@ -39,24 +39,6 @@ pub struct Create {
     #[cfg_attr(feature = "serde", serde(skip))]
     #[derivative(PartialEq = "ignore", Hash = "ignore")]
     pub(crate) metadata: Option<CommonMetadata>,
-}
-
-impl Default for Create {
-    fn default() -> Self {
-        Self {
-            gas_price: Default::default(),
-            gas_limit: Default::default(),
-            maturity: Default::default(),
-            bytecode_length: Default::default(),
-            bytecode_witness_index: Default::default(),
-            storage_slots: Default::default(),
-            inputs: Default::default(),
-            outputs: Default::default(),
-            witnesses: Default::default(),
-            salt: Default::default(),
-            metadata: None,
-        }
-    }
 }
 
 #[cfg(feature = "std")]

@@ -1,5 +1,6 @@
 mod create;
 mod input;
+mod mint;
 mod output;
 mod script;
 mod storage;
@@ -11,6 +12,7 @@ mod witness;
 pub use create::checked::CheckedMetadata as CreateCheckedMetadata;
 pub use create::Create;
 pub use input::{Input, InputRepr};
+pub use mint::Mint;
 pub use output::{Output, OutputRepr};
 #[cfg(feature = "std")]
 pub use script::checked::CheckedMetadata as ScriptCheckedMetadata;

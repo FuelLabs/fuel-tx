@@ -99,6 +99,7 @@ mod use_std {
                     .map(|t| match t {
                         Transaction::Script { .. } => (),
                         Transaction::Create { .. } => (),
+                        Transaction::Mint { .. } => (),
                     })
                     .unwrap_or(());
 

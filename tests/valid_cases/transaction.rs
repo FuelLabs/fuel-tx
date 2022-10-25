@@ -333,7 +333,7 @@ fn output_change_asset_id() {
         .check(block_height, &PARAMS)
         .expect_err("Expected erroneous transaction");
 
-    assert_eq!(CheckError::TransactionOutputChangeAssetIdDuplicated, err);
+    assert_eq!(CheckError::TransactionOutputChangeAssetIdDuplicated(a), err);
 
     let err = TransactionBuilder::script(generate_bytes(rng), generate_bytes(rng))
         .gas_limit(PARAMS.max_gas_per_tx)
@@ -514,13 +514,16 @@ fn create() {
             rng.gen(),
             maturity,
         )
-        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
-        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::default()))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::BASE))
+        .add_output(Output::change(rng.gen(), rng.gen(), AssetId::BASE))
         .finalize()
         .check(block_height, &PARAMS)
         .expect_err("Expected erroneous transaction");
 
-    assert_eq!(err, CheckError::TransactionOutputChangeAssetIdDuplicated,);
+    assert_eq!(
+        err,
+        CheckError::TransactionOutputChangeAssetIdDuplicated(AssetId::BASE)
+    );
 
     let asset_id: AssetId = rng.gen();
 

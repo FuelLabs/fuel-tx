@@ -8,6 +8,7 @@ use fuel_types::Word;
 pub enum TransactionRepr {
     Script = 0x00,
     Create = 0x01,
+    Mint = 0x02,
 }
 
 impl From<&Transaction> for TransactionRepr {
@@ -15,6 +16,7 @@ impl From<&Transaction> for TransactionRepr {
         match tx {
             Transaction::Script { .. } => Self::Script,
             Transaction::Create { .. } => Self::Create,
+            Transaction::Mint { .. } => Self::Mint,
         }
     }
 }

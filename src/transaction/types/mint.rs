@@ -265,8 +265,8 @@ impl io::Read for Mint {
             ..
         } = self;
 
-        let n = tx_pointer.read(buf)?;
-        let buf = &mut buf[n..];
+        let skip = tx_pointer.read(buf)?;
+        let buf = &mut buf[skip..];
         let mut buf = bytes::store_number_unchecked(buf, outputs.len() as Word);
 
         for output in outputs {

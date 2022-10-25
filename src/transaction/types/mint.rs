@@ -4,8 +4,8 @@ use crate::transaction::{
 };
 use crate::{CheckError, ConsensusParameters, Output, TxPointer};
 use derivative::Derivative;
-use fuel_types::bytes::{Deserializable, SizedBytes, WORD_SIZE};
-use fuel_types::{bytes, Bytes32, Word};
+use fuel_types::bytes::{SizedBytes, WORD_SIZE};
+use fuel_types::{Bytes32, Word};
 
 #[cfg(feature = "std")]
 use std::io;
@@ -14,7 +14,7 @@ use std::io;
 use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
-use fuel_types::bytes::SerializableVec;
+use fuel_types::bytes::{self, Deserializable, SerializableVec};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct MintMetadata {
@@ -24,6 +24,7 @@ pub(crate) struct MintMetadata {
     pub serialized_size: usize,
 }
 
+#[cfg(feature = "std")]
 impl MintMetadata {
     fn compute<Tx>(tx: &Tx) -> Self
     where

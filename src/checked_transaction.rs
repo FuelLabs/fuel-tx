@@ -205,6 +205,12 @@ impl From<Checked<Create>> for CheckedTransaction {
     }
 }
 
+impl From<Checked<Mint>> for CheckedTransaction {
+    fn from(checked: Checked<Mint>) -> Self {
+        Self::Mint(checked)
+    }
+}
+
 impl From<CheckedTransaction> for Checked<Transaction> {
     fn from(checked: CheckedTransaction) -> Self {
         match checked {

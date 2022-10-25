@@ -25,9 +25,10 @@ pub use fee::{Chargeable, TransactionFee};
 pub use metadata::Cacheable;
 pub use repr::TransactionRepr;
 pub use types::{
-    Create, Input, InputRepr, Mint, Output, OutputRepr, Script, StorageSlot, TxPointer, UtxoId,
-    Witness,
+    Create, Input, InputRepr, Mint, Output, OutputRepr, Script, StorageSlot, UtxoId, Witness,
 };
+
+use crate::TxPointer;
 
 #[cfg(feature = "std")]
 pub use id::{Signable, UniqueIdentifier};

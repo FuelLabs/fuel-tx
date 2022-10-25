@@ -39,90 +39,6 @@ struct TestedFields {
     output_recipient: bool,
 }
 
-fn outputs_assert<Tx: Outputs>(tx: &Tx, bytes: &[u8], cases: &mut TestedFields) {
-    tx.outputs().iter().enumerate().for_each(|(idx, o)| {
-        let output_ofs = tx
-            .outputs_offset_at(idx)
-            .expect("failed to fetch output offset");
-        let o_p = Output::from_bytes(&bytes[output_ofs..]).expect("failed to deserialize output");
-
-        assert_eq!(o, &o_p);
-
-        if let Some(to) = o.to() {
-            cases.output_to = true;
-
-            let ofs = output_ofs + o.repr().to_offset().expect("output have to");
-            let to_p = unsafe { Address::as_ref_unchecked(&bytes[ofs..ofs + Address::LEN]) };
-
-            assert_eq!(to, to_p);
-        }
-
-        if let Some(asset_id) = o.asset_id() {
-            cases.output_asset_id = true;
-
-            let ofs = output_ofs + o.repr().asset_id_offset().expect("output have asset id");
-            let asset_id_p = unsafe { AssetId::as_ref_unchecked(&bytes[ofs..ofs + Address::LEN]) };
-
-            assert_eq!(asset_id, asset_id_p);
-        }
-
-        if let Some(balance_root) = o.balance_root() {
-            cases.output_balance_root = true;
-
-            let ofs = output_ofs
-                + o.repr()
-                    .contract_balance_root_offset()
-                    .expect("output have balance root");
-            let balance_root_p =
-                unsafe { Bytes32::as_ref_unchecked(&bytes[ofs..ofs + Bytes32::LEN]) };
-
-            assert_eq!(balance_root, balance_root_p);
-        }
-
-        if let Some(state_root) = o.state_root() {
-            let ofs = if o.is_contract() {
-                cases.output_contract_state_root = true;
-                o.repr()
-                    .contract_state_root_offset()
-                    .expect("output have state root")
-            } else {
-                cases.output_contract_created_state_root = true;
-                o.repr()
-                    .contract_created_state_root_offset()
-                    .expect("output have state root")
-            };
-
-            let ofs = output_ofs + ofs;
-            let state_root_p =
-                unsafe { Bytes32::as_ref_unchecked(&bytes[ofs..ofs + Bytes32::LEN]) };
-
-            assert_eq!(state_root, state_root_p);
-        }
-
-        if let Some(contract_id) = o.contract_id() {
-            cases.output_contract_created_id = true;
-
-            let ofs = output_ofs
-                + o.repr()
-                    .contract_id_offset()
-                    .expect("output have contract id");
-            let contract_id_p =
-                unsafe { ContractId::as_ref_unchecked(&bytes[ofs..ofs + ContractId::LEN]) };
-
-            assert_eq!(contract_id, contract_id_p);
-        }
-
-        if let Some(recipient) = o.recipient() {
-            cases.output_recipient = true;
-
-            let ofs = output_ofs + o.repr().recipient_offset().expect("output have recipient");
-            let recipient_p = unsafe { Address::as_ref_unchecked(&bytes[ofs..ofs + Address::LEN]) };
-
-            assert_eq!(recipient, recipient_p);
-        }
-    });
-}
-
 fn common_parts_create_and_script<Tx: Buildable>(tx: &Tx, bytes: &[u8], cases: &mut TestedFields) {
     tx.inputs().iter().enumerate().for_each(|(idx, i)| {
         let input_ofs = tx
@@ -307,6 +223,90 @@ fn common_parts_create_and_script<Tx: Buildable>(tx: &Tx, bytes: &[u8], cases: &
     });
 
     outputs_assert(tx, bytes, cases);
+}
+
+fn outputs_assert<Tx: Outputs>(tx: &Tx, bytes: &[u8], cases: &mut TestedFields) {
+    tx.outputs().iter().enumerate().for_each(|(idx, o)| {
+        let output_ofs = tx
+            .outputs_offset_at(idx)
+            .expect("failed to fetch output offset");
+        let o_p = Output::from_bytes(&bytes[output_ofs..]).expect("failed to deserialize output");
+
+        assert_eq!(o, &o_p);
+
+        if let Some(to) = o.to() {
+            cases.output_to = true;
+
+            let ofs = output_ofs + o.repr().to_offset().expect("output have to");
+            let to_p = unsafe { Address::as_ref_unchecked(&bytes[ofs..ofs + Address::LEN]) };
+
+            assert_eq!(to, to_p);
+        }
+
+        if let Some(asset_id) = o.asset_id() {
+            cases.output_asset_id = true;
+
+            let ofs = output_ofs + o.repr().asset_id_offset().expect("output have asset id");
+            let asset_id_p = unsafe { AssetId::as_ref_unchecked(&bytes[ofs..ofs + Address::LEN]) };
+
+            assert_eq!(asset_id, asset_id_p);
+        }
+
+        if let Some(balance_root) = o.balance_root() {
+            cases.output_balance_root = true;
+
+            let ofs = output_ofs
+                + o.repr()
+                    .contract_balance_root_offset()
+                    .expect("output have balance root");
+            let balance_root_p =
+                unsafe { Bytes32::as_ref_unchecked(&bytes[ofs..ofs + Bytes32::LEN]) };
+
+            assert_eq!(balance_root, balance_root_p);
+        }
+
+        if let Some(state_root) = o.state_root() {
+            let ofs = if o.is_contract() {
+                cases.output_contract_state_root = true;
+                o.repr()
+                    .contract_state_root_offset()
+                    .expect("output have state root")
+            } else {
+                cases.output_contract_created_state_root = true;
+                o.repr()
+                    .contract_created_state_root_offset()
+                    .expect("output have state root")
+            };
+
+            let ofs = output_ofs + ofs;
+            let state_root_p =
+                unsafe { Bytes32::as_ref_unchecked(&bytes[ofs..ofs + Bytes32::LEN]) };
+
+            assert_eq!(state_root, state_root_p);
+        }
+
+        if let Some(contract_id) = o.contract_id() {
+            cases.output_contract_created_id = true;
+
+            let ofs = output_ofs
+                + o.repr()
+                    .contract_id_offset()
+                    .expect("output have contract id");
+            let contract_id_p =
+                unsafe { ContractId::as_ref_unchecked(&bytes[ofs..ofs + ContractId::LEN]) };
+
+            assert_eq!(contract_id, contract_id_p);
+        }
+
+        if let Some(recipient) = o.recipient() {
+            cases.output_recipient = true;
+
+            let ofs = output_ofs + o.repr().recipient_offset().expect("output have recipient");
+            let recipient_p = unsafe { Address::as_ref_unchecked(&bytes[ofs..ofs + Address::LEN]) };
+
+            assert_eq!(recipient, recipient_p);
+        }
+    });
 }
 
 #[test]

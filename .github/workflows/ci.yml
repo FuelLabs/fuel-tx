@@ -11,6 +11,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings -D clippy::dbg_macro
+  RUST_VERSION: 1.64.0
 
 jobs:
   cancel-previous-runs:
@@ -56,7 +57,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: ${{ env.RUST_VERSION }}
           # Using thumbv6m-none-eabi as ARMv6-M arbitrary common choice for a bare-minimum target.
           # More info: https://docs.rs/cortex-m-rt/latest/cortex_m_rt/
           #

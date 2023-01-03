@@ -8,6 +8,11 @@ on:
   release:
     types: [published]
 
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings -D clippy::dbg_macro
+  RUST_VERSION: 1.64.0
+
 jobs:
   cancel-previous-runs:
     runs-on: ubuntu-latest
